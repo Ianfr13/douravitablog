@@ -216,7 +216,7 @@ msgid "{0}{1}"
 msgstr "{0}{1}"
 
 #. placeholder {0}: draft.description.length
-#: packages/admin/src/components/SeoPanel.tsx:164
+#: packages/admin/src/components/SeoPanel.tsx:165
 msgid "{0}/160 characters"
 msgstr "{0}/160자"
 
@@ -435,7 +435,7 @@ msgstr "기능"
 msgid "Active"
 msgstr "활성"
 
-#: packages/admin/src/components/ContentEditor.tsx:1706
+#: packages/admin/src/components/ContentEditor.tsx:1709
 #: packages/admin/src/components/MenuEditor.tsx:297
 #: packages/admin/src/components/TaxonomyManager.tsx:214
 #: packages/admin/src/components/TaxonomyManager.tsx:610
@@ -514,7 +514,7 @@ msgstr "추가"
 msgid "Add new {0}"
 msgstr "새 {0} 추가"
 
-#: packages/admin/src/components/SeoPanel.tsx:187
+#: packages/admin/src/components/SeoPanel.tsx:189
 msgid "Add noindex meta tag"
 msgstr "noindex 메타 태그 추가"
 
@@ -823,7 +823,7 @@ msgstr "빙 확인"
 msgid "Boolean"
 msgstr "불리언"
 
-#: packages/admin/src/components/SeoPanel.tsx:165
+#: packages/admin/src/components/SeoPanel.tsx:166
 msgid "Brief summary shown below the title in search results"
 msgstr "검색결과 제목 아래에 간략한 요약이 표시됩니다."
 
@@ -875,8 +875,8 @@ msgstr "콘텐츠 조회 가능"
 #: packages/admin/src/components/ContentEditor.tsx:628
 #: packages/admin/src/components/ContentEditor.tsx:834
 #: packages/admin/src/components/ContentEditor.tsx:886
-#: packages/admin/src/components/ContentEditor.tsx:1809
-#: packages/admin/src/components/ContentEditor.tsx:1862
+#: packages/admin/src/components/ContentEditor.tsx:1812
+#: packages/admin/src/components/ContentEditor.tsx:1865
 #: packages/admin/src/components/ContentList.tsx:543
 #: packages/admin/src/components/ContentList.tsx:614
 #: packages/admin/src/components/ContentPickerModal.tsx:253
@@ -911,7 +911,7 @@ msgstr "이름 변경 취소"
 msgid "Cannot delete theme sections"
 msgstr "테마 섹션을 삭제할 수 없습니다."
 
-#: packages/admin/src/components/SeoPanel.tsx:176
+#: packages/admin/src/components/SeoPanel.tsx:178
 msgid "Canonical URL"
 msgstr "표준 URL"
 
@@ -942,7 +942,7 @@ msgstr "카테고리({0})"
 msgid "Categories will be imported"
 msgstr "카테고리를 가져옵니다."
 
-#: packages/admin/src/components/ContentEditor.tsx:1566
+#: packages/admin/src/components/ContentEditor.tsx:1569
 #: packages/admin/src/components/FieldEditor.tsx:391
 #: packages/admin/src/components/SeoImageField.tsx:47
 msgid "Change"
@@ -1256,7 +1256,7 @@ msgstr "WordPress를 감지할 수 없습니다."
 msgid "Count"
 msgstr "수"
 
-#: packages/admin/src/components/ContentEditor.tsx:1833
+#: packages/admin/src/components/ContentEditor.tsx:1836
 #: packages/admin/src/components/MenuList.tsx:146
 #: packages/admin/src/components/Redirects.tsx:185
 #: packages/admin/src/components/Sections.tsx:210
@@ -1285,7 +1285,7 @@ msgstr "계정 만들기"
 msgid "Create an account"
 msgstr "계정 만들기"
 
-#: packages/admin/src/components/ContentEditor.tsx:1781
+#: packages/admin/src/components/ContentEditor.tsx:1784
 msgid "Create byline"
 msgstr "바이라인 추가"
 
@@ -1408,7 +1408,7 @@ msgstr "생성됨: {0}"
 msgid "Creating collections and fields..."
 msgstr "컬렉션 및 필드 생성 중..."
 
-#: packages/admin/src/components/ContentEditor.tsx:1833
+#: packages/admin/src/components/ContentEditor.tsx:1836
 #: packages/admin/src/components/MenuList.tsx:146
 #: packages/admin/src/components/Redirects.tsx:182
 #: packages/admin/src/components/Sections.tsx:210
@@ -1696,8 +1696,8 @@ msgstr "무시"
 msgid "Display a navigation menu"
 msgstr "탐색 메뉴 표시"
 
-#: packages/admin/src/components/ContentEditor.tsx:1784
-#: packages/admin/src/components/ContentEditor.tsx:1846
+#: packages/admin/src/components/ContentEditor.tsx:1787
+#: packages/admin/src/components/ContentEditor.tsx:1849
 msgid "Display name"
 msgstr "표시 이름"
 
@@ -1748,7 +1748,7 @@ msgstr "계정이 없으신가요? <0>회원가입</0>"
 msgid "Done"
 msgstr "완료"
 
-#: packages/admin/src/components/ContentEditor.tsx:1727
+#: packages/admin/src/components/ContentEditor.tsx:1730
 msgid "Down"
 msgstr "아래로"
 
@@ -1799,7 +1799,7 @@ msgid "e.g., MacBook Pro, iPhone"
 msgstr "예: 맥북 프로, 아이폰"
 
 #: packages/admin/src/components/ContentEditor.tsx:966
-#: packages/admin/src/components/ContentEditor.tsx:1736
+#: packages/admin/src/components/ContentEditor.tsx:1739
 #: packages/admin/src/components/MenuEditor.tsx:367
 #: packages/admin/src/components/MenuList.tsx:185
 #: packages/admin/src/components/Sections.tsx:390
@@ -1824,7 +1824,7 @@ msgstr "{collectionLabel} 수정"
 msgid "Edit {title}"
 msgstr "{title} 편집"
 
-#: packages/admin/src/components/ContentEditor.tsx:1843
+#: packages/admin/src/components/ContentEditor.tsx:1846
 msgid "Edit byline"
 msgstr "작성자 편집"
 
@@ -1947,7 +1947,7 @@ msgid "Enabled"
 msgstr "활성화됨"
 
 #. placeholder {0}: label.toLowerCase()
-#: packages/admin/src/components/ContentEditor.tsx:1179
+#: packages/admin/src/components/ContentEditor.tsx:1180
 msgid "Enter {0}..."
 msgstr "{0}을(를) 입력하세요..."
 
@@ -1956,7 +1956,7 @@ msgstr "{0}을(를) 입력하세요..."
 msgid "Enter a URL (https://…) or a relative path (/…)"
 msgstr "URL(https://…) 또는 상대 경로(/…)를 입력하세요."
 
-#: packages/admin/src/components/ContentEditor.tsx:1393
+#: packages/admin/src/components/ContentEditor.tsx:1396
 msgid "Enter a valid URL (e.g. https://example.com)"
 msgstr "유효한 URL을 입력하세요 (예: https://example.com)"
 
@@ -1972,7 +1972,7 @@ msgstr "집중 모드로 전환"
 msgid "Enter email"
 msgstr "이메일을 입력하세요"
 
-#: packages/admin/src/components/ContentEditor.tsx:1200
+#: packages/admin/src/components/ContentEditor.tsx:1202
 msgid "Enter markdown content..."
 msgstr "마크다운 콘텐츠를 입력하세요..."
 
@@ -2059,7 +2059,7 @@ msgstr "보안 감사 실패"
 msgid "Failed to add domain"
 msgstr "도메인을 추가하지 못했습니다."
 
-#: packages/admin/src/components/ContentEditor.tsx:1827
+#: packages/admin/src/components/ContentEditor.tsx:1830
 msgid "Failed to create byline"
 msgstr "바이라인을 추가하지 못했습니다."
 
@@ -2157,7 +2157,7 @@ msgstr "테스트 이메일을 보내지 못했습니다."
 msgid "Failed to update {0}"
 msgstr "{0}을(를) 업데이트하지 못했습니다."
 
-#: packages/admin/src/components/ContentEditor.tsx:1877
+#: packages/admin/src/components/ContentEditor.tsx:1880
 msgid "Failed to update byline"
 msgstr "바이라인을 업데이트하지 못했습니다."
 
@@ -2305,7 +2305,7 @@ msgstr "제목 3"
 msgid "Height"
 msgstr "높이"
 
-#: packages/admin/src/components/SeoPanel.tsx:186
+#: packages/admin/src/components/SeoPanel.tsx:188
 msgid "Hide from search engines"
 msgstr "검색에서 숨기기"
 
@@ -2551,7 +2551,7 @@ msgstr "설치 중..."
 msgid "Integer"
 msgstr "정수"
 
-#: packages/admin/src/components/ContentEditor.tsx:1462
+#: packages/admin/src/components/ContentEditor.tsx:1465
 msgid "Invalid JSON"
 msgstr "잘못된 JSON"
 
@@ -2966,7 +2966,7 @@ msgstr "메뉴({0})"
 msgid "Menus Manage"
 msgstr "메뉴 관리"
 
-#: packages/admin/src/components/SeoPanel.tsx:161
+#: packages/admin/src/components/SeoPanel.tsx:162
 msgid "Meta Description"
 msgstr "메타 설명"
 
@@ -3168,7 +3168,7 @@ msgstr "아직 API 토큰이 없습니다. 하나를 생성하여 시작하세�
 msgid "No approved comments yet."
 msgstr "아직 승인된 댓글이 없습니다."
 
-#: packages/admin/src/components/ContentEditor.tsx:1768
+#: packages/admin/src/components/ContentEditor.tsx:1771
 msgid "No bylines selected."
 msgstr "선택된 작성자가 없습니다."
 
@@ -3637,7 +3637,7 @@ msgstr "플러그인이 업데이트되었습니다."
 msgid "Plugins"
 msgstr "플러그인"
 
-#: packages/admin/src/components/SeoPanel.tsx:177
+#: packages/admin/src/components/SeoPanel.tsx:179
 msgid "Points search engines to the original version of this page, if it's duplicated from another URL"
 msgstr "다른 URL과 중복된 페이지인 경우, 검색 엔진에 원본 페이지를 알려줍니다"
 
@@ -3725,7 +3725,7 @@ msgstr "게시됨 {0}"
 msgid "Published At"
 msgstr "게시 날짜"
 
-#: packages/admin/src/components/ContentEditor.tsx:1776
+#: packages/admin/src/components/ContentEditor.tsx:1779
 msgid "Quick create byline"
 msgstr "바이라인 빠르게 추가"
 
@@ -3806,7 +3806,7 @@ msgstr "등록된 사용자"
 msgid "Registration was cancelled or timed out. Please try again."
 msgstr "등록이 취소되었거나 시간이 초과되었습니다. 다시 시도해 주세요."
 
-#: packages/admin/src/components/ContentEditor.tsx:1745
+#: packages/admin/src/components/ContentEditor.tsx:1748
 #: packages/admin/src/components/editor/ImageDetailPanel.tsx:177
 #: packages/admin/src/components/settings/GeneralSettings.tsx:202
 #: packages/admin/src/components/settings/GeneralSettings.tsx:246
@@ -3830,7 +3830,7 @@ msgstr "도메인 제거"
 msgid "Remove Domain?"
 msgstr "도메인을 제거하시겠습니까?"
 
-#: packages/admin/src/components/ContentEditor.tsx:1574
+#: packages/admin/src/components/ContentEditor.tsx:1577
 #: packages/admin/src/components/SeoImageField.tsx:55
 msgid "Remove image"
 msgstr "이미지 삭제"
@@ -4033,7 +4033,7 @@ msgstr "역할"
 msgid "Role {role}"
 msgstr "역할 {role}"
 
-#: packages/admin/src/components/ContentEditor.tsx:1750
+#: packages/admin/src/components/ContentEditor.tsx:1753
 msgid "Role label"
 msgstr "역할명"
 
@@ -4044,7 +4044,7 @@ msgstr "역할명"
 msgid "Same window"
 msgstr "현재 창"
 
-#: packages/admin/src/components/ContentEditor.tsx:1883
+#: packages/admin/src/components/ContentEditor.tsx:1886
 #: packages/admin/src/components/editor/ImageDetailPanel.tsx:349
 #: packages/admin/src/components/editor/ImageDetailPanel.tsx:519
 #: packages/admin/src/components/MediaDetailPanel.tsx:241
@@ -4084,7 +4084,7 @@ msgid "Saved"
 msgstr "저장됨"
 
 #: packages/admin/src/components/ContentEditor.tsx:572
-#: packages/admin/src/components/ContentEditor.tsx:1883
+#: packages/admin/src/components/ContentEditor.tsx:1886
 #: packages/admin/src/components/FieldEditor.tsx:656
 #: packages/admin/src/components/MediaDetailPanel.tsx:241
 #: packages/admin/src/components/MenuEditor.tsx:442
@@ -4334,7 +4334,7 @@ msgstr "보안 설정"
 msgid "Select"
 msgstr "선택"
 
-#: packages/admin/src/components/ContentEditor.tsx:1598
+#: packages/admin/src/components/ContentEditor.tsx:1601
 msgid "Select {label}"
 msgstr "{label} 선택"
 
@@ -4342,7 +4342,7 @@ msgstr "{label} 선택"
 msgid "Select all"
 msgstr "모두 선택"
 
-#: packages/admin/src/components/ContentEditor.tsx:1689
+#: packages/admin/src/components/ContentEditor.tsx:1692
 msgid "Select byline..."
 msgstr "작성자 선택..."
 
@@ -4360,7 +4360,7 @@ msgstr "콘텐츠 선택"
 msgid "Select Favicon"
 msgstr "파비콘 선택"
 
-#: packages/admin/src/components/ContentEditor.tsx:1589
+#: packages/admin/src/components/ContentEditor.tsx:1592
 msgid "Select image"
 msgstr "이미지 선택"
 
@@ -4385,7 +4385,7 @@ msgstr "OG 이미지 선택"
 msgid "Select which content types to import."
 msgstr "가져올 콘텐츠 유형을 선택하세요."
 
-#: packages/admin/src/components/RepeaterField.tsx:363
+#: packages/admin/src/components/RepeaterField.tsx:365
 msgid "Select..."
 msgstr "선택..."
 
@@ -4609,8 +4609,8 @@ msgid "Skipped"
 msgstr "건너뜀"
 
 #: packages/admin/src/components/ContentEditor.tsx:767
-#: packages/admin/src/components/ContentEditor.tsx:1792
-#: packages/admin/src/components/ContentEditor.tsx:1854
+#: packages/admin/src/components/ContentEditor.tsx:1795
+#: packages/admin/src/components/ContentEditor.tsx:1857
 #: packages/admin/src/components/ContentTypeEditor.tsx:109
 #: packages/admin/src/components/ContentTypeList.tsx:97
 #: packages/admin/src/components/FieldEditor.tsx:224
@@ -4854,7 +4854,7 @@ msgstr "테마: {label}"
 msgid "Themes"
 msgstr "테마 마켓플레이스"
 
-#: packages/admin/src/components/ContentEditor.tsx:1602
+#: packages/admin/src/components/ContentEditor.tsx:1605
 msgid "This field is required"
 msgstr "필수 항목입니다"
 
@@ -5069,8 +5069,8 @@ msgstr "유형 불일치({0})"
 msgid "Unable to reach marketplace"
 msgstr "마켓플레이스에 접속할 수 없습니다"
 
-#: packages/admin/src/components/ContentEditor.tsx:1897
-#: packages/admin/src/components/ContentEditor.tsx:1912
+#: packages/admin/src/components/ContentEditor.tsx:1900
+#: packages/admin/src/components/ContentEditor.tsx:1915
 msgid "Unassigned"
 msgstr "할당되지 않음"
 
@@ -5136,7 +5136,7 @@ msgstr "예약 취소"
 msgid "Untitled"
 msgstr "제목 없음"
 
-#: packages/admin/src/components/ContentEditor.tsx:1724
+#: packages/admin/src/components/ContentEditor.tsx:1727
 msgid "Up"
 msgstr "위로"
 
@@ -5298,7 +5298,7 @@ msgstr "등록된 패스키를 사용하여 안전하게 로그인하세요."
 msgid "Used as the identifier. Lowercase letters, numbers, and underscores only."
 msgstr "식별자로 사용됩니다. 소문자, 숫자, 밑줄만 가능합니다."
 
-#: packages/admin/src/components/ContentEditor.tsx:1275
+#: packages/admin/src/components/ContentEditor.tsx:1277
 msgid "Used as the main visual for this post on listing pages and at the top of the post"
 msgstr "목록 페이지와 게시물 상단에서 이 게시물의 기본 시각적 요소로 사용됩니다."
 

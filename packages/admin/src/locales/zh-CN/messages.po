@@ -216,7 +216,7 @@ msgid "{0}{1}"
 msgstr "{0}{1}"
 
 #. placeholder {0}: draft.description.length
-#: packages/admin/src/components/SeoPanel.tsx:164
+#: packages/admin/src/components/SeoPanel.tsx:165
 msgid "{0}/160 characters"
 msgstr "{0}/160 个字符"
 
@@ -435,7 +435,7 @@ msgstr "操作"
 msgid "Active"
 msgstr "活跃"
 
-#: packages/admin/src/components/ContentEditor.tsx:1706
+#: packages/admin/src/components/ContentEditor.tsx:1709
 #: packages/admin/src/components/MenuEditor.tsx:297
 #: packages/admin/src/components/TaxonomyManager.tsx:214
 #: packages/admin/src/components/TaxonomyManager.tsx:610
@@ -514,7 +514,7 @@ msgstr "添加新内容"
 msgid "Add new {0}"
 msgstr "添加新{0}"
 
-#: packages/admin/src/components/SeoPanel.tsx:187
+#: packages/admin/src/components/SeoPanel.tsx:189
 msgid "Add noindex meta tag"
 msgstr "添加 noindex 元标签"
 
@@ -823,7 +823,7 @@ msgstr "Bing 验证"
 msgid "Boolean"
 msgstr "布尔值"
 
-#: packages/admin/src/components/SeoPanel.tsx:165
+#: packages/admin/src/components/SeoPanel.tsx:166
 msgid "Brief summary shown below the title in search results"
 msgstr "在搜索结果中标题下方显示简短摘要"
 
@@ -875,8 +875,8 @@ msgstr "可以查看内容"
 #: packages/admin/src/components/ContentEditor.tsx:628
 #: packages/admin/src/components/ContentEditor.tsx:834
 #: packages/admin/src/components/ContentEditor.tsx:886
-#: packages/admin/src/components/ContentEditor.tsx:1809
-#: packages/admin/src/components/ContentEditor.tsx:1862
+#: packages/admin/src/components/ContentEditor.tsx:1812
+#: packages/admin/src/components/ContentEditor.tsx:1865
 #: packages/admin/src/components/ContentList.tsx:543
 #: packages/admin/src/components/ContentList.tsx:614
 #: packages/admin/src/components/ContentPickerModal.tsx:253
@@ -911,7 +911,7 @@ msgstr "取消重命名"
 msgid "Cannot delete theme sections"
 msgstr "无法删除主题区块"
 
-#: packages/admin/src/components/SeoPanel.tsx:176
+#: packages/admin/src/components/SeoPanel.tsx:178
 msgid "Canonical URL"
 msgstr "规范 URL"
 
@@ -942,7 +942,7 @@ msgstr "分类 ({0})"
 msgid "Categories will be imported"
 msgstr "分类将被导入"
 
-#: packages/admin/src/components/ContentEditor.tsx:1566
+#: packages/admin/src/components/ContentEditor.tsx:1569
 #: packages/admin/src/components/FieldEditor.tsx:391
 #: packages/admin/src/components/SeoImageField.tsx:47
 msgid "Change"
@@ -1256,7 +1256,7 @@ msgstr "无法检测到 WordPress"
 msgid "Count"
 msgstr "数量"
 
-#: packages/admin/src/components/ContentEditor.tsx:1833
+#: packages/admin/src/components/ContentEditor.tsx:1836
 #: packages/admin/src/components/MenuList.tsx:146
 #: packages/admin/src/components/Redirects.tsx:185
 #: packages/admin/src/components/Sections.tsx:210
@@ -1285,7 +1285,7 @@ msgstr "创建账户"
 msgid "Create an account"
 msgstr "创建账户"
 
-#: packages/admin/src/components/ContentEditor.tsx:1781
+#: packages/admin/src/components/ContentEditor.tsx:1784
 msgid "Create byline"
 msgstr "创建署名"
 
@@ -1408,7 +1408,7 @@ msgstr "创建于：{0}"
 msgid "Creating collections and fields..."
 msgstr "正在创建合集和字段..."
 
-#: packages/admin/src/components/ContentEditor.tsx:1833
+#: packages/admin/src/components/ContentEditor.tsx:1836
 #: packages/admin/src/components/MenuList.tsx:146
 #: packages/admin/src/components/Redirects.tsx:182
 #: packages/admin/src/components/Sections.tsx:210
@@ -1696,8 +1696,8 @@ msgstr "关闭"
 msgid "Display a navigation menu"
 msgstr "显示导航菜单"
 
-#: packages/admin/src/components/ContentEditor.tsx:1784
-#: packages/admin/src/components/ContentEditor.tsx:1846
+#: packages/admin/src/components/ContentEditor.tsx:1787
+#: packages/admin/src/components/ContentEditor.tsx:1849
 msgid "Display name"
 msgstr "显示名称"
 
@@ -1748,7 +1748,7 @@ msgstr "还没有账号？<0>立即注册</0>"
 msgid "Done"
 msgstr "完成"
 
-#: packages/admin/src/components/ContentEditor.tsx:1727
+#: packages/admin/src/components/ContentEditor.tsx:1730
 msgid "Down"
 msgstr "下移"
 
@@ -1799,7 +1799,7 @@ msgid "e.g., MacBook Pro, iPhone"
 msgstr "例如：MacBook Pro、iPhone"
 
 #: packages/admin/src/components/ContentEditor.tsx:966
-#: packages/admin/src/components/ContentEditor.tsx:1736
+#: packages/admin/src/components/ContentEditor.tsx:1739
 #: packages/admin/src/components/MenuEditor.tsx:367
 #: packages/admin/src/components/MenuList.tsx:185
 #: packages/admin/src/components/Sections.tsx:390
@@ -1824,7 +1824,7 @@ msgstr "编辑 {collectionLabel}"
 msgid "Edit {title}"
 msgstr "编辑 {title}"
 
-#: packages/admin/src/components/ContentEditor.tsx:1843
+#: packages/admin/src/components/ContentEditor.tsx:1846
 msgid "Edit byline"
 msgstr "编辑署名"
 
@@ -1947,7 +1947,7 @@ msgid "Enabled"
 msgstr "已启用"
 
 #. placeholder {0}: label.toLowerCase()
-#: packages/admin/src/components/ContentEditor.tsx:1179
+#: packages/admin/src/components/ContentEditor.tsx:1180
 msgid "Enter {0}..."
 msgstr "输入 {0}..."
 
@@ -1956,7 +1956,7 @@ msgstr "输入 {0}..."
 msgid "Enter a URL (https://…) or a relative path (/…)"
 msgstr "输入 URL (https://…) 或相对路径 (/…)"
 
-#: packages/admin/src/components/ContentEditor.tsx:1393
+#: packages/admin/src/components/ContentEditor.tsx:1396
 msgid "Enter a valid URL (e.g. https://example.com)"
 msgstr "输入有效的 URL（例如 https://example.com）"
 
@@ -1972,7 +1972,7 @@ msgstr "进入无干扰模式"
 msgid "Enter email"
 msgstr "输入邮箱"
 
-#: packages/admin/src/components/ContentEditor.tsx:1200
+#: packages/admin/src/components/ContentEditor.tsx:1202
 msgid "Enter markdown content..."
 msgstr "输入 Markdown 内容..."
 
@@ -2059,7 +2059,7 @@ msgstr "安全审计失败"
 msgid "Failed to add domain"
 msgstr "添加域名失败"
 
-#: packages/admin/src/components/ContentEditor.tsx:1827
+#: packages/admin/src/components/ContentEditor.tsx:1830
 msgid "Failed to create byline"
 msgstr "创建署名失败"
 
@@ -2157,7 +2157,7 @@ msgstr "发送测试邮件失败"
 msgid "Failed to update {0}"
 msgstr "更新 {0} 失败"
 
-#: packages/admin/src/components/ContentEditor.tsx:1877
+#: packages/admin/src/components/ContentEditor.tsx:1880
 msgid "Failed to update byline"
 msgstr "更新署名失败"
 
@@ -2305,7 +2305,7 @@ msgstr "标题 3"
 msgid "Height"
 msgstr "高度"
 
-#: packages/admin/src/components/SeoPanel.tsx:186
+#: packages/admin/src/components/SeoPanel.tsx:188
 msgid "Hide from search engines"
 msgstr "对搜索引擎隐藏"
 
@@ -2551,7 +2551,7 @@ msgstr "正在安装..."
 msgid "Integer"
 msgstr "整数"
 
-#: packages/admin/src/components/ContentEditor.tsx:1462
+#: packages/admin/src/components/ContentEditor.tsx:1465
 msgid "Invalid JSON"
 msgstr "无效的 JSON"
 
@@ -2966,7 +2966,7 @@ msgstr "菜单 ({0})"
 msgid "Menus Manage"
 msgstr "菜单管理"
 
-#: packages/admin/src/components/SeoPanel.tsx:161
+#: packages/admin/src/components/SeoPanel.tsx:162
 msgid "Meta Description"
 msgstr "Meta 描述"
 
@@ -3168,7 +3168,7 @@ msgstr "暂无 API 令牌。创建一个以开始使用。"
 msgid "No approved comments yet."
 msgstr "暂无已审核评论。"
 
-#: packages/admin/src/components/ContentEditor.tsx:1768
+#: packages/admin/src/components/ContentEditor.tsx:1771
 msgid "No bylines selected."
 msgstr "未选择任何署名。"
 
@@ -3637,7 +3637,7 @@ msgstr "插件已更新"
 msgid "Plugins"
 msgstr "插件"
 
-#: packages/admin/src/components/SeoPanel.tsx:177
+#: packages/admin/src/components/SeoPanel.tsx:179
 msgid "Points search engines to the original version of this page, if it's duplicated from another URL"
 msgstr "如果此页面是从另一个 URL 复制的，则引导搜索引擎到原始版本"
 
@@ -3725,7 +3725,7 @@ msgstr "发布于 {0}"
 msgid "Published At"
 msgstr "发布时间"
 
-#: packages/admin/src/components/ContentEditor.tsx:1776
+#: packages/admin/src/components/ContentEditor.tsx:1779
 msgid "Quick create byline"
 msgstr "快速创建署名"
 
@@ -3806,7 +3806,7 @@ msgstr "已注册用户"
 msgid "Registration was cancelled or timed out. Please try again."
 msgstr "注册已取消或超时。请重试。"
 
-#: packages/admin/src/components/ContentEditor.tsx:1745
+#: packages/admin/src/components/ContentEditor.tsx:1748
 #: packages/admin/src/components/editor/ImageDetailPanel.tsx:177
 #: packages/admin/src/components/settings/GeneralSettings.tsx:202
 #: packages/admin/src/components/settings/GeneralSettings.tsx:246
@@ -3830,7 +3830,7 @@ msgstr "移除域名"
 msgid "Remove Domain?"
 msgstr "移除域名？"
 
-#: packages/admin/src/components/ContentEditor.tsx:1574
+#: packages/admin/src/components/ContentEditor.tsx:1577
 #: packages/admin/src/components/SeoImageField.tsx:55
 msgid "Remove image"
 msgstr "移除图片"
@@ -4033,7 +4033,7 @@ msgstr "角色"
 msgid "Role {role}"
 msgstr "角色 {role}"
 
-#: packages/admin/src/components/ContentEditor.tsx:1750
+#: packages/admin/src/components/ContentEditor.tsx:1753
 msgid "Role label"
 msgstr "角色标签"
 
@@ -4044,7 +4044,7 @@ msgstr "角色标签"
 msgid "Same window"
 msgstr "同一窗口"
 
-#: packages/admin/src/components/ContentEditor.tsx:1883
+#: packages/admin/src/components/ContentEditor.tsx:1886
 #: packages/admin/src/components/editor/ImageDetailPanel.tsx:349
 #: packages/admin/src/components/editor/ImageDetailPanel.tsx:519
 #: packages/admin/src/components/MediaDetailPanel.tsx:241
@@ -4084,7 +4084,7 @@ msgid "Saved"
 msgstr "已保存"
 
 #: packages/admin/src/components/ContentEditor.tsx:572
-#: packages/admin/src/components/ContentEditor.tsx:1883
+#: packages/admin/src/components/ContentEditor.tsx:1886
 #: packages/admin/src/components/FieldEditor.tsx:656
 #: packages/admin/src/components/MediaDetailPanel.tsx:241
 #: packages/admin/src/components/MenuEditor.tsx:442
@@ -4334,7 +4334,7 @@ msgstr "安全设置"
 msgid "Select"
 msgstr "选择"
 
-#: packages/admin/src/components/ContentEditor.tsx:1598
+#: packages/admin/src/components/ContentEditor.tsx:1601
 msgid "Select {label}"
 msgstr "选择 {label}"
 
@@ -4342,7 +4342,7 @@ msgstr "选择 {label}"
 msgid "Select all"
 msgstr "全选"
 
-#: packages/admin/src/components/ContentEditor.tsx:1689
+#: packages/admin/src/components/ContentEditor.tsx:1692
 msgid "Select byline..."
 msgstr "选择署名..."
 
@@ -4360,7 +4360,7 @@ msgstr "选择内容"
 msgid "Select Favicon"
 msgstr "选择网站图标"
 
-#: packages/admin/src/components/ContentEditor.tsx:1589
+#: packages/admin/src/components/ContentEditor.tsx:1592
 msgid "Select image"
 msgstr "选择图片"
 
@@ -4385,7 +4385,7 @@ msgstr "选择 OG 图片"
 msgid "Select which content types to import."
 msgstr "选择要导入的内容类型。"
 
-#: packages/admin/src/components/RepeaterField.tsx:363
+#: packages/admin/src/components/RepeaterField.tsx:365
 msgid "Select..."
 msgstr "选择..."
 
@@ -4609,8 +4609,8 @@ msgid "Skipped"
 msgstr "已跳过"
 
 #: packages/admin/src/components/ContentEditor.tsx:767
-#: packages/admin/src/components/ContentEditor.tsx:1792
-#: packages/admin/src/components/ContentEditor.tsx:1854
+#: packages/admin/src/components/ContentEditor.tsx:1795
+#: packages/admin/src/components/ContentEditor.tsx:1857
 #: packages/admin/src/components/ContentTypeEditor.tsx:109
 #: packages/admin/src/components/ContentTypeList.tsx:97
 #: packages/admin/src/components/FieldEditor.tsx:224
@@ -4854,7 +4854,7 @@ msgstr "主题：{label}"
 msgid "Themes"
 msgstr "主题"
 
-#: packages/admin/src/components/ContentEditor.tsx:1602
+#: packages/admin/src/components/ContentEditor.tsx:1605
 msgid "This field is required"
 msgstr "此字段为必填项"
 
@@ -5069,8 +5069,8 @@ msgstr "类型不匹配 ({0})"
 msgid "Unable to reach marketplace"
 msgstr "无法访问市场"
 
-#: packages/admin/src/components/ContentEditor.tsx:1897
-#: packages/admin/src/components/ContentEditor.tsx:1912
+#: packages/admin/src/components/ContentEditor.tsx:1900
+#: packages/admin/src/components/ContentEditor.tsx:1915
 msgid "Unassigned"
 msgstr "未分配"
 
@@ -5136,7 +5136,7 @@ msgstr "取消定时发布"
 msgid "Untitled"
 msgstr "无标题"
 
-#: packages/admin/src/components/ContentEditor.tsx:1724
+#: packages/admin/src/components/ContentEditor.tsx:1727
 msgid "Up"
 msgstr "上移"
 
@@ -5298,7 +5298,7 @@ msgstr "使用您注册的通行密钥安全登录。"
 msgid "Used as the identifier. Lowercase letters, numbers, and underscores only."
 msgstr "用作标识符。仅限小写字母、数字和下划线。"
 
-#: packages/admin/src/components/ContentEditor.tsx:1275
+#: packages/admin/src/components/ContentEditor.tsx:1277
 msgid "Used as the main visual for this post on listing pages and at the top of the post"
 msgstr "用于在列表页和文章顶部作为主要视觉展示"
 
