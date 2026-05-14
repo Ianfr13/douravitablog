@@ -1,25 +1,53 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "my-emdash-site",
+	"name": "douravitablog",
 	"main": "./src/worker.ts",
-	"compatibility_date": "2026-02-24",
+	"compatibility_date": "2026-03-29",
 	"compatibility_flags": ["nodejs_compat"],
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+	},
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "my-emdash-site",
+			"database_name": "douravitablog",
+			"database_id": "cf53deb6-5330-4935-9549-ab0782ab8151",
 		},
 	],
 	"r2_buckets": [
 		{
 			"binding": "MEDIA",
-			"bucket_name": "my-emdash-media",
+			"bucket_name": "douravitablog",
 		},
 	],
+	"kv_namespaces": [
+		{
+			"binding": "SESSION",
+			"id": "bdbbe6b193794f8dbcf6affa8bd702c3",
+		},
+	],
+	"images": {
+		"binding": "IMAGES",
+	},
 	// Worker Loader for plugin sandboxing
 	"worker_loaders": [
 		{
 			"binding": "LOADER",
+		},
+	],
+	"routes": [
+		{
+			"pattern": "douravita.com.br/blog*",
+			"zone_name": "douravita.com.br",
+		},
+		{
+			"pattern": "douravita.com.br/_emdash/*",
+			"zone_name": "douravita.com.br",
+		},
+		{
+			"pattern": "douravita.com.br/_astro/*",
+			"zone_name": "douravita.com.br",
 		},
 	],
 }

@@ -1,0 +1,64 @@
+name: Sync fork with upstream emdash-cms/emdash
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: douravita-sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/emdash-cms/emdash.git
+          git fetch upstream main
+
+      - name: Merge upstream into main
+        id: merge
+        run: |
+          set +e
+          git merge upstream/main --no-edit -m "chore: sync with upstream emdash-cms/emdash"
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "merge_failed=true" >> "$GITHUB_OUTPUT"
+            git merge --abort || true
+          fi
+          exit 0
+
+      - name: Push if clean merge
+        if: steps.merge.outputs.merge_failed != 'true'
+        run: git push origin main
+
+      - name: Open PR if conflicts
+        if: steps.merge.outputs.merge_failed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="sync-upstream/$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$branch"
+          git merge upstream/main --no-edit -m "chore: sync upstream (manual resolution needed)" || true
+          git add -A
+          git commit -m "chore: sync upstream — conflicts pending resolution" || true
+          git push -u origin "$branch"
+          gh pr create \
+            --base main --head "$branch" \
+            --title "Sync upstream emdash-cms/emdash (conflicts)" \
+            --body "Merge automatico falhou por conflito. Resolva manualmente nesta branch antes de mergear."
