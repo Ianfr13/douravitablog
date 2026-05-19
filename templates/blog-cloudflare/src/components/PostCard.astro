@@ -11,6 +11,7 @@ interface Props {
 	readingTime?: number;
 	tags?: Array<{ slug: string; label: string }>;
 	bylines?: ContentBylineCredit[];
+	headingLevel?: 2 | 3;
 }
 
 const {
@@ -22,10 +23,13 @@ const {
 	readingTime,
 	tags,
 	bylines,
+	headingLevel = 2,
 } = Astro.props;
 
+const TitleTag = `h${headingLevel}` as "h2" | "h3";
+
 const formattedDate = date
-	? date.toLocaleDateString("en-US", {
+	? date.toLocaleDateString("pt-BR", {
 			year: "numeric",
 			month: "short",
 			day: "numeric",
@@ -89,7 +93,7 @@ const formattedDate = date
 				{formattedDate && readingTime && <span class="meta-dot" />}
 				{readingTime && <span>{readingTime} min</span>}
 			</div>
-			<h2 class="card-title">{title}</h2>
+			<TitleTag class="card-title">{title}</TitleTag>
 			{excerpt && <p class="card-excerpt">{excerpt}</p>}
 		</div>
 	</a>

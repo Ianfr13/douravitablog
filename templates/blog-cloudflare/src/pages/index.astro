@@ -65,7 +65,7 @@ const gridPostsWithTags = gridPosts.map((post) => ({
 // Format date helper
 function formatDate(date: Date | null | undefined) {
 	if (!date) return null;
-	return date.toLocaleDateString("en-US", {
+	return date.toLocaleDateString("pt-BR", {
 		year: "numeric",
 		month: "long",
 		day: "numeric",
@@ -77,10 +77,10 @@ function formatDate(date: Date | null | undefined) {
 	{
 		posts.length === 0 ? (
 			<section class="empty-state">
-				<h2>No posts yet</h2>
-				<p>Create your first post in the admin panel.</p>
+				<h2>Nenhum artigo ainda</h2>
+				<p>Crie seu primeiro artigo no painel administrativo.</p>
 				<a href="/_emdash/admin/content/posts/new" class="btn">
-					Create a post
+					Criar um artigo
 				</a>
 			</section>
 		) : (
@@ -130,7 +130,7 @@ function formatDate(date: Date | null | undefined) {
 									)}
 									<span class="meta-dot" />
 									<span>
-										{getReadingTime(featuredPost.data.content)} min read
+										{getReadingTime(featuredPost.data.content)} min de leitura
 									</span>
 								</div>
 								<a
@@ -160,17 +160,17 @@ function formatDate(date: Date | null | undefined) {
 				{gridPostsWithTags.length > 0 && (
 					<section class="posts-section">
 						<header class="section-header">
-							<h2 class="section-title">Latest</h2>
+							<h2 class="section-title">Mais recentes</h2>
 							{hasMorePosts && (
 								<a href="/posts" class="section-link">
-									View all
+									Ver todos
 								</a>
 							)}
 						</header>
 						<div class="posts-grid">
 							{gridPostsWithTags.map(({ post, tags, bylines }) => (
 								<PostCard
-									title={post.data.title ?? "Untitled"}
+									title={post.data.title ?? "Sem título"}
 									excerpt={post.data.excerpt}
 									featuredImage={post.data.featured_image}
 									href={`/posts/${post.id}`}
@@ -178,6 +178,7 @@ function formatDate(date: Date | null | undefined) {
 									readingTime={getReadingTime(post.data.content)}
 									tags={tags}
 									bylines={bylines}
+									headingLevel={3}
 								/>
 							))}
 						</div>

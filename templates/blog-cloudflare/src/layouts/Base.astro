@@ -77,7 +77,7 @@ const isLoggedIn = !!Astro.locals.user;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -111,7 +111,7 @@ const isLoggedIn = !!Astro.locals.user;
 				</a>
 				<div class="nav-right">
 					<LiveSearch
-						placeholder="Search..."
+						placeholder="Buscar..."
 						class="site-search"
 						inputClass="site-search-input"
 						resultsClass="site-search-results"
@@ -155,10 +155,10 @@ const isLoggedIn = !!Astro.locals.user;
 						<p class="footer-tagline">{siteTagline}</p>
 					</div>
 					<div class="footer-nav">
-						<h4 class="footer-heading">Navigate</h4>
+						<h2 class="footer-heading">Navegação</h2>
 						<ul class="footer-links">
-							<li><a href="/">Home</a></li>
-							<li><a href="/posts">All Posts</a></li>
+							<li><a href="/">Início</a></li>
+							<li><a href="/posts">Todos os artigos</a></li>
 							{
 								pages.slice(0, 3).map((page) => (
 									<li>
@@ -171,7 +171,7 @@ const isLoggedIn = !!Astro.locals.user;
 						</ul>
 					</div>
 					<div class="footer-nav">
-						<h4 class="footer-heading">Connect</h4>
+						<h2 class="footer-heading">Conecte-se</h2>
 						<ul class="footer-links">
 							{
 								socialMenu?.items.map((item) => (
@@ -190,7 +190,7 @@ const isLoggedIn = !!Astro.locals.user;
 									</li>
 								))
 							}
-							<li><a href="/rss.xml">RSS Feed</a></li>
+							<li><a href="/rss.xml">Feed RSS</a></li>
 						</ul>
 					</div>
 					<div class="footer-widgets-section">
@@ -199,14 +199,14 @@ const isLoggedIn = !!Astro.locals.user;
 				</div>
 				<div class="footer-bottom">
 					<p class="footer-copyright">
-						Powered by <a href="https://emdashcms.com">EmDash</a>
+						Feito com <a href="https://emdashcms.com">EmDash</a>
 					</p>
 					<div class="theme-switcher">
 						<button
 							type="button"
 							class="theme-btn"
 							data-theme="light"
-							aria-label="Light mode"
+							aria-label="Modo claro"
 						>
 							<svg
 								width="16"
@@ -237,7 +237,7 @@ const isLoggedIn = !!Astro.locals.user;
 							type="button"
 							class="theme-btn"
 							data-theme="dark"
-							aria-label="Dark mode"
+							aria-label="Modo escuro"
 						>
 							<svg
 								width="16"
@@ -256,7 +256,7 @@ const isLoggedIn = !!Astro.locals.user;
 							type="button"
 							class="theme-btn"
 							data-theme="system"
-							aria-label="System theme"
+							aria-label="Tema do sistema"
 						>
 							<svg
 								width="16"
@@ -610,10 +610,10 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.site-logo-img {
-				height: 48px;
+				height: 80px;
 				width: auto;
 				display: block;
-				margin: -8px 0;
+				margin: -16px 0;
 			}
 
 			.nav-right {
@@ -789,7 +789,7 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.footer-logo-img {
-				height: 24px;
+				height: 36px;
 				width: auto;
 			}
 

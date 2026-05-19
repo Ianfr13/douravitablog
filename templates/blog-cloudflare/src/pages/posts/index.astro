@@ -27,26 +27,26 @@ const postsWithTags = posts.map((post) => ({
 }));
 
 const formatDate = (date: Date) =>
-	date.toLocaleDateString("en-US", {
+	date.toLocaleDateString("pt-BR", {
 		year: "numeric",
 		month: "long",
 		day: "numeric",
 	});
 ---
 
-<Base title="All Posts" description="Browse all blog posts">
+<Base title="Todos os artigos" description="Veja todos os artigos do blog">
 	<div class="posts-page">
 		<header class="page-header">
-			<h1 class="page-title">All Posts</h1>
+			<h1 class="page-title">Todos os artigos</h1>
 			<p class="page-description">
 				{posts.length}
-				{posts.length === 1 ? "article" : "articles"}
+				{posts.length === 1 ? "artigo" : "artigos"}
 			</p>
 		</header>
 
 		{
 			posts.length === 0 ? (
-				<p class="empty">No posts yet.</p>
+				<p class="empty">Nenhum artigo ainda.</p>
 			) : (
 				<div class="posts-list">
 					{postsWithTags.map(({ post, tags, bylines }) => (
@@ -84,7 +84,7 @@ const formatDate = (date: Date) =>
 										<time>{formatDate(post.data.publishedAt)}</time>
 									)}
 									{post.data.publishedAt && <span class="meta-dot" />}
-									<span>{getReadingTime(post.data.content)} min read</span>
+									<span>{getReadingTime(post.data.content)} min de leitura</span>
 								</div>
 								<h2 class="post-title">{post.data.title}</h2>
 								{post.data.excerpt && (

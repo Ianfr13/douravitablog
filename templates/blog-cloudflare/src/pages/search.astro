@@ -16,30 +16,30 @@ const { items: results } = query
 ---
 
 <Base
-	title={query ? `Search: ${query}` : "Search"}
-	description="Search blog posts"
+	title={query ? `Busca: ${query}` : "Buscar"}
+	description="Buscar artigos do blog"
 >
 	<section class="search-page">
-		<h1 class="search-title">Search</h1>
+		<h1 class="search-title">Buscar</h1>
 
 		<form method="get" action="/search" class="search-form">
 			<input
 				type="search"
 				name="q"
 				value={query}
-				placeholder="Search posts..."
+				placeholder="Buscar artigos..."
 				class="search-input"
 				autofocus
 			/>
-			<button type="submit" class="search-button">Search</button>
+			<button type="submit" class="search-button">Buscar</button>
 		</form>
 
 		{
 			query && (
 				<p class="search-summary">
 					{results.length === 0
-						? `No results for "${query}"`
-						: `${results.length} result${results.length === 1 ? "" : "s"} for "${query}"`}
+						? `Nenhum resultado para "${query}"`
+						: `${results.length} resultado${results.length === 1 ? "" : "s"} para "${query}"`}
 				</p>
 			)
 		}
@@ -54,7 +54,7 @@ const { items: results } = query
 								class="result-link"
 							>
 								<h2 class="result-title">
-									{result.title ?? "Untitled"}
+									{result.title ?? "Sem título"}
 								</h2>
 								{result.snippet && (
 									<p class="result-snippet" set:html={result.snippet} />
@@ -66,7 +66,7 @@ const { items: results } = query
 			)
 		}
 
-		{!query && <p class="search-hint">Enter a search term to find posts.</p>}
+		{!query && <p class="search-hint">Digite um termo para buscar artigos.</p>}
 	</section>
 </Base>
 

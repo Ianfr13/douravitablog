@@ -100,7 +100,7 @@ const otherPostsWithTags = otherPosts.map((p) => ({
 }));
 
 const publishDate =
-	post.data.publishedAt?.toLocaleDateString("en-US", {
+	post.data.publishedAt?.toLocaleDateString("pt-BR", {
 		year: "numeric",
 		month: "long",
 		day: "numeric",
@@ -138,7 +138,7 @@ const publishDate =
 						bylines.length > 0 && (
 							<div class="meta-block byline-block">
 								<span class="meta-label">
-									{bylines.length === 1 ? "Author" : "Authors"}
+									{bylines.length === 1 ? "Autor" : "Autores"}
 								</span>
 								<div class="bylines">
 									{bylines.map((credit) => (
@@ -167,13 +167,13 @@ const publishDate =
 					{
 						publishDate && (
 							<div class="meta-block">
-								<span class="meta-label">Published</span>
+								<span class="meta-label">Publicado em</span>
 								<time class="meta-value">{publishDate}</time>
 							</div>
 						)
 					}
 					<div class="meta-block">
-						<span class="meta-label">Reading time</span>
+						<span class="meta-label">Tempo de leitura</span>
 						<span class="meta-value">{readingTime} min</span>
 					</div>
 					{
@@ -220,7 +220,7 @@ const publishDate =
 								</>
 							)
 						}
-						<span>{readingTime} min read</span>
+						<span>{readingTime} min de leitura</span>
 					</div>
 					<h1 class="article-title" {...post.edit.title}>{post.data.title}</h1>
 					{
@@ -243,8 +243,8 @@ const publishDate =
 			{/* Right gutter: TOC + Sidebar widgets */}
 			<aside class="article-sidebar">
 				<div class="sidebar-sticky">
-					<nav class="toc" aria-label="Table of contents">
-						<h4 class="toc-title">On this page</h4>
+					<nav class="toc" aria-label="Sumário">
+						<h2 class="toc-title">Nesta página</h2>
 						<div class="toc-content" id="toc-content">
 							<!-- Populated by JS -->
 						</div>
@@ -261,7 +261,7 @@ const publishDate =
 		otherPostsWithTags.length > 0 && (
 			<section class="more-posts">
 				<div class="more-inner">
-					<h2 class="more-title">Continue reading</h2>
+					<h2 class="more-title">Continue lendo</h2>
 					<div class="more-grid">
 						{otherPostsWithTags.map(
 							({ post: p, tags: postTags, bylines: postBylines }) => (
@@ -274,6 +274,7 @@ const publishDate =
 									readingTime={getReadingTime(p.data.content)}
 									tags={postTags.map((t) => ({ slug: t.slug, label: t.label }))}
 									bylines={postBylines}
+									headingLevel={3}
 								/>
 							)
 						)}

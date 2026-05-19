@@ -37,20 +37,20 @@ const filteredPosts = posts.map((post) => ({
 }));
 ---
 
-<Base title={`${term.label} posts`} description={`All posts in ${term.label}`}>
+<Base title={`Artigos em ${term.label}`} description={`Todos os artigos em ${term.label}`}>
 	<section class="archive-section">
 		<header class="archive-header">
-			<span class="archive-label">Category</span>
+			<span class="archive-label">Categoria</span>
 			<h1 class="archive-title">{term.label}</h1>
 			<p class="archive-count">
 				{filteredPosts.length}
-				{filteredPosts.length === 1 ? "post" : "posts"}
+				{filteredPosts.length === 1 ? "artigo" : "artigos"}
 			</p>
 		</header>
 
 		{
 			filteredPosts.length === 0 ? (
-				<p class="no-posts">No posts in this category yet.</p>
+				<p class="no-posts">Nenhum artigo nesta categoria ainda.</p>
 			) : (
 				<div class="posts-grid">
 					{filteredPosts.map(({ post, tags }) => (
