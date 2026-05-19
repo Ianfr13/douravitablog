@@ -38,6 +38,10 @@
 	],
 	"routes": [
 		{
+			"pattern": "blog.douravita.com.br/*",
+			"zone_name": "douravita.com.br",
+		},
+		{
 			"pattern": "douravita.com.br/blog*",
 			"zone_name": "douravita.com.br",
 		},
