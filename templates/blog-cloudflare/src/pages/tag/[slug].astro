@@ -37,8 +37,8 @@ const filteredPosts = posts.map((post) => ({
 ---
 
 <Base
-	title={`Posts tagged "${term.label}"`}
-	description={`All posts tagged with ${term.label}`}
+	title={`Artigos com a tag "${term.label}"`}
+	description={`Todos os artigos com a tag ${term.label}`}
 >
 	<section class="archive-section">
 		<header class="archive-header">
@@ -46,13 +46,13 @@ const filteredPosts = posts.map((post) => ({
 			<h1 class="archive-title">{term.label}</h1>
 			<p class="archive-count">
 				{filteredPosts.length}
-				{filteredPosts.length === 1 ? "post" : "posts"}
+				{filteredPosts.length === 1 ? "artigo" : "artigos"}
 			</p>
 		</header>
 
 		{
 			filteredPosts.length === 0 ? (
-				<p class="no-posts">No posts with this tag yet.</p>
+				<p class="no-posts">Nenhum artigo com esta tag ainda.</p>
 			) : (
 				<div class="posts-grid">
 					{filteredPosts.map(({ post, tags }) => (
