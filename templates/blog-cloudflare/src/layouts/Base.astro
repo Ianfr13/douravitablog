@@ -47,11 +47,6 @@ const fullTitle = title.includes(siteTitle) ? title : `${title} — ${siteTitle}
 // Fetch primary menu defined in seed
 const menu = await getMenu("primary");
 
-// Optional "social" menu. If a site defines a `social` menu in its seed,
-// it'll render in the footer's "Connect" column. Otherwise that column
-// just shows RSS, avoiding duplication with the "Navigate" column above.
-const socialMenu = await getMenu("social");
-
 // Fetch pages for footer
 const { entries: pages } = await getEmDashCollection("pages");
 
@@ -194,29 +189,6 @@ const isLoggedIn = !!Astro.locals.user;
 									</li>
 								))
 							}
-						</ul>
-					</div>
-					<div class="footer-nav">
-						<h2 class="footer-heading">Conecte-se</h2>
-						<ul class="footer-links">
-							{
-								socialMenu?.items.map((item) => (
-									<li>
-										<a
-											href={item.url}
-											target={item.target}
-											rel={
-												item.target === "_blank"
-													? "noopener noreferrer"
-													: undefined
-											}
-										>
-											{item.label}
-										</a>
-									</li>
-								))
-							}
-							<li><a href="/rss.xml">Feed RSS</a></li>
 						</ul>
 					</div>
 					<div class="footer-widgets-section">
