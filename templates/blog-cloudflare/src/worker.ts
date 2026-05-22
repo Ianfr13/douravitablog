@@ -52,12 +52,16 @@ const TRACKING_PARAMS = [
 	"ref",
 ];
 
-// max-age=60: cache do browser (sem isso, navegador re-baixa HTML toda visita
-//   mesmo no botao "voltar" — confirmado 2026-05-22 com Ian reportando lentidao).
-// s-maxage=60: cache do CF CDN (edge).
-// stale-while-revalidate=86400: serve stale por 24h enquanto revalida.
+// max-age=120: cache do browser. TTL maior que o cron interval (1min) garante
+//   que o cache nao expira entre ciclos do scheduled handler — sem MISS no
+//   intervalo. Trade: novo post leva ate 2min pra aparecer pra quem ja
+//   visitou. Trade-off aceitavel; antes de aumentar mais, considerar invalidar
+//   via API quando o bot Discord aprova.
+// s-maxage=120: CF CDN edge cache, mesmo intervalo.
+// stale-while-revalidate=86400: serve stale por 24h se algum cliente tiver
+//   cache expirado mas o cron renovar o edge em background.
 const DEFAULT_CACHE_CONTROL =
-	"public, max-age=60, s-maxage=60, stale-while-revalidate=86400";
+	"public, max-age=120, s-maxage=120, stale-while-revalidate=86400";
 
 type CacheKind = "html" | "media" | null;
 
