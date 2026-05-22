@@ -36,6 +36,12 @@
 			"binding": "LOADER",
 		},
 	],
+	// Cron trigger pra pre-warm: roda o handler `scheduled` no worker.ts a cada
+	// 1min, fazendo self-fetch nas URLs principais. Mantém o isolate quente
+	// (~800ms de cold start eliminado) e caches.default sempre fresh.
+	"triggers": {
+		"crons": ["* * * * *"],
+	},
 	"routes": [
 		{
 			"pattern": "blog.douravita.com.br/*",
@@ -59,14 +65,6 @@
 		},
 		{
 			"pattern": "douravita.com.br/_astro/*",
-			"zone_name": "douravita.com.br",
-		},
-		{
-			"pattern": "douravita.com.br/pages/*",
-			"zone_name": "douravita.com.br",
-		},
-		{
-			"pattern": "douravita.com.br/pages",
 			"zone_name": "douravita.com.br",
 		},
 	],
