@@ -34,6 +34,15 @@ if (!post) {
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
+// Edge cache pra Cloudflare. s-maxage=60 = CDN segura por 60s (mudanças via
+// publish aparecem em ~1min); stale-while-revalidate=86400 = serve stale por
+// 24h em background enquanto revalida (usuário sempre vê página rápida).
+// Render server-side custa ~2s (15 queries no D1); cache HIT cai pra ~30ms.
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+
 // Get featured image URL for OG fallback
 // The image may have src (external) or meta.storageKey (local)
 function getImageUrl(img: unknown): string | undefined {

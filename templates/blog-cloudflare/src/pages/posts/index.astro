@@ -11,6 +11,13 @@ const { entries: posts, cacheHint } = await getEmDashCollection("posts", {
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
+// Edge cache: ver comentario em posts/[slug].astro. Lista de posts atualiza
+// quando um novo eh publicado — 60s eh tempo aceitavel pra aparecer.
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+
 // Single batched query for tags across all posts, instead of one
 // getEntryTerms() call per post (which would be N round-trips).
 // Bylines are already hydrated on entry.data.bylines.

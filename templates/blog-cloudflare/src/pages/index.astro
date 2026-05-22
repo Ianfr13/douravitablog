@@ -25,6 +25,12 @@ const { siteTitle, siteTagline } = resolveBlogSiteIdentity(settings);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
+// Edge cache: ver comentario em posts/[slug].astro.
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+
 // Trim the lookahead post used to detect overflow
 const visiblePosts = posts.slice(0, POSTS_PER_PAGE);
 const hasMorePosts = posts.length > POSTS_PER_PAGE;
