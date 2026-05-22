@@ -80,6 +80,7 @@ function formatDate(date: Date | null | undefined) {
 ---
 
 <Base title={siteTitle} description={siteTagline}>
+	<h1 class="home-page-heading">{siteTitle}</h1>
 	{
 		posts.length === 0 ? (
 			<section class="empty-state">
@@ -143,7 +144,7 @@ function formatDate(date: Date | null | undefined) {
 									href={`/posts/${featuredPost.id}`}
 									class="featured-title-link"
 								>
-									<h1 class="featured-title">{featuredPost.data.title}</h1>
+									<h2 class="featured-title">{featuredPost.data.title}</h2>
 								</a>
 								{featuredPost.data.excerpt && (
 									<p class="featured-excerpt">{featuredPost.data.excerpt}</p>
@@ -196,6 +197,21 @@ function formatDate(date: Date | null | undefined) {
 </Base>
 
 <style>
+	.home-page-heading {
+		/* Visualmente escondido mas presente no DOM pra SEO/screen readers.
+		   Browsers/Google enxergam o H1 da pagina (nome do blog); usuario
+		   vidente ve direto o featured post (que agora e H2). */
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
 	.home-content {
 		max-width: var(--wide-width);
 		margin: 0 auto;
