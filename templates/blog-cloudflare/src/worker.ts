@@ -21,13 +21,22 @@ export { PluginBridge } from "@emdash-cms/cloudflare/sandbox";
 // stale-while-revalidate=86400 faz CF servir stale por 24h enquanto revalida
 // em background — usuario nunca espera o render lento (~2s, 15 queries no D1).
 
-const CACHEABLE_PATTERNS = [
+const CACHEABLE_HTML_PATTERNS = [
 	/^\/$/,
 	/^\/blog\/?$/,
 	/^\/posts(\/|$)/,
 	/^\/tag\//,
 	/^\/category\//,
 	/^\/pages\//,
+];
+
+// Media servida pelo EmDash worker — JA traz Cache-Control: max-age=31536000
+// immutable no upstream, mas CF CDN nao cacheia Workers output sem caches.default.
+// Sem cache de edge, cada visita re-renderiza (220ms render + R2 fetch).
+// Cachear aqui evita esse roundtrip pra arquivos com URL imutavel (storageKey
+// e content-addressed: muda quando o conteudo muda).
+const CACHEABLE_MEDIA_PATTERNS = [
+	/^\/_emdash\/api\/media\/file\//,
 ];
 
 const TRACKING_PARAMS = [
@@ -46,10 +55,14 @@ const TRACKING_PARAMS = [
 const DEFAULT_CACHE_CONTROL =
 	"public, s-maxage=60, stale-while-revalidate=86400";
 
-function isCacheable(request: Request): boolean {
-	if (request.method !== "GET") return false;
+type CacheKind = "html" | "media" | null;
+
+function classifyCacheable(request: Request): CacheKind {
+	if (request.method !== "GET") return null;
 	const url = new URL(request.url);
-	return CACHEABLE_PATTERNS.some((re) => re.test(url.pathname));
+	if (CACHEABLE_HTML_PATTERNS.some((re) => re.test(url.pathname))) return "html";
+	if (CACHEABLE_MEDIA_PATTERNS.some((re) => re.test(url.pathname))) return "media";
+	return null;
 }
 
 function makeCacheKey(request: Request): Request {
@@ -65,13 +78,17 @@ export default {
 		env: unknown,
 		ctx: ExecutionContext,
 	): Promise<Response> {
-		if (!isCacheable(request)) {
+		const kind = classifyCacheable(request);
+		if (!kind) {
 			// @ts-expect-error handler default export shape from @astrojs/cloudflare
 			return handler.fetch(request, env, ctx);
 		}
 
 		const cache = caches.default;
-		const cacheKey = makeCacheKey(request);
+		// Media tem URL imutavel (storageKey content-addressed) entao nao precisa
+		// stripar tracking params; pra HTML, normaliza pra evitar fragmentacao
+		// por marketing.
+		const cacheKey = kind === "html" ? makeCacheKey(request) : request;
 
 		const cached = await cache.match(cacheKey);
 		if (cached) {
@@ -83,7 +100,6 @@ export default {
 		// @ts-expect-error handler default export shape from @astrojs/cloudflare
 		const response: Response = await handler.fetch(request, env, ctx);
 
-		// So cacheia 200 OK sem set-cookie (set-cookie indica resposta personalizada).
 		if (
 			response.status !== 200 ||
 			response.headers.has("set-cookie") ||
@@ -93,12 +109,16 @@ export default {
 		}
 
 		const headers = new Headers(response.headers);
-		const existingCC = headers.get("cache-control") || "";
-		if (!existingCC.includes("s-maxage")) {
-			headers.set("Cache-Control", DEFAULT_CACHE_CONTROL);
+		// Pra HTML: garante s-maxage=60 (curto, conteudo muda quando aprova post).
+		// Pra media: preserva o Cache-Control upstream (EmDash ja manda
+		// max-age=31536000 immutable nas imagens — storageKey é content-addressed).
+		if (kind === "html") {
+			const existingCC = headers.get("cache-control") || "";
+			if (!existingCC.includes("s-maxage")) {
+				headers.set("Cache-Control", DEFAULT_CACHE_CONTROL);
+			}
 		}
 
-		// Cria 2 copias da resposta: uma vai pro cache, outra pro usuario.
 		const responseToCache = new Response(response.body, {
 			status: response.status,
 			statusText: response.statusText,
