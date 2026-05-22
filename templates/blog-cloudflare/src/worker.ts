@@ -52,8 +52,12 @@ const TRACKING_PARAMS = [
 	"ref",
 ];
 
+// max-age=60: cache do browser (sem isso, navegador re-baixa HTML toda visita
+//   mesmo no botao "voltar" — confirmado 2026-05-22 com Ian reportando lentidao).
+// s-maxage=60: cache do CF CDN (edge).
+// stale-while-revalidate=86400: serve stale por 24h enquanto revalida.
 const DEFAULT_CACHE_CONTROL =
-	"public, s-maxage=60, stale-while-revalidate=86400";
+	"public, max-age=60, s-maxage=60, stale-while-revalidate=86400";
 
 type CacheKind = "html" | "media" | null;
 
@@ -109,14 +113,13 @@ export default {
 		}
 
 		const headers = new Headers(response.headers);
-		// Pra HTML: garante s-maxage=60 (curto, conteudo muda quando aprova post).
+		// Pra HTML: SOBRESCREVE Cache-Control pra garantir max-age (browser cache).
+		// Os templates Astro tambem setam um header similar mas podem estar
+		// desatualizados; worker.ts e a fonte unica de verdade pra HTML cache.
 		// Pra media: preserva o Cache-Control upstream (EmDash ja manda
 		// max-age=31536000 immutable nas imagens — storageKey é content-addressed).
 		if (kind === "html") {
-			const existingCC = headers.get("cache-control") || "";
-			if (!existingCC.includes("s-maxage")) {
-				headers.set("Cache-Control", DEFAULT_CACHE_CONTROL);
-			}
+			headers.set("Cache-Control", DEFAULT_CACHE_CONTROL);
 		}
 
 		const responseToCache = new Response(response.body, {
