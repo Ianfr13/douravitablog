@@ -65,7 +65,8 @@ function getImageUrl(img: unknown): string | undefined {
 	return undefined;
 }
 const featuredImageUrl = getImageUrl(post.data.featured_image);
-const { siteTitle } = resolveBlogSiteIdentity(await getSiteSettings());
+const settings = await getSiteSettings();
+const { siteTitle } = resolveBlogSiteIdentity(settings);
 
 // Generate SEO meta from content
 const seo = getSeoMeta(post, {
@@ -73,6 +74,7 @@ const seo = getSeoMeta(post, {
 	siteUrl: Astro.url.origin,
 	path: `/posts/${slug}`,
 	defaultOgImage: featuredImageUrl,
+	titleSeparator: settings.seo?.titleSeparator,
 });
 
 // Bylines are already hydrated by getEmDashEntry
