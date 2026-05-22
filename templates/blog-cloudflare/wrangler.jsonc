@@ -88,5 +88,9 @@
 			"pattern": "douravita.com.br/sitemap.xml",
 			"zone_name": "douravita.com.br",
 		},
+		{
+			"pattern": "douravita.com.br/fd04932e30993d72c654a14e55572025.txt",
+			"zone_name": "douravita.com.br",
+		},
 	],
 }
