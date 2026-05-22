@@ -133,4 +133,44 @@ export default {
 		ctx.waitUntil(cache.put(cacheKey, responseToCache));
 		return responseToUser;
 	},
+
+	// Cron trigger (config em wrangler.jsonc): roda a cada 1min e faz self-fetch
+	// em URLs principais. Objetivo: manter o isolate quente (cold start do
+	// EmDash core leva ~800ms entre rt.setup+rt.market+rt.db) e o caches.default
+	// sempre fresh. Sem isso, primeira visita em PoP frio paga ~1.8s — confirmado
+	// 2026-05-22 com Ian no Network tab DevTools.
+	//
+	// Limitacao: cron roda em 1 PoP por execucao (CF nao distribui), entao so
+	// aquece esse PoP. Pra cobrir mais PoPs, dependeria de Workers Cron Reserve
+	// (feature paga) ou disparar de varios lugares externos. Mesmo assim, manter
+	// 1 PoP sempre warm ja ajuda — outros pegam menos cold porque ao chegar a
+	// primeira request, o codigo do worker ja foi promovido pra "globalmente
+	// quente" no rolling cache da CF.
+	async scheduled(
+		event: ScheduledEvent,
+		env: unknown,
+		ctx: ExecutionContext,
+	): Promise<void> {
+		const origin = "https://douravita.com.br";
+		const warmupUrls = [
+			`${origin}/`,
+			`${origin}/blog`,
+			`${origin}/posts`,
+		];
+
+		// Self-fetch via handler (passa pelo cache logic do default.fetch acima).
+		// Promise.allSettled: 1 URL falhar nao deve abortar as outras.
+		ctx.waitUntil(
+			Promise.allSettled(
+				warmupUrls.map((url) =>
+					this.fetch(new Request(url, { method: "GET" }), env, ctx),
+				),
+			).then((results) => {
+				const ok = results.filter((r) => r.status === "fulfilled").length;
+				console.log(
+					`[cron warmup] ${ok}/${warmupUrls.length} OK at ${new Date(event.scheduledTime).toISOString()}`,
+				);
+			}),
+		);
+	},
 };
