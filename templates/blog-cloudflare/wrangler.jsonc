@@ -61,5 +61,13 @@
 			"pattern": "douravita.com.br/_astro/*",
 			"zone_name": "douravita.com.br",
 		},
+		{
+			"pattern": "douravita.com.br/pages/*",
+			"zone_name": "douravita.com.br",
+		},
+		{
+			"pattern": "douravita.com.br/pages",
+			"zone_name": "douravita.com.br",
+		},
 	],
 }
