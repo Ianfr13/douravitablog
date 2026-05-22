@@ -42,6 +42,15 @@
 	"triggers": {
 		"crons": ["* * * * *"],
 	},
+	// Smart Placement: CF roda o Worker no PoP mais proximo do D1/R2 (services
+	// fixos geograficamente), em vez do PoP do usuario. Cada query no D1 que
+	// custaria ~50ms cross-region cai pra ~5ms intra-region. Com 10-17 queries
+	// por request, isso corta ~500-800ms do MISS. Trade: usuario tem +1 hop
+	// pra chegar no Worker (~50ms), mas as queries salvam mais que isso.
+	// CF analisa trafego por alguns minutos antes de aplicar a otimizacao.
+	"placement": {
+		"mode": "smart",
+	},
 	"routes": [
 		{
 			"pattern": "blog.douravita.com.br/*",
