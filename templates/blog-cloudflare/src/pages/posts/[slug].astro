@@ -323,6 +323,34 @@ const publishDate =
 	}
 
 	<script>
+		// Extrai `{#anchor-id}` no fim do texto dos headings (sintaxe markdown-extra
+		// que o pipeline emite — `## Heading {#o-que-e}`). O PortableText do EmDash
+		// não interpreta essa sintaxe, então o `{#...}` chega literal no DOM e os
+		// H2 ficam sem `id`. Aqui movemos o anchor pra `heading.id` e limpamos o
+		// texto visível, fazendo o Sumário inline (links `[texto](#anchor)` do
+		// próprio conteúdo) navegar corretamente.
+		function hoistInlineAnchors() {
+			const content = document.querySelector(".article-content");
+			if (!content) return;
+			const headings = content.querySelectorAll("h2, h3, h4");
+			const anchorRe = /\s*\{#([a-zA-Z0-9_-]+)\}\s*$/;
+			headings.forEach((heading) => {
+				const text = heading.textContent || "";
+				const match = text.match(anchorRe);
+				if (!match) return;
+				const anchorId = match[1];
+				// Limpa o texto: percorre os text nodes e remove o trecho `{#...}`
+				// do último que contiver. Mantém spans/em/strong intactos.
+				const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+				let lastTextNode = null;
+				while (walker.nextNode()) lastTextNode = walker.currentNode;
+				if (lastTextNode && lastTextNode.nodeValue) {
+					lastTextNode.nodeValue = lastTextNode.nodeValue.replace(anchorRe, "");
+				}
+				if (!heading.id) heading.id = anchorId;
+			});
+		}
+
 		// Build table of contents from h2/h3 headings
 		function buildToc() {
 			const content = document.querySelector(".article-content");
@@ -383,6 +411,7 @@ const publishDate =
 			headings.forEach((heading) => observer.observe(heading));
 		}
 
+		hoistInlineAnchors();
 		buildToc();
 	</script>
 </Base>
