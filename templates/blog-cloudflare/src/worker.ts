@@ -113,6 +113,60 @@ function makeSearchCacheKey(request: Request): Request {
 const SEARCH_CACHE_CONTROL =
 	"public, max-age=300, s-maxage=300, stale-while-revalidate=86400";
 
+// Cache key separado pra variantes WebP de media. Sem isso, primeira request
+// (com Accept: image/webp) salvaria WebP no cache, mas a SEGUNDA (sem webp,
+// ex: bot/curl velho) leria o WebP e quebraria. Usando params distintos, cada
+// variante tem seu proprio slot — sem cross-contamination.
+function makeMediaCacheKey(request: Request, asWebp: boolean): Request {
+	if (!asWebp) return request;
+	const url = new URL(request.url);
+	url.searchParams.set("_fmt", "webp");
+	return new Request(url.toString(), { method: "GET" });
+}
+
+// Heuristica simples: todo browser que manda Accept: image/webp suporta WebP.
+// Cobre 97%+ do trafego (Safari 14+, Chrome 23+, FF 65+, Edge 18+). Crawlers
+// e curls velhos caem no fallback (raw JPG/PNG).
+function clientAcceptsWebp(request: Request): boolean {
+	const accept = request.headers.get("accept") ?? "";
+	return accept.includes("image/webp");
+}
+
+// Tenta converter pra WebP via CF Images binding. Retorna null se:
+// - binding nao disponivel
+// - input nao e imagem decodavel (SVG, video, etc.)
+// - transformacao falha (timeout, formato exotico)
+// O caller usa esse null pra cair no fallback do raw upstream.
+type ImagesBinding = {
+	input?: (body: ReadableStream | ArrayBuffer) => {
+		transform: (opts: { width?: number; height?: number; fit?: string }) => unknown;
+		output: (opts: { format: string }) => Promise<{ response: () => Response }>;
+	};
+};
+
+async function transformToWebp(
+	body: ReadableStream | null,
+	env: { IMAGES?: ImagesBinding },
+	width?: number,
+): Promise<Response | null> {
+	if (!body) return null;
+	const images = env.IMAGES;
+	if (!images?.input) return null;
+	try {
+		let pipeline = images.input(body) as {
+			transform: (opts: { width?: number; height?: number; fit?: string }) => typeof pipeline;
+			output: (opts: { format: string }) => Promise<{ response: () => Response }>;
+		};
+		if (width && width > 0) {
+			pipeline = pipeline.transform({ width });
+		}
+		const output = await pipeline.output({ format: "image/webp" });
+		return output.response();
+	} catch {
+		return null;
+	}
+}
+
 export default {
 	async fetch(
 		request: Request,
@@ -126,15 +180,17 @@ export default {
 		}
 
 		const cache = caches.default;
-		// Media tem URL imutavel (storageKey content-addressed) entao nao precisa
-		// stripar tracking params; pra HTML, normaliza pra evitar fragmentacao
-		// por marketing; pra search, normaliza o param `q`.
+		// Pra media: cache key inclui marker `_fmt=webp` se cliente aceita WebP,
+		// pra evitar contaminacao cross-variant (ver makeMediaCacheKey).
+		const wantWebp = kind === "media" && clientAcceptsWebp(request);
 		const cacheKey =
 			kind === "html"
 				? makeCacheKey(request)
 				: kind === "api"
 					? makeSearchCacheKey(request)
-					: request;
+					: kind === "media"
+						? makeMediaCacheKey(request, wantWebp)
+						: request;
 
 		const cached = await cache.match(cacheKey);
 		if (cached) {
@@ -144,7 +200,7 @@ export default {
 		}
 
 		// @ts-expect-error handler default export shape from @astrojs/cloudflare
-		const response: Response = await handler.fetch(request, env, ctx);
+		let response: Response = await handler.fetch(request, env, ctx);
 
 		// IMPORTANTE: o check `no-store` so se aplica a HTML/media. Pra search API
 		// o EmDash core SEMPRE manda `private, no-store` (assume contexto de
@@ -156,6 +212,36 @@ export default {
 			(kind !== "api" && response.headers.get("cache-control")?.includes("no-store"))
 		) {
 			return response;
+		}
+
+		// Media WebP conversion: tenta IMAGES binding pra reduzir ~70% do
+		// peso de JPGs/PNGs. Falha silenciosa (mantem original) se:
+		// - binding indisponivel (free plan sem CF Images)
+		// - input nao decodavel (SVG/video/AVIF ja otimo)
+		// - upstream nao retornou imagem decodavel
+		// Param `?w=` opcional restringe largura (template astro usa pra srcset).
+		if (wantWebp && response.headers.get("content-type")?.startsWith("image/")) {
+			const contentType = response.headers.get("content-type") ?? "";
+			// SVG nao precisa (ja vetorial); animated GIF/WebP nao queremos converter
+			// pra WebP estatico — quebraria animacao.
+			const skipFormats = ["image/svg", "image/gif", "image/webp", "image/avif"];
+			if (!skipFormats.some((f) => contentType.includes(f))) {
+				const widthParam = new URL(request.url).searchParams.get("w");
+				const width = widthParam ? parseInt(widthParam, 10) : undefined;
+				const webp = await transformToWebp(response.body, env as { IMAGES?: ImagesBinding }, width);
+				if (webp) {
+					const newHeaders = new Headers(response.headers);
+					newHeaders.set("Content-Type", "image/webp");
+					newHeaders.delete("Content-Length"); // recalculado pelo runtime
+					// Vary: Accept e informativo (CDN externos respeitam, workers cache
+					// nao usa diretamente — por isso a cache key separa via _fmt).
+					newHeaders.set("Vary", "Accept");
+					response = new Response(webp.body, {
+						status: 200,
+						headers: newHeaders,
+					});
+				}
+			}
 		}
 
 		const headers = new Headers(response.headers);
