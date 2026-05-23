@@ -9,6 +9,10 @@ import emdash from "emdash/astro";
 export default defineConfig({
 	output: "server",
 	adapter: cloudflare(),
+	prefetch: {
+		prefetchAll: true,
+		defaultStrategy: "viewport",
+	},
 	image: {
 		layout: "constrained",
 		responsiveStyles: true,
