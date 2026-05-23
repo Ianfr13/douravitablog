@@ -117,10 +117,17 @@ const SEARCH_CACHE_CONTROL =
 // (com Accept: image/webp) salvaria WebP no cache, mas a SEGUNDA (sem webp,
 // ex: bot/curl velho) leria o WebP e quebraria. Usando params distintos, cada
 // variante tem seu proprio slot — sem cross-contamination.
+//
+// `_v` e version marker: bump pra invalidar todas as variantes WebP cacheadas
+// quando o algoritmo de transformacao muda. v1 = sem quality (lossless, ruim
+// pra fotos JPG). v2 = quality 75 (lossy padrao p fotos).
+const MEDIA_CACHE_VERSION = "2";
+
 function makeMediaCacheKey(request: Request, asWebp: boolean): Request {
 	if (!asWebp) return request;
 	const url = new URL(request.url);
 	url.searchParams.set("_fmt", "webp");
+	url.searchParams.set("_v", MEDIA_CACHE_VERSION);
 	return new Request(url.toString(), { method: "GET" });
 }
 
@@ -140,9 +147,19 @@ function clientAcceptsWebp(request: Request): boolean {
 type ImagesBinding = {
 	input?: (body: ReadableStream | ArrayBuffer) => {
 		transform: (opts: { width?: number; height?: number; fit?: string }) => unknown;
-		output: (opts: { format: string }) => Promise<{ response: () => Response }>;
+		output: (opts: { format: string; quality?: number }) => Promise<{ response: () => Response }>;
 	};
 };
+
+// Quality default 75: padrao da industria pra fotos JPG → WebP. Acima de 80
+// o ganho de tamanho deteriora rapidamente; abaixo de 70 artefatos visiveis
+// aparecem em areas de gradiente (rosto, ceu). 75 corta ~70% do JPG mantendo
+// qualidade percebida indistinguivel.
+//
+// CRITICO: sem quality explicito, o binding gera WebP lossless, que pra fotos
+// (input ja lossy) fica 2-3x MAIOR que o JPG original — o oposto do desejado.
+// Bug confirmado em prod 2026-05-23 antes do fix.
+const WEBP_QUALITY = 75;
 
 async function transformToWebp(
 	body: ReadableStream | null,
@@ -155,12 +172,12 @@ async function transformToWebp(
 	try {
 		let pipeline = images.input(body) as {
 			transform: (opts: { width?: number; height?: number; fit?: string }) => typeof pipeline;
-			output: (opts: { format: string }) => Promise<{ response: () => Response }>;
+			output: (opts: { format: string; quality?: number }) => Promise<{ response: () => Response }>;
 		};
 		if (width && width > 0) {
 			pipeline = pipeline.transform({ width });
 		}
-		const output = await pipeline.output({ format: "image/webp" });
+		const output = await pipeline.output({ format: "image/webp", quality: WEBP_QUALITY });
 		return output.response();
 	} catch {
 		return null;
