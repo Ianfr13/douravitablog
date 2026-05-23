@@ -323,26 +323,18 @@ const publishDate =
 	}
 
 	<script>
-		// O Sumário inline do post contém links tipo `[texto](#o-que-e)`, mas os
-		// H2 do conteúdo não têm `id` (o pipeline sanitiza `{#anchor}` antes da
-		// publicação e o PortableText do EmDash não suporta IDs em heading blocks).
-		// Aqui aproveitamos a tabela de links do próprio Sumário pra hoistar o id
-		// correto pra cada H2: matching por texto normalizado (lower + sem acento +
-		// whitespace colapsado). Também trata `{#anchor}` legacy que ainda apareça
-		// no DOM (posts não-resanitizados).
-		function normalizeText(s) {
-			return (s || "")
-				.normalize("NFD")
-				.replace(/[̀-ͯ]/g, "")
-				.toLowerCase()
-				.replace(/\s+/g, " ")
-				.trim();
-		}
+		// O Sumário inline do post tem links tipo `[texto](#o-que-e)`, mas os H2
+		// do conteúdo não têm `id` (o pipeline sanitiza `{#anchor}` antes do publish
+		// e o PortableText do EmDash não suporta IDs em heading blocks).
+		// Estratégia: pega os anchors do Sumário em ordem e atribui posicionalmente
+		// aos H2 que vêm DEPOIS do Sumário. A ordem é confiável (o template gera
+		// Sumário na mesma sequência dos H2 do conteúdo), e isso é robusto a casos
+		// onde o LLM customiza o texto do H2 mas deixa o link do Sumário no genérico.
 		function hoistInlineAnchors() {
 			const content = document.querySelector(".article-content");
 			if (!content) return;
 
-			// Pass 1: trata `{#anchor}` legacy no fim do heading (compat retro).
+			// Pass A: trata `{#anchor}` legacy ainda no DOM (posts não-resanitizados).
 			const legacyRe = /\s*\{#([a-zA-Z0-9_-]+)\}\s*$/;
 			content.querySelectorAll("h2, h3, h4").forEach((heading) => {
 				const m = (heading.textContent || "").match(legacyRe);
@@ -356,22 +348,32 @@ const publishDate =
 				if (!heading.id) heading.id = m[1];
 			});
 
-			// Pass 2: lê links âncora do Sumário e casa por texto com H2/H3.
-			const anchorLinks = content.querySelectorAll('a[href^="#"]');
-			const linkMap = new Map(); // normalized text -> anchor id
-			anchorLinks.forEach((a) => {
+			// Pass B: matching posicional via Sumário.
+			const anchorLinks = Array.from(
+				content.querySelectorAll('a[href^="#"]')
+			).filter((a) => {
 				const href = a.getAttribute("href") || "";
-				const anchorId = href.startsWith("#") ? href.slice(1) : "";
-				if (!anchorId) return;
-				const key = normalizeText(a.textContent || "");
-				if (key && !linkMap.has(key)) linkMap.set(key, anchorId);
+				// ignora links âncora pra outros recursos (e.g. #faq vindo de outro lugar)
+				return /^#[a-zA-Z][\w-]*$/.test(href);
 			});
-			content.querySelectorAll("h2, h3, h4").forEach((heading) => {
-				if (heading.id) return;
-				const key = normalizeText(heading.textContent || "");
-				const anchorId = linkMap.get(key);
-				if (anchorId) heading.id = anchorId;
-			});
+			if (anchorLinks.length === 0) return;
+			const lastLink = anchorLinks[anchorLinks.length - 1];
+			const anchorIds = anchorLinks.map((a) =>
+				(a.getAttribute("href") || "").slice(1)
+			);
+
+			// H2s que vêm DEPOIS do último link âncora (= H2s do conteúdo, não os
+			// "Resposta direta"/"Principais pontos"/"Sumário" que vêm antes).
+			const contentH2 = Array.from(content.querySelectorAll("h2")).filter(
+				(h2) =>
+					lastLink.compareDocumentPosition(h2) &
+					Node.DOCUMENT_POSITION_FOLLOWING
+			);
+
+			const n = Math.min(anchorIds.length, contentH2.length);
+			for (let i = 0; i < n; i++) {
+				if (!contentH2[i].id) contentH2[i].id = anchorIds[i];
+			}
 		}
 
 		// Build table of contents from h2/h3 headings
