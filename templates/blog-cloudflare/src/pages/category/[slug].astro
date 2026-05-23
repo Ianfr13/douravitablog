@@ -13,7 +13,14 @@ const slug = decodeSlug(Astro.params.slug);
 const term = slug ? await getTerm("category", slug) : null;
 
 if (!term) {
-	return Astro.redirect("/404");
+	return new Response(
+		`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Categoria nao encontrada</title><meta name="robots" content="noindex"></head><body style="font-family:system-ui,sans-serif;max-width:42rem;margin:4rem auto;padding:0 1rem;color:#333"><h1>Categoria nao encontrada</h1><p>Essa categoria nao existe no blog. <a href="/blog">Voltar para o inicio</a>.</p></body></html>`,
+		{
+			status: 404,
+			statusText: "Not Found",
+			headers: { "content-type": "text/html; charset=utf-8" },
+		},
+	);
 }
 
 const { entries: posts, cacheHint } = await getEmDashCollection("posts", {
