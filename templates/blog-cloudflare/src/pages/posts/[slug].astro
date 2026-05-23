@@ -306,7 +306,7 @@ const publishDate =
 									title={p.data.title}
 									excerpt={p.data.excerpt}
 									featuredImage={p.data.featured_image}
-									href={`/posts/${p.id}`}
+									href={`/posts/${p.slug ?? p.id}`}
 									date={p.data.publishedAt ?? undefined}
 									readingTime={getReadingTime(p.data.content)}
 									tags={postTags.map((t) => ({ slug: t.slug, label: t.label }))}

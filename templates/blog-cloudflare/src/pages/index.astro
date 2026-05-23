@@ -107,7 +107,7 @@ function formatDate(date: Date | null | undefined) {
 				{featuredPost && (
 					<section class="featured-section">
 						<div class="featured-grid">
-							<a href={`/posts/${featuredPost.id}`} class="featured-image-link">
+							<a href={`/posts/${featuredPost.slug ?? featuredPost.id}`} class="featured-image-link">
 								<div class="featured-image">
 									<Image image={featuredPost.data.featured_image} />
 								</div>
@@ -160,7 +160,7 @@ function formatDate(date: Date | null | undefined) {
 									</a>
 								)}
 								<a
-									href={`/posts/${featuredPost.id}`}
+									href={`/posts/${featuredPost.slug ?? featuredPost.id}`}
 									class="featured-title-link"
 								>
 									<h2 class="featured-title">{featuredPost.data.title}</h2>
@@ -199,7 +199,7 @@ function formatDate(date: Date | null | undefined) {
 									title={post.data.title ?? "Sem título"}
 									excerpt={post.data.excerpt}
 									featuredImage={post.data.featured_image}
-									href={`/posts/${post.id}`}
+									href={`/posts/${post.slug ?? post.id}`}
 									date={post.data.publishedAt ?? undefined}
 									readingTime={getReadingTime(post.data.content)}
 									tags={tags}
