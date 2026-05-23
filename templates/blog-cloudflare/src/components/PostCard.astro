@@ -40,70 +40,72 @@ const formattedDate = date
 ---
 
 <article class="post-card">
-	<a href={href} class="card-link">
-		{
-			featuredImage ? (
+	{
+		featuredImage ? (
+			<a href={href} class="card-image-link" aria-label={title}>
 				<div class="card-image">
 					<Image image={featuredImage} />
 				</div>
-			) : (
-				<div class="card-placeholder" />
-			)
-		}
-		<div class="card-body">
-			{category && (
-				<a href={`/category/${category.slug}`} class="card-category" onclick="event.stopPropagation()">
-					Pilar: {category.label}
-				</a>
-			)}
-			<div class="card-meta">
-				{
-					bylines && bylines.length > 0 && (
-						<>
-							<div class="card-bylines">
-								{bylines.slice(0, 1).map((credit) => (
-									<span class="card-byline">
-										{credit.byline.avatarMediaId && (
-											<img
-												src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-												alt={credit.byline.displayName}
-												class="card-byline-avatar"
-											/>
-										)}
-										<span class="card-byline-name">
-											{credit.byline.displayName}
-										</span>
+			</a>
+		) : (
+			<div class="card-placeholder" />
+		)
+	}
+	<div class="card-body">
+		{category && (
+			<a href={`/category/${category.slug}`} class="card-category">
+				Pilar: {category.label}
+			</a>
+		)}
+		<div class="card-meta">
+			{
+				bylines && bylines.length > 0 && (
+					<>
+						<div class="card-bylines">
+							{bylines.slice(0, 1).map((credit) => (
+								<span class="card-byline">
+									{credit.byline.avatarMediaId && (
+										<img
+											src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
+											alt={credit.byline.displayName}
+											class="card-byline-avatar"
+										/>
+									)}
+									<span class="card-byline-name">
+										{credit.byline.displayName}
 									</span>
-								))}
-								{bylines.length > 1 && (
-									<span
-										class="byline-more"
-										data-tooltip={bylines
-											.slice(1)
-											.map((c) => c.byline.displayName)
-											.join(", ")}
-										title={bylines
-											.slice(1)
-											.map((c) => c.byline.displayName)
-											.join(", ")}
-										tabindex="0"
-									>
-										+{bylines.length - 1}
-									</span>
-								)}
-							</div>
-							{(formattedDate || readingTime) && <span class="meta-dot" />}
-						</>
-					)
-				}
-				{formattedDate && <time>{formattedDate}</time>}
-				{formattedDate && readingTime && <span class="meta-dot" />}
-				{readingTime && <span>{readingTime} min</span>}
-			</div>
-			<TitleTag class="card-title">{title}</TitleTag>
-			{excerpt && <p class="card-excerpt">{excerpt}</p>}
+								</span>
+							))}
+							{bylines.length > 1 && (
+								<span
+									class="byline-more"
+									data-tooltip={bylines
+										.slice(1)
+										.map((c) => c.byline.displayName)
+										.join(", ")}
+									title={bylines
+										.slice(1)
+										.map((c) => c.byline.displayName)
+										.join(", ")}
+									tabindex="0"
+								>
+									+{bylines.length - 1}
+								</span>
+							)}
+						</div>
+						{(formattedDate || readingTime) && <span class="meta-dot" />}
+					</>
+				)
+			}
+			{formattedDate && <time>{formattedDate}</time>}
+			{formattedDate && readingTime && <span class="meta-dot" />}
+			{readingTime && <span>{readingTime} min</span>}
 		</div>
-	</a>
+		<TitleTag class="card-title">
+			<a href={href} class="card-title-link">{title}</a>
+		</TitleTag>
+		{excerpt && <p class="card-excerpt">{excerpt}</p>}
+	</div>
 	{
 		tags && tags.length > 0 && (
 			<div class="card-tags">
@@ -123,7 +125,7 @@ const formattedDate = date
 		flex-direction: column;
 	}
 
-	.card-link {
+	.card-image-link {
 		display: block;
 		text-decoration: none;
 		color: inherit;
@@ -150,7 +152,7 @@ const formattedDate = date
 		transition: transform 0.3s ease;
 	}
 
-	.card-link:hover .card-image img {
+	.card-image-link:hover .card-image img {
 		transform: scale(1.03);
 	}
 
@@ -194,10 +196,15 @@ const formattedDate = date
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
 		margin-bottom: var(--spacing-2);
+	}
+
+	.card-title-link {
+		color: inherit;
+		text-decoration: none;
 		transition: color var(--transition-fast);
 	}
 
-	.card-link:hover .card-title {
+	.card-title-link:hover {
 		color: var(--color-accent);
 	}
 
