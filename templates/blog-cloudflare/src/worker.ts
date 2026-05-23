@@ -39,6 +39,16 @@ const CACHEABLE_MEDIA_PATTERNS = [
 	/^\/_emdash\/api\/media\/file\//,
 ];
 
+// Search/suggest API: EmDash core devolve Cache-Control: private, no-store
+// (assume conteudo dinamico por usuario). Pro blog publico, a busca e
+// determinista (mesmo query → mesmos resultados pra qualquer um), entao da
+// pra forcar cache no edge. Sem isso, cada keystroke do LiveSearch dispara
+// uma roundtrip de ~2.5s no D1 (FTS5 + N queries pra hidratar resultados).
+const CACHEABLE_API_PATTERNS = [
+	/^\/_emdash\/api\/search$/,
+	/^\/_emdash\/api\/search\/suggest$/,
+];
+
 const TRACKING_PARAMS = [
 	"fbclid",
 	"gclid",
@@ -63,12 +73,13 @@ const TRACKING_PARAMS = [
 const DEFAULT_CACHE_CONTROL =
 	"public, max-age=120, s-maxage=120, stale-while-revalidate=86400";
 
-type CacheKind = "html" | "media" | null;
+type CacheKind = "html" | "media" | "api" | null;
 
 function classifyCacheable(request: Request): CacheKind {
 	if (request.method !== "GET") return null;
 	const url = new URL(request.url);
 	if (CACHEABLE_HTML_PATTERNS.some((re) => re.test(url.pathname))) return "html";
+	if (CACHEABLE_API_PATTERNS.some((re) => re.test(url.pathname))) return "api";
 	if (CACHEABLE_MEDIA_PATTERNS.some((re) => re.test(url.pathname))) return "media";
 	return null;
 }
@@ -79,6 +90,28 @@ function makeCacheKey(request: Request): Request {
 	url.searchParams.sort();
 	return new Request(url.toString(), { method: "GET" });
 }
+
+// Cache key pra search API: normaliza o param `q` (trim + lowercase + collapse
+// whitespace) pra maximizar reuso entre usuarios. "Diabetes ", "diabetes",
+// "DIABETES" todas caem na mesma chave.
+function makeSearchCacheKey(request: Request): Request {
+	const url = new URL(request.url);
+	const q = url.searchParams.get("q");
+	if (q !== null) {
+		const normalized = q.trim().toLowerCase().replace(/\s+/g, " ");
+		url.searchParams.set("q", normalized);
+	}
+	url.searchParams.sort();
+	return new Request(url.toString(), { method: "GET" });
+}
+
+// TTL maior pra search API: queries repetem entre usuarios (termos comuns como
+// "diabetes", "menopausa", etc) e a janela onde um novo post afeta resultados
+// e relativamente tolerante (5min de delay pra novo post aparecer na busca e
+// aceitavel; o cron warmup nao cobre buscas, entao max-age curto demais
+// devolveria MISS constante).
+const SEARCH_CACHE_CONTROL =
+	"public, max-age=300, s-maxage=300, stale-while-revalidate=86400";
 
 export default {
 	async fetch(
@@ -95,8 +128,13 @@ export default {
 		const cache = caches.default;
 		// Media tem URL imutavel (storageKey content-addressed) entao nao precisa
 		// stripar tracking params; pra HTML, normaliza pra evitar fragmentacao
-		// por marketing.
-		const cacheKey = kind === "html" ? makeCacheKey(request) : request;
+		// por marketing; pra search, normaliza o param `q`.
+		const cacheKey =
+			kind === "html"
+				? makeCacheKey(request)
+				: kind === "api"
+					? makeSearchCacheKey(request)
+					: request;
 
 		const cached = await cache.match(cacheKey);
 		if (cached) {
@@ -108,10 +146,14 @@ export default {
 		// @ts-expect-error handler default export shape from @astrojs/cloudflare
 		const response: Response = await handler.fetch(request, env, ctx);
 
+		// IMPORTANTE: o check `no-store` so se aplica a HTML/media. Pra search API
+		// o EmDash core SEMPRE manda `private, no-store` (assume contexto de
+		// usuario logado); a gente sobrescreve abaixo porque a busca publica do
+		// blog e determinista.
 		if (
 			response.status !== 200 ||
 			response.headers.has("set-cookie") ||
-			response.headers.get("cache-control")?.includes("no-store")
+			(kind !== "api" && response.headers.get("cache-control")?.includes("no-store"))
 		) {
 			return response;
 		}
@@ -120,10 +162,18 @@ export default {
 		// Pra HTML: SOBRESCREVE Cache-Control pra garantir max-age (browser cache).
 		// Os templates Astro tambem setam um header similar mas podem estar
 		// desatualizados; worker.ts e a fonte unica de verdade pra HTML cache.
+		// Pra api (search): sobrescreve o `private, no-store` do EmDash core.
 		// Pra media: preserva o Cache-Control upstream (EmDash ja manda
 		// max-age=31536000 immutable nas imagens — storageKey é content-addressed).
 		if (kind === "html") {
 			headers.set("Cache-Control", DEFAULT_CACHE_CONTROL);
+		} else if (kind === "api") {
+			headers.set("Cache-Control", SEARCH_CACHE_CONTROL);
+			// CORS: LiveSearch chama da mesma origem hoje, mas se algum dia for
+			// embedado, sem isso o cached response pode quebrar; barato adicionar.
+			if (!headers.has("Access-Control-Allow-Origin")) {
+				headers.set("Access-Control-Allow-Origin", "*");
+			}
 		}
 
 		const responseToCache = new Response(response.body, {
@@ -156,25 +206,88 @@ export default {
 		ctx: ExecutionContext,
 	): Promise<void> {
 		const origin = "https://douravita.com.br";
-		const warmupUrls = [
+
+		// Lista base: home + index de posts + blog. Sempre aquece.
+		const baseUrls = [
 			`${origin}/`,
 			`${origin}/blog`,
 			`${origin}/posts`,
 		];
 
+		// Pre-warm de TODAS as URLs do sitemap (posts individuais, pages, etc).
+		// Sem isso, cada /posts/<slug> e MISS no primeiro acesso → ~2.5s render
+		// (17-21 queries D1 + template). Com warmup, primeiro acesso vira HIT
+		// em ~150ms.
+		// Limite de 50 URLs por safety (cron tem ~30s wall clock; self-fetch
+		// em paralelo via Promise.allSettled). 50 cobre o blog atual com folga.
+		const sitemapUrls = await fetchSitemapUrls(this, env, ctx, origin, 50);
+
+		// Dedup: sitemap inclui /blog e /posts (que ja estao em baseUrls).
+		const warmupUrls = Array.from(new Set([...baseUrls, ...sitemapUrls]));
+
+		// Pre-warm tambem a busca pra termos comuns. Sem isso, primeira
+		// keystroke ainda paga ~2.5s. Lista mantida pequena: o cache da
+		// search e per-query, entao so vale aquecer queries que repetem muito.
+		const searchWarmupQueries = [
+			"diabetes",
+			"menopausa",
+			"longevidade",
+			"musculacao",
+			"memoria",
+			"suplemento",
+		];
+		const searchUrls = searchWarmupQueries.map(
+			(q) => `${origin}/_emdash/api/search?q=${encodeURIComponent(q)}&collections=posts&limit=8`,
+		);
+
+		const allUrls = [...warmupUrls, ...searchUrls];
+
 		// Self-fetch via handler (passa pelo cache logic do default.fetch acima).
 		// Promise.allSettled: 1 URL falhar nao deve abortar as outras.
 		ctx.waitUntil(
 			Promise.allSettled(
-				warmupUrls.map((url) =>
+				allUrls.map((url) =>
 					this.fetch(new Request(url, { method: "GET" }), env, ctx),
 				),
 			).then((results) => {
 				const ok = results.filter((r) => r.status === "fulfilled").length;
 				console.log(
-					`[cron warmup] ${ok}/${warmupUrls.length} OK at ${new Date(event.scheduledTime).toISOString()}`,
+					`[cron warmup] ${ok}/${allUrls.length} OK (${warmupUrls.length} pages + ${searchUrls.length} searches) at ${new Date(event.scheduledTime).toISOString()}`,
 				);
 			}),
 		);
 	},
 };
+
+// Pega /sitemap.xml e extrai os <loc>. Filtra pra mesma origem (defesa em
+// profundidade: sitemap nao deveria conter URLs cross-origin, mas se um dia
+// o template mudar nao queremos self-fetch em dominios externos).
+async function fetchSitemapUrls(
+	self: { fetch: (req: Request, env: unknown, ctx: ExecutionContext) => Promise<Response> },
+	env: unknown,
+	ctx: ExecutionContext,
+	origin: string,
+	limit: number,
+): Promise<string[]> {
+	try {
+		const sitemapReq = new Request(`${origin}/sitemap.xml`, { method: "GET" });
+		const resp = await self.fetch(sitemapReq, env, ctx);
+		if (!resp.ok) {
+			console.log(`[cron warmup] sitemap fetch failed: ${resp.status}`);
+			return [];
+		}
+		const xml = await resp.text();
+		const matches = xml.matchAll(/<loc>([^<]+)<\/loc>/g);
+		const urls: string[] = [];
+		for (const m of matches) {
+			const u = m[1].trim();
+			if (u.startsWith(origin) && urls.length < limit) {
+				urls.push(u);
+			}
+		}
+		return urls;
+	} catch (err) {
+		console.log(`[cron warmup] sitemap parse error: ${(err as Error).message}`);
+		return [];
+	}
+}
