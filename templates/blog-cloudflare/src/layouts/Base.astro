@@ -561,6 +561,22 @@ const isLoggedIn = !!Astro.locals.user;
 					display: block;
 				}
 
+				/* GLOBAL guard pra logo. A regra scoped abaixo deveria bastar,
+				 * mas em alguns devices (iOS Safari + cache CSS) o seletor
+				 * [data-astro-cid-*] nao apanha e a logo (PNG 2250x2250
+				 * quadrada) renderiza no width do container = ~430px de altura.
+				 * Regra global sem dependencia de scope cid garante limite. */
+				.site-header .site-logo-img,
+				.site-footer .footer-logo-img {
+					max-height: 80px;
+					width: auto;
+				}
+				@media (max-width: 768px) {
+					.site-header .site-logo-img {
+						max-height: 40px;
+					}
+				}
+
 				h1,
 				h2,
 				h3,
