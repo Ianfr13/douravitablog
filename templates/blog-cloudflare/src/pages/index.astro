@@ -50,6 +50,11 @@ const tagEntryIds = [
 	...gridPosts.map((p) => p.data.id),
 ];
 const tagsByEntry = await getTermsForEntries("posts", tagEntryIds, "tag");
+const categoriesByEntry = await getTermsForEntries(
+	"posts",
+	tagEntryIds,
+	"category",
+);
 
 const featuredTags = featuredPost
 	? (tagsByEntry.get(featuredPost.data.id) ?? []).map((t) => ({
@@ -58,6 +63,9 @@ const featuredTags = featuredPost
 		}))
 	: [];
 const featuredBylines = featuredPost?.data.bylines ?? [];
+const featuredCategory = featuredPost
+	? (categoriesByEntry.get(featuredPost.data.id) ?? [])[0]
+	: undefined;
 
 const gridPostsWithTags = gridPosts.map((post) => ({
 	post,
@@ -65,6 +73,9 @@ const gridPostsWithTags = gridPosts.map((post) => ({
 		slug: t.slug,
 		label: t.label,
 	})),
+	category: ((categoriesByEntry.get(post.data.id) ?? [])[0]) as
+		| { slug: string; label: string }
+		| undefined,
 	bylines: post.data.bylines ?? [],
 }));
 
@@ -140,6 +151,14 @@ function formatDate(date: Date | null | undefined) {
 										{getReadingTime(featuredPost.data.content)} min de leitura
 									</span>
 								</div>
+								{featuredCategory && (
+									<a
+										href={`/category/${featuredCategory.slug}`}
+										class="featured-category"
+									>
+										Pilar: {featuredCategory.label}
+									</a>
+								)}
 								<a
 									href={`/posts/${featuredPost.id}`}
 									class="featured-title-link"
@@ -175,7 +194,7 @@ function formatDate(date: Date | null | undefined) {
 							)}
 						</header>
 						<div class="posts-grid">
-							{gridPostsWithTags.map(({ post, tags, bylines }) => (
+							{gridPostsWithTags.map(({ post, tags, category, bylines }) => (
 								<PostCard
 									title={post.data.title ?? "Sem título"}
 									excerpt={post.data.excerpt}
@@ -184,6 +203,7 @@ function formatDate(date: Date | null | undefined) {
 									date={post.data.publishedAt ?? undefined}
 									readingTime={getReadingTime(post.data.content)}
 									tags={tags}
+									category={category}
 									bylines={bylines}
 									headingLevel={3}
 								/>
@@ -340,6 +360,23 @@ function formatDate(date: Date | null | undefined) {
 		font-size: var(--font-size-lg);
 		line-height: var(--leading-relaxed);
 		color: var(--color-text-secondary);
+	}
+
+	.featured-category {
+		display: inline-block;
+		padding: var(--tag-padding-y) var(--spacing-3);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+		border-radius: var(--radius);
+		text-decoration: none;
+		margin-bottom: var(--spacing-3);
+		transition: background var(--transition-fast);
+	}
+
+	.featured-category:hover {
+		background: var(--color-border);
 	}
 
 	.featured-tags {

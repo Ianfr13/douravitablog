@@ -87,14 +87,16 @@ const readingTime = getReadingTime(post.data.content);
 // independent queries, so running them concurrently halves the round-trip
 // cost on remote databases.
 // Note: post.id is the slug, post.data.id is the database ULID.
-const [tags, { entries: recentPosts }] = await Promise.all([
+const [tags, categories, { entries: recentPosts }] = await Promise.all([
 	getEntryTerms("posts", post.data.id, "tag"),
+	getEntryTerms("posts", post.data.id, "category"),
 	// Fetch a few extra in case the current post is among them
 	getEmDashCollection("posts", {
 		orderBy: { published_at: "desc" },
 		limit: 4,
 	}),
 ]);
+const category = categories[0];
 const otherPosts = recentPosts.filter((p) => p.id !== post.id).slice(0, 3);
 
 // Single batched query for related-posts tags, rather than one
@@ -104,9 +106,15 @@ const otherTagsByEntry = await getTermsForEntries(
 	otherPosts.map((p) => p.data.id),
 	"tag",
 );
+const otherCategoriesByEntry = await getTermsForEntries(
+	"posts",
+	otherPosts.map((p) => p.data.id),
+	"category",
+);
 const otherPostsWithTags = otherPosts.map((p) => ({
 	post: p,
 	tags: otherTagsByEntry.get(p.data.id) ?? [],
+	category: (otherCategoriesByEntry.get(p.data.id) ?? [])[0],
 	bylines: p.data.bylines ?? [],
 }));
 
@@ -188,6 +196,16 @@ const publishDate =
 						<span class="meta-value">{readingTime} min</span>
 					</div>
 					{
+						category && (
+							<div class="meta-block">
+								<span class="meta-label">Categoria</span>
+								<a href={`/category/${category.slug}`} class="meta-category">
+									{category.label}
+								</a>
+							</div>
+						)
+					}
+					{
 						tags.length > 0 && (
 							<div class="meta-block">
 								<span class="meta-label">Tags</span>
@@ -233,6 +251,14 @@ const publishDate =
 						}
 						<span>{readingTime} min de leitura</span>
 					</div>
+					{category && (
+						<a
+							href={`/category/${category.slug}`}
+							class="article-category"
+						>
+							Pilar: {category.label}
+						</a>
+					)}
 					<h1 class="article-title" {...post.edit.title}>{post.data.title}</h1>
 					{
 						post.data.excerpt && (
@@ -275,7 +301,7 @@ const publishDate =
 					<h2 class="more-title">Continue lendo</h2>
 					<div class="more-grid">
 						{otherPostsWithTags.map(
-							({ post: p, tags: postTags, bylines: postBylines }) => (
+							({ post: p, tags: postTags, category: postCategory, bylines: postBylines }) => (
 								<PostCard
 									title={p.data.title}
 									excerpt={p.data.excerpt}
@@ -284,6 +310,7 @@ const publishDate =
 									date={p.data.publishedAt ?? undefined}
 									readingTime={getReadingTime(p.data.content)}
 									tags={postTags.map((t) => ({ slug: t.slug, label: t.label }))}
+									category={postCategory ? { slug: postCategory.slug, label: postCategory.label } : undefined}
 									bylines={postBylines}
 									headingLevel={3}
 								/>
@@ -430,6 +457,21 @@ const publishDate =
 		gap: var(--spacing-1);
 	}
 
+	.meta-category {
+		display: inline-block;
+		padding: var(--tag-padding-y) var(--spacing-2);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+		border-radius: var(--radius);
+		text-decoration: none;
+	}
+
+	.meta-category:hover {
+		background: var(--color-border);
+	}
+
 	.meta-tag {
 		display: inline-block;
 		padding: var(--tag-padding-y) var(--spacing-2);
@@ -507,6 +549,23 @@ const publishDate =
 	.article-meta-byline {
 		font-weight: 500;
 		color: var(--color-text-secondary);
+	}
+
+	.article-category {
+		display: inline-block;
+		padding: var(--tag-padding-y) var(--spacing-3);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+		border-radius: var(--radius);
+		text-decoration: none;
+		margin-bottom: var(--spacing-3);
+		transition: background var(--transition-fast);
+	}
+
+	.article-category:hover {
+		background: var(--color-border);
 	}
 
 	.article-title {
