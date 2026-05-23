@@ -7,6 +7,7 @@ import {
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 import PostCard from "../components/PostCard.astro";
+import PillarGrid from "../components/PillarGrid.astro";
 import { getReadingTime } from "../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
@@ -181,6 +182,9 @@ function formatDate(date: Date | null | undefined) {
 						</div>
 					</section>
 				)}
+
+				{/* Pillar grid: descoberta por tópico, distribui PageRank pros 12 hubs */}
+				<PillarGrid />
 
 				{/* Latest Posts */}
 				{gridPostsWithTags.length > 0 && (

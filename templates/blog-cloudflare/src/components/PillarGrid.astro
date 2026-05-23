@@ -1,0 +1,148 @@
+---
+import { PILLARS } from "../data/pilares-visual";
+
+interface Props {
+	heading?: string;
+	tagline?: string;
+}
+
+const {
+	heading = "Explore por pilar",
+	tagline = "12 áreas de cuidado pra quem tem 55+",
+} = Astro.props;
+---
+
+<section class="pillar-grid-section" aria-labelledby="pillar-grid-heading">
+	<header class="pillar-grid-header">
+		<h2 id="pillar-grid-heading" class="pillar-grid-heading">{heading}</h2>
+		{tagline && <p class="pillar-grid-tagline">{tagline}</p>}
+	</header>
+
+	<ul class="pillar-grid">
+		{
+			PILLARS.map((p) => (
+				<li class="pillar-cell">
+					<a
+						href={`/category/${p.slug}`}
+						class="pillar-card"
+						style={`--pillar-color: ${p.color};`}
+					>
+						<span class="pillar-emoji" aria-hidden="true">
+							{p.emoji}
+						</span>
+						<span class="pillar-label">{p.label}</span>
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</section>
+
+<style>
+	.pillar-grid-section {
+		max-width: var(--wide-width);
+		margin: var(--spacing-12) auto;
+		padding: 0 var(--spacing-6);
+	}
+
+	.pillar-grid-header {
+		text-align: center;
+		margin-bottom: var(--spacing-6);
+	}
+
+	.pillar-grid-heading {
+		font-size: var(--font-size-2xl);
+		font-weight: 600;
+		letter-spacing: var(--tracking-snug);
+		margin-bottom: var(--spacing-2);
+	}
+
+	.pillar-grid-tagline {
+		font-size: var(--font-size-base);
+		color: var(--color-text-secondary);
+	}
+
+	.pillar-grid {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: var(--spacing-3);
+	}
+
+	.pillar-cell {
+		display: block;
+	}
+
+	.pillar-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--spacing-2);
+		aspect-ratio: 1 / 1;
+		padding: var(--spacing-4);
+		border-radius: var(--radius-lg);
+		text-align: center;
+		text-decoration: none;
+		color: var(--color-text);
+		/* Tinta da cor do pilar misturada com o bg da página: funciona em
+		 * light/dark mode sem precisar duplicar regras. 18% é forte o suficiente
+		 * pra identidade visual mas suave o bastante pra não competir com texto. */
+		background: color-mix(in srgb, var(--pillar-color) 18%, var(--color-bg));
+		border: 1px solid color-mix(in srgb, var(--pillar-color) 30%, transparent);
+		transition:
+			transform var(--transition-fast),
+			border-color var(--transition-fast),
+			background var(--transition-fast);
+	}
+
+	.pillar-card:hover,
+	.pillar-card:focus-visible {
+		transform: translateY(-2px);
+		background: color-mix(in srgb, var(--pillar-color) 28%, var(--color-bg));
+		border-color: color-mix(in srgb, var(--pillar-color) 50%, transparent);
+		outline: none;
+	}
+
+	.pillar-emoji {
+		font-size: 2.25rem;
+		line-height: 1;
+		/* Render consistente em emoji (alguns devices renderizam pequeno). */
+		display: block;
+	}
+
+	.pillar-label {
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		line-height: var(--leading-tight);
+		letter-spacing: var(--tracking-snug);
+	}
+
+	@media (max-width: 1024px) {
+		.pillar-grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.pillar-grid-section {
+			margin: var(--spacing-8) auto;
+		}
+
+		.pillar-grid {
+			grid-template-columns: repeat(2, 1fr);
+			gap: var(--spacing-2);
+		}
+
+		.pillar-emoji {
+			font-size: 1.75rem;
+		}
+
+		.pillar-label {
+			font-size: var(--font-size-xs);
+		}
+	}
+</style>
