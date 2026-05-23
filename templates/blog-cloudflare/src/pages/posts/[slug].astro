@@ -323,31 +323,54 @@ const publishDate =
 	}
 
 	<script>
-		// Extrai `{#anchor-id}` no fim do texto dos headings (sintaxe markdown-extra
-		// que o pipeline emite — `## Heading {#o-que-e}`). O PortableText do EmDash
-		// não interpreta essa sintaxe, então o `{#...}` chega literal no DOM e os
-		// H2 ficam sem `id`. Aqui movemos o anchor pra `heading.id` e limpamos o
-		// texto visível, fazendo o Sumário inline (links `[texto](#anchor)` do
-		// próprio conteúdo) navegar corretamente.
+		// O Sumário inline do post contém links tipo `[texto](#o-que-e)`, mas os
+		// H2 do conteúdo não têm `id` (o pipeline sanitiza `{#anchor}` antes da
+		// publicação e o PortableText do EmDash não suporta IDs em heading blocks).
+		// Aqui aproveitamos a tabela de links do próprio Sumário pra hoistar o id
+		// correto pra cada H2: matching por texto normalizado (lower + sem acento +
+		// whitespace colapsado). Também trata `{#anchor}` legacy que ainda apareça
+		// no DOM (posts não-resanitizados).
+		function normalizeText(s) {
+			return (s || "")
+				.normalize("NFD")
+				.replace(/[̀-ͯ]/g, "")
+				.toLowerCase()
+				.replace(/\s+/g, " ")
+				.trim();
+		}
 		function hoistInlineAnchors() {
 			const content = document.querySelector(".article-content");
 			if (!content) return;
-			const headings = content.querySelectorAll("h2, h3, h4");
-			const anchorRe = /\s*\{#([a-zA-Z0-9_-]+)\}\s*$/;
-			headings.forEach((heading) => {
-				const text = heading.textContent || "";
-				const match = text.match(anchorRe);
-				if (!match) return;
-				const anchorId = match[1];
-				// Limpa o texto: percorre os text nodes e remove o trecho `{#...}`
-				// do último que contiver. Mantém spans/em/strong intactos.
+
+			// Pass 1: trata `{#anchor}` legacy no fim do heading (compat retro).
+			const legacyRe = /\s*\{#([a-zA-Z0-9_-]+)\}\s*$/;
+			content.querySelectorAll("h2, h3, h4").forEach((heading) => {
+				const m = (heading.textContent || "").match(legacyRe);
+				if (!m) return;
 				const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
-				let lastTextNode = null;
-				while (walker.nextNode()) lastTextNode = walker.currentNode;
-				if (lastTextNode && lastTextNode.nodeValue) {
-					lastTextNode.nodeValue = lastTextNode.nodeValue.replace(anchorRe, "");
+				let last = null;
+				while (walker.nextNode()) last = walker.currentNode;
+				if (last && last.nodeValue) {
+					last.nodeValue = last.nodeValue.replace(legacyRe, "");
 				}
-				if (!heading.id) heading.id = anchorId;
+				if (!heading.id) heading.id = m[1];
+			});
+
+			// Pass 2: lê links âncora do Sumário e casa por texto com H2/H3.
+			const anchorLinks = content.querySelectorAll('a[href^="#"]');
+			const linkMap = new Map(); // normalized text -> anchor id
+			anchorLinks.forEach((a) => {
+				const href = a.getAttribute("href") || "";
+				const anchorId = href.startsWith("#") ? href.slice(1) : "";
+				if (!anchorId) return;
+				const key = normalizeText(a.textContent || "");
+				if (key && !linkMap.has(key)) linkMap.set(key, anchorId);
+			});
+			content.querySelectorAll("h2, h3, h4").forEach((heading) => {
+				if (heading.id) return;
+				const key = normalizeText(heading.textContent || "");
+				const anchorId = linkMap.get(key);
+				if (anchorId) heading.id = anchorId;
 			});
 		}
 
