@@ -1,0 +1,86 @@
+---
+import Base from "../layouts/Base.astro";
+import PillarGrid from "../components/PillarGrid.astro";
+import { PILLARS } from "../data/pilares-visual";
+
+// Edge cache: lista de pilares é estática (mora no pilares-visual.ts), só
+// muda em deploy. SWR longo + s-maxage curto cobre o caso de mudança rápida.
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+---
+
+<Base
+	title="Todos os assuntos"
+	description={`${PILLARS.length} áreas de cuidado pra quem tem 55+`}
+>
+	<div class="categorias-page">
+		<header class="page-header">
+			<h1 class="page-title">Todos os assuntos</h1>
+			<p class="page-description">
+				Escolha uma das {PILLARS.length} áreas pra ver os artigos sobre o tema.
+			</p>
+		</header>
+
+		<PillarGrid
+			heading=""
+			tagline=""
+			featuredOnly={false}
+			showAllLink={false}
+			columns={4}
+		/>
+	</div>
+</Base>
+
+<style>
+	.categorias-page {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-12) var(--spacing-6);
+	}
+
+	.page-header {
+		text-align: center;
+		margin-bottom: var(--spacing-8);
+	}
+
+	.page-title {
+		font-size: var(--font-size-3xl);
+		font-weight: 700;
+		letter-spacing: var(--tracking-snug);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.page-description {
+		font-size: var(--font-size-lg);
+		color: var(--color-text-secondary);
+		max-width: 60ch;
+		margin: 0 auto;
+	}
+
+	/* PillarGrid já tem header próprio; aqui zeramos pra evitar duplicação
+	 * (passamos heading="" tagline="" props). O <section> interno do
+	 * componente continua com seu padding/margin defaults. */
+	:global(.categorias-page .pillar-grid-section) {
+		margin-top: 0;
+	}
+
+	:global(.categorias-page .pillar-grid-header) {
+		display: none;
+	}
+
+	@media (max-width: 640px) {
+		.categorias-page {
+			padding: var(--spacing-8) var(--spacing-4);
+		}
+
+		.page-title {
+			font-size: var(--font-size-2xl);
+		}
+
+		.page-description {
+			font-size: var(--font-size-base);
+		}
+	}
+</style>

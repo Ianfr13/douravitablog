@@ -1,15 +1,27 @@
 ---
-import { PILLARS } from "../data/pilares-visual";
+import { PILLARS, FEATURED_PILLARS } from "../data/pilares-visual";
 
 interface Props {
 	heading?: string;
 	tagline?: string;
+	/** Se true, mostra só os 6 featured (vitrine da home). Default false (todos os 12). */
+	featuredOnly?: boolean;
+	/** Mostra link "Ver todos os assuntos" embaixo. Default = igual a featuredOnly. */
+	showAllLink?: boolean;
+	/** Coluna count no desktop. Default 3 (combina com 6 ou 12 cards). */
+	columns?: 3 | 4;
 }
 
 const {
-	heading = "Explore por pilar",
-	tagline = "12 áreas de cuidado pra quem tem 55+",
+	heading = "Escolha um assunto",
+	tagline = "Conteúdos organizados por área de cuidado",
+	featuredOnly = false,
+	showAllLink,
+	columns = 3,
 } = Astro.props;
+
+const pillarsToShow = featuredOnly ? FEATURED_PILLARS : PILLARS;
+const shouldShowAllLink = showAllLink ?? featuredOnly;
 ---
 
 <section class="pillar-grid-section" aria-labelledby="pillar-grid-heading">
@@ -18,9 +30,9 @@ const {
 		{tagline && <p class="pillar-grid-tagline">{tagline}</p>}
 	</header>
 
-	<ul class="pillar-grid">
+	<ul class={`pillar-grid columns-${columns}`}>
 		{
-			PILLARS.map((p) => (
+			pillarsToShow.map((p) => (
 				<li class="pillar-cell">
 					<a
 						href={`/category/${p.slug}`}
@@ -36,6 +48,16 @@ const {
 			))
 		}
 	</ul>
+
+	{
+		shouldShowAllLink && (
+			<div class="pillar-grid-footer">
+				<a href="/categorias" class="pillar-grid-all-link">
+					Ver todos os assuntos →
+				</a>
+			</div>
+		)
+	}
 </section>
 
 <style>
@@ -67,8 +89,15 @@ const {
 		padding: 0;
 		margin: 0;
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
 		gap: var(--spacing-3);
+	}
+
+	.pillar-grid.columns-3 {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	.pillar-grid.columns-4 {
+		grid-template-columns: repeat(4, 1fr);
 	}
 
 	.pillar-cell {
@@ -81,7 +110,7 @@ const {
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: var(--spacing-2);
+		gap: var(--spacing-3);
 		aspect-ratio: 1 / 1;
 		padding: var(--spacing-4);
 		border-radius: var(--radius-lg);
@@ -108,21 +137,44 @@ const {
 	}
 
 	.pillar-emoji {
-		font-size: 2.25rem;
+		font-size: 2.75rem;
 		line-height: 1;
-		/* Render consistente em emoji (alguns devices renderizam pequeno). */
 		display: block;
 	}
 
+	/* Label maior que a v1: público 55+ precisa de fonte legível,
+	 * principalmente em card quadrado pequeno. */
 	.pillar-label {
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-base);
 		font-weight: 600;
 		line-height: var(--leading-tight);
 		letter-spacing: var(--tracking-snug);
 	}
 
+	.pillar-grid-footer {
+		text-align: center;
+		margin-top: var(--spacing-6);
+	}
+
+	.pillar-grid-all-link {
+		display: inline-block;
+		padding: var(--spacing-2) var(--spacing-4);
+		font-size: var(--font-size-base);
+		font-weight: 500;
+		color: var(--color-accent);
+		text-decoration: none;
+		border-radius: var(--radius);
+		transition: color var(--transition-fast);
+	}
+
+	.pillar-grid-all-link:hover,
+	.pillar-grid-all-link:focus-visible {
+		color: var(--color-accent-hover);
+		outline: none;
+	}
+
 	@media (max-width: 1024px) {
-		.pillar-grid {
+		.pillar-grid.columns-4 {
 			grid-template-columns: repeat(3, 1fr);
 		}
 	}
@@ -132,17 +184,19 @@ const {
 			margin: var(--spacing-8) auto;
 		}
 
-		.pillar-grid {
+		.pillar-grid,
+		.pillar-grid.columns-3,
+		.pillar-grid.columns-4 {
 			grid-template-columns: repeat(2, 1fr);
 			gap: var(--spacing-2);
 		}
 
 		.pillar-emoji {
-			font-size: 1.75rem;
+			font-size: 2rem;
 		}
 
 		.pillar-label {
-			font-size: var(--font-size-xs);
+			font-size: var(--font-size-sm);
 		}
 	}
 </style>

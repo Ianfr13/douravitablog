@@ -183,8 +183,9 @@ function formatDate(date: Date | null | undefined) {
 					</section>
 				)}
 
-				{/* Pillar grid: descoberta por tópico, distribui PageRank pros 12 hubs */}
-				<PillarGrid />
+				{/* Pillar grid: vitrine dos 6 featured (limite cognitivo 7±2 pro
+				 * público 55+). Os outros 6 são acessíveis via /categorias. */}
+				<PillarGrid featuredOnly={true} />
 
 				{/* Latest Posts */}
 				{gridPostsWithTags.length > 0 && (

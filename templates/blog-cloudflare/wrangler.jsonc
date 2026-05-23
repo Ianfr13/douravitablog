@@ -89,6 +89,10 @@
 			"zone_name": "douravita.com.br",
 		},
 		{
+			"pattern": "douravita.com.br/categorias",
+			"zone_name": "douravita.com.br",
+		},
+		{
 			"pattern": "douravita.com.br/tag/*",
 			"zone_name": "douravita.com.br",
 		},
