@@ -139,14 +139,6 @@ const isLoggedIn = !!Astro.locals.user;
 						>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
 						</button>
-						<button
-							type="button"
-							class="theme-btn"
-							data-theme="system"
-							aria-label="Tema do sistema"
-						>
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-						</button>
 					</div>
 				</div>
 				{
@@ -261,29 +253,6 @@ const isLoggedIn = !!Astro.locals.user;
 								></path></svg
 							>
 						</button>
-						<button
-							type="button"
-							class="theme-btn"
-							data-theme="system"
-							aria-label="Tema do sistema"
-						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								><rect x="2" y="3" width="20" height="14" rx="2" ry="2"
-								></rect><line x1="8" y1="21" x2="16" y2="21"></line><line
-									x1="12"
-									y1="17"
-									x2="12"
-									y2="21"></line></svg
-							>
-						</button>
 					</div>
 				</div>
 			</div>
@@ -325,8 +294,14 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			function updateActiveBtn(theme: string) {
+				const effective =
+					theme === "system"
+						? window.matchMedia("(prefers-color-scheme: dark)").matches
+							? "dark"
+							: "light"
+						: theme;
 				themeBtns.forEach((btn) => {
-					btn.classList.toggle("active", btn.dataset.theme === theme);
+					btn.classList.toggle("active", btn.dataset.theme === effective);
 				});
 			}
 
@@ -351,6 +326,7 @@ const isLoggedIn = !!Astro.locals.user;
 				.addEventListener("change", (e) => {
 					if (getStoredTheme() === "system") {
 						root.classList.toggle("dark", e.matches);
+						updateActiveBtn("system");
 					}
 				});
 		</script>
