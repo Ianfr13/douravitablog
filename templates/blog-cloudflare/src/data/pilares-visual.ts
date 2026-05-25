@@ -38,7 +38,7 @@ export const PILLARS: readonly PillarVisual[] = [
 	{ slug: "homem-55", label: "Pra homem 55+", emoji: "👨", color: "#3F87E0" },
 	{ slug: "pele-e-estetica", label: "Pele, cabelo e dentes", emoji: "✨", color: "#D4A017" },
 	{ slug: "ciencia", label: "Ciência da longevidade", emoji: "🔬", color: "#26A69A" },
-	{ slug: "noticias", label: "Notícias de saúde", emoji: "📰", color: "#546E7A" },
+	{ slug: "noticias", label: "Notícias de saúde", emoji: "📰", color: "#546E7A", featured: true },
 ] as const;
 
 export const FEATURED_PILLARS = PILLARS.filter((p) => p.featured);
