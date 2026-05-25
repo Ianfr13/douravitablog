@@ -28,6 +28,11 @@ const CACHEABLE_HTML_PATTERNS = [
 	/^\/tag\//,
 	/^\/category\//,
 	/^\/pages\//,
+	// Feeds/sitemap: sem isso, Google desiste no fetch do GSC (1.5s render +
+	// timeout curto). Cron warmup ja puxa sitemap.xml a cada 1min — entrar
+	// aqui faz esse fetch popular o cache, e GSC/bots subsequentes pegam HIT.
+	/^\/sitemap\.xml$/,
+	/^\/rss\.xml$/,
 ];
 
 // Media servida pelo EmDash worker — JA traz Cache-Control: max-age=31536000
