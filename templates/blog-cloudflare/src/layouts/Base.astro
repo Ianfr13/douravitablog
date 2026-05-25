@@ -1351,13 +1351,34 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.inspirational-quote-text {
-				font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-3xl));
-				font-weight: 500;
-				line-height: var(--leading-snug);
-				color: var(--color-text);
-				letter-spacing: var(--tracking-snug);
-				margin: 0;
+				/* Fonte serif elegante (Georgia built-in, sem download).
+				 * Italic + tracking solto + line-height generoso = visual editorial. */
+				font-family: Georgia, "Times New Roman", "DejaVu Serif", serif;
+				font-size: clamp(var(--font-size-2xl), 3.5vw, var(--font-size-4xl));
+				font-weight: 400;
 				font-style: italic;
+				line-height: 1.4;
+				color: var(--color-text);
+				letter-spacing: -0.01em;
+				margin: 0;
+				quotes: "“" "”";
+			}
+
+			/* Aspas decorativas grandes acima da frase. */
+			.inspirational-quote-text::before {
+				content: open-quote;
+				display: block;
+				font-size: 3em;
+				line-height: 0.5;
+				color: var(--color-accent);
+				opacity: 0.4;
+				margin-bottom: var(--spacing-4);
+				font-style: normal;
+			}
+
+			.inspirational-quote-text::after {
+				content: close-quote;
+				display: none;
 			}
 
 			@media (max-width: 640px) {
