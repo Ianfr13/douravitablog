@@ -13,17 +13,20 @@
  * Shape esperado do value:
  *   { _type: "leiaTambem", slug: "x-y-z", title: "Título...", href: "/posts/x-y-z" }
  */
-interface Value {
+interface Node {
 	_type: "leiaTambem";
+	_key: string;
 	slug: string;
 	title: string;
 	href: string;
 }
 interface Props {
-	value: Value;
+	node: Node;
 }
-const { value } = Astro.props;
-const { title, href } = value;
+// astro-portabletext passa a prop como `node` (não `value`) pra custom types
+// — ver packages/core/src/components/Image.astro do EmDash como referência.
+const { node } = Astro.props;
+const { title, href } = node;
 const displayUrl = `douravita.com.br${href}`;
 ---
 
