@@ -26,12 +26,8 @@ export const GET: APIRoute = async ({ site, url }) => {
 
 	const entries: string[] = [];
 
-	// Home institucional (one-pager servido pelo Pages, fora do EmDash).
-	// Precisa estar no sitemap porque Pages institucional nao gera o seu.
-	entries.push(urlEntry(`${siteUrl}/`, todayIso, "weekly", 1.0));
-
-	// Home do blog + índice de posts (alta prioridade, atualização diária)
-	entries.push(urlEntry(`${siteUrl}/blog`, todayIso, "daily", 0.9));
+	// Home + índice de posts (alta prioridade, atualização diária)
+	entries.push(urlEntry(`${siteUrl}/blog`, todayIso, "daily", 1.0));
 	entries.push(urlEntry(`${siteUrl}/posts`, todayIso, "daily", 0.8));
 
 	for (const post of posts) {
