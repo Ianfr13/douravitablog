@@ -10,6 +10,7 @@ import { createPublicPageContext } from "emdash/page";
 import LiveSearch from "emdash/ui/search";
 import { Font } from "astro:assets";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
+import { FEATURED_PILLARS } from "../data/pilares-visual";
 import "../styles/theme.css";
 
 interface Props {
@@ -98,6 +99,19 @@ const isLoggedIn = !!Astro.locals.user;
 		<EmDashBodyStart page={pageCtx} />
 		<header class="site-header">
 			<nav class="nav">
+				<button
+					type="button"
+					class="mobile-menu-toggle"
+					aria-label="Abrir menu de categorias"
+					aria-controls="mobile-menu-overlay"
+					aria-expanded="false"
+				>
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<line x1="3" y1="6" x2="21" y2="6"></line>
+						<line x1="3" y1="12" x2="21" y2="12"></line>
+						<line x1="3" y1="18" x2="21" y2="18"></line>
+					</svg>
+				</button>
 				<a href="/blog" class="site-title">
 					{siteLogo
 						? <img src={siteLogo.url} alt={siteLogo.alt || siteTitle} class="site-logo-img" />
@@ -150,6 +164,42 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 			</nav>
 		</header>
+
+		<aside
+			class="mobile-menu-overlay"
+			id="mobile-menu-overlay"
+			aria-hidden="true"
+		>
+			<div class="mobile-menu-drawer" role="dialog" aria-label="Menu de categorias">
+				<div class="mobile-menu-header">
+					<span class="mobile-menu-title">Assuntos</span>
+					<button type="button" class="mobile-menu-close" aria-label="Fechar menu">
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
+					</button>
+				</div>
+				<ul class="mobile-menu-list">
+					{FEATURED_PILLARS.map((p) => (
+						<li>
+							<a
+								href={`/blog/category/${p.slug}`}
+								class="mobile-menu-item"
+								style={`--pillar-color: ${p.color};`}
+							>
+								<span class="mobile-menu-emoji" aria-hidden="true">{p.emoji}</span>
+								<span class="mobile-menu-label">{p.label}</span>
+								<svg class="mobile-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									<polyline points="9 18 15 12 9 6"></polyline>
+								</svg>
+							</a>
+						</li>
+					))}
+				</ul>
+				<a href="/blog/categorias" class="mobile-menu-all">Ver todos os assuntos →</a>
+			</div>
+		</aside>
 
 		<main>
 			<slot />
@@ -329,6 +379,36 @@ const isLoggedIn = !!Astro.locals.user;
 						updateActiveBtn("system");
 					}
 				});
+
+			// Mobile menu drawer toggle (so visivel < 768px via CSS).
+			const menuToggle = document.querySelector<HTMLButtonElement>(".mobile-menu-toggle");
+			const menuOverlay = document.getElementById("mobile-menu-overlay");
+			const menuClose = document.querySelector<HTMLButtonElement>(".mobile-menu-close");
+
+			function openMenu() {
+				menuOverlay?.classList.add("is-open");
+				menuOverlay?.setAttribute("aria-hidden", "false");
+				menuToggle?.setAttribute("aria-expanded", "true");
+				document.body.style.overflow = "hidden";
+			}
+
+			function closeMenu() {
+				menuOverlay?.classList.remove("is-open");
+				menuOverlay?.setAttribute("aria-hidden", "true");
+				menuToggle?.setAttribute("aria-expanded", "false");
+				document.body.style.overflow = "";
+			}
+
+			menuToggle?.addEventListener("click", openMenu);
+			menuClose?.addEventListener("click", closeMenu);
+			menuOverlay?.addEventListener("click", (e) => {
+				if (e.target === menuOverlay) closeMenu();
+			});
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "Escape" && menuOverlay?.classList.contains("is-open")) {
+					closeMenu();
+				}
+			});
 		</script>
 
 		<script>
@@ -987,6 +1067,167 @@ const isLoggedIn = !!Astro.locals.user;
 
 			.social-btn--whatsapp {
 				background: #25d366;
+			}
+
+			/* ---- Mobile menu hamburger + drawer (so visivel < 768px) ---- */
+			.mobile-menu-toggle {
+				display: none;
+				align-items: center;
+				justify-content: center;
+				width: 40px;
+				height: 40px;
+				padding: 0;
+				background: transparent;
+				border: none;
+				color: var(--color-text);
+				cursor: pointer;
+				border-radius: var(--radius);
+				transition: background var(--transition-fast);
+				flex-shrink: 0;
+			}
+
+			.mobile-menu-toggle:hover,
+			.mobile-menu-toggle:focus-visible {
+				background: var(--color-surface);
+				outline: none;
+			}
+
+			.mobile-menu-overlay {
+				position: fixed;
+				inset: 0;
+				z-index: 200;
+				display: flex;
+				background: rgba(0, 0, 0, 0.5);
+				opacity: 0;
+				visibility: hidden;
+				transition: opacity 0.25s ease, visibility 0.25s ease;
+			}
+
+			.mobile-menu-overlay.is-open {
+				opacity: 1;
+				visibility: visible;
+			}
+
+			.mobile-menu-drawer {
+				width: min(85vw, 320px);
+				height: 100%;
+				background: var(--color-bg);
+				padding: var(--spacing-6) var(--spacing-5) var(--spacing-8);
+				overflow-y: auto;
+				transform: translateX(-100%);
+				transition: transform 0.3s ease;
+				display: flex;
+				flex-direction: column;
+				gap: var(--spacing-5);
+				box-shadow: var(--shadow-dropdown);
+			}
+
+			.mobile-menu-overlay.is-open .mobile-menu-drawer {
+				transform: translateX(0);
+			}
+
+			.mobile-menu-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: var(--spacing-1);
+			}
+
+			.mobile-menu-title {
+				font-size: var(--font-size-xs);
+				font-weight: 500;
+				text-transform: uppercase;
+				letter-spacing: var(--tracking-wider);
+				color: var(--color-muted);
+			}
+
+			.mobile-menu-close {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 32px;
+				height: 32px;
+				padding: 0;
+				background: transparent;
+				border: none;
+				color: var(--color-text);
+				cursor: pointer;
+				border-radius: var(--radius);
+				transition: background var(--transition-fast);
+			}
+
+			.mobile-menu-close:hover,
+			.mobile-menu-close:focus-visible {
+				background: var(--color-surface);
+				outline: none;
+			}
+
+			.mobile-menu-list {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				flex-direction: column;
+				gap: var(--spacing-2);
+			}
+
+			.mobile-menu-item {
+				display: flex;
+				align-items: center;
+				gap: var(--spacing-3);
+				padding: var(--spacing-3) var(--spacing-4);
+				border-radius: var(--radius-lg);
+				background: color-mix(in srgb, var(--pillar-color) 14%, var(--color-bg));
+				border: 1px solid color-mix(in srgb, var(--pillar-color) 26%, transparent);
+				color: var(--color-text);
+				text-decoration: none;
+				font-weight: 500;
+				transition: background var(--transition-fast);
+			}
+
+			.mobile-menu-item:hover,
+			.mobile-menu-item:focus-visible {
+				background: color-mix(in srgb, var(--pillar-color) 24%, var(--color-bg));
+				outline: none;
+			}
+
+			.mobile-menu-emoji {
+				font-size: 1.5rem;
+				flex-shrink: 0;
+				line-height: 1;
+			}
+
+			.mobile-menu-label {
+				flex: 1;
+				font-size: var(--font-size-base);
+				line-height: var(--leading-snug);
+			}
+
+			.mobile-menu-chevron {
+				color: var(--color-muted);
+				flex-shrink: 0;
+			}
+
+			.mobile-menu-all {
+				display: block;
+				text-align: center;
+				padding: var(--spacing-4) var(--spacing-3);
+				color: var(--color-accent);
+				font-size: var(--font-size-sm);
+				font-weight: 500;
+				text-decoration: none;
+				border-top: 1px solid var(--color-border-subtle);
+				margin-top: auto;
+			}
+
+			.mobile-menu-all:hover {
+				color: var(--color-accent-hover);
+			}
+
+			@media (max-width: 768px) {
+				.mobile-menu-toggle {
+					display: inline-flex;
+				}
 			}
 
 			@media (max-width: 900px) {
