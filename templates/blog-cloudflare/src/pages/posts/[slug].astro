@@ -17,8 +17,18 @@ import {
 } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import PostCard from "../../components/PostCard.astro";
+import LeiaTambem from "../../components/LeiaTambem.astro";
 import { getReadingTime } from "../../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../../utils/site-identity";
+
+// Custom PortableText component pra blocos `_type: 'leiaTambem'` emitidos
+// pelo pipeline (md_to_portable.py). Registra via prop `components.type`
+// no <PortableText> abaixo — astro-portabletext merge com defaults EmDash.
+const portableTextComponents = {
+	type: {
+		leiaTambem: LeiaTambem,
+	},
+};
 
 const slug = decodeSlug(Astro.params.slug);
 
@@ -268,7 +278,7 @@ const publishDate =
 				</header>
 
 				<div class="article-content">
-					<PortableText value={post.data.content} />
+					<PortableText value={post.data.content} components={portableTextComponents} />
 				</div>
 
 				<div class="article-comments">
