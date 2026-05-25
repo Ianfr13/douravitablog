@@ -317,25 +317,29 @@ function formatDate(date: Date | null | undefined) {
 	.featured-image-link {
 		grid-column: 1 / 3;
 		display: block;
-		/* Extend to viewport edge, but cap at -6rem minimum extension */
-		margin-left: min(
-			-6rem,
-			calc(-1 * (var(--spacing-6) + (100vw - var(--wide-width)) / 2))
-		);
 	}
 
 	.featured-image {
 		overflow: hidden;
-		border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+		border-radius: var(--radius-lg);
 		background: var(--color-surface);
 	}
 
 	.featured-image img {
 		width: 100%;
 		height: auto;
-		aspect-ratio: 4 / 3;
+		aspect-ratio: 16 / 9;
 		object-fit: cover;
 		transition: transform 0.4s ease;
+	}
+
+	/* Desktop: limita altura da imagem do hero featured pra não dominar
+	 * a dobra. Mobile (<= 900px) usa altura natural via aspect-ratio. */
+	@media (min-width: 901px) {
+		.featured-image,
+		.featured-image img {
+			max-height: 420px;
+		}
 	}
 
 	.featured-image-link:hover .featured-image img,
