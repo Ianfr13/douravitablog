@@ -81,6 +81,14 @@ const isLoggedIn = !!Astro.locals.user;
 		<Font cssVariable="--font-mono" />
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
+		<!-- Google Analytics 4 -->
+		<script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-9BF05HSEEL"></script>
+		<script is:inline>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag("js", new Date());
+			gtag("config", "G-9BF05HSEEL");
+		</script>
 		<script is:inline>
 			// Apply theme immediately to prevent flash
 			(function () {
@@ -203,6 +211,14 @@ const isLoggedIn = !!Astro.locals.user;
 		<main>
 			<slot />
 		</main>
+
+		<section class="inspirational-quote" aria-label="Mensagem">
+			<div class="inspirational-quote-inner">
+				<blockquote class="inspirational-quote-text">
+					Cuidar de você é o melhor presente que você pode dar a quem te ama.
+				</blockquote>
+			</div>
+		</section>
 
 		<footer class="site-footer">
 			<div class="footer-inner">
@@ -1318,6 +1334,35 @@ const isLoggedIn = !!Astro.locals.user;
 
 				.social-buttons {
 					justify-content: flex-end;
+				}
+			}
+
+			/* ---- Frase inspiradora antes do footer ---- */
+			.inspirational-quote {
+				background: var(--color-bg-subtle);
+				padding: var(--spacing-16) var(--spacing-6);
+				border-top: 1px solid var(--color-border-subtle);
+			}
+
+			.inspirational-quote-inner {
+				max-width: 720px;
+				margin: 0 auto;
+				text-align: center;
+			}
+
+			.inspirational-quote-text {
+				font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-3xl));
+				font-weight: 500;
+				line-height: var(--leading-snug);
+				color: var(--color-text);
+				letter-spacing: var(--tracking-snug);
+				margin: 0;
+				font-style: italic;
+			}
+
+			@media (max-width: 640px) {
+				.inspirational-quote {
+					padding: var(--spacing-12) var(--spacing-5);
 				}
 			}
 		</style>

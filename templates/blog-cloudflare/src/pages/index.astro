@@ -11,9 +11,9 @@ import CategoriesBar from "../components/CategoriesBar.astro";
 import { getReadingTime } from "../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
-// Limit to what we render (1 featured + 6 grid). The DB does the slicing
-// instead of fetching every post and discarding the tail in JS.
-const POSTS_PER_PAGE = 7;
+// Limit to what we render (1 featured + 4 lista compacta). The DB does the
+// slicing instead of fetching every post and discarding the tail in JS.
+const POSTS_PER_PAGE = 5;
 
 const [{ entries: posts, cacheHint }, settings] = await Promise.all([
 	getEmDashCollection("posts", {
@@ -40,8 +40,8 @@ const hasMorePosts = posts.length > POSTS_PER_PAGE;
 const featuredPost = visiblePosts.find((p) => p.data.featured_image);
 const featuredIndex = featuredPost ? visiblePosts.indexOf(featuredPost) : -1;
 
-// Get remaining posts (exclude featured if found, limit to 6 for grid)
-const gridPosts = visiblePosts.filter((_, i) => i !== featuredIndex).slice(0, 6);
+// Get remaining posts (exclude featured if found, limit to 4 for compact list)
+const gridPosts = visiblePosts.filter((_, i) => i !== featuredIndex).slice(0, 4);
 
 // Single batched query for tags across the featured post + grid posts.
 // Avoids the N+1 pattern of calling getEntryTerms() per entry.
@@ -187,33 +187,45 @@ function formatDate(date: Date | null | undefined) {
 				 * Desktop only — em mobile o acesso é via menu hamburger no header. */}
 				<CategoriesBar />
 
-				{/* Latest Posts */}
+				{/* Latest Posts — lista compacta estilo Tua Saúde: badge categoria
+				 * + título + data, sem imagens, separados por divisor fino. */}
 				{gridPostsWithTags.length > 0 && (
 					<section class="posts-section">
 						<header class="section-header">
-							<h2 class="section-title">Mais recentes</h2>
+							<h2 class="section-title">Conteúdos mais recentes</h2>
 							{hasMorePosts && (
 								<a href="/blog/posts" class="section-link">
 									Ver todos
 								</a>
 							)}
 						</header>
-						<div class="posts-grid">
-							{gridPostsWithTags.map(({ post, tags, category, bylines }) => (
-								<PostCard
-									title={post.data.title ?? "Sem título"}
-									excerpt={post.data.excerpt}
-									featuredImage={post.data.featured_image}
-									href={`/blog/posts/${post.slug ?? post.id}`}
-									date={post.data.publishedAt ?? undefined}
-									readingTime={getReadingTime(post.data.content)}
-									tags={tags}
-									category={category}
-									bylines={bylines}
-									headingLevel={3}
-								/>
+						<ul class="posts-list-compact">
+							{gridPostsWithTags.map(({ post, category }) => (
+								<li class="posts-list-item">
+									{category && (
+										<a
+											href={`/blog/category/${category.slug}`}
+											class="posts-list-category"
+										>
+											{category.label}
+										</a>
+									)}
+									<a
+										href={`/blog/posts/${post.slug ?? post.id}`}
+										class="posts-list-title-link"
+									>
+										<h3 class="posts-list-title">
+											{post.data.title ?? "Sem título"}
+										</h3>
+									</a>
+									{post.data.publishedAt && (
+										<time class="posts-list-date">
+											Criado em {post.data.publishedAt.toLocaleDateString("pt-BR")}
+										</time>
+									)}
+								</li>
 							))}
-						</div>
+						</ul>
 					</section>
 				)}
 			</div>
@@ -438,7 +450,7 @@ function formatDate(date: Date | null | undefined) {
 		color: var(--color-accent-hover);
 	}
 
-	/* Posts Grid */
+	/* Posts Grid (legacy — mantido caso seja reutilizado) */
 	.posts-section {
 	}
 
@@ -446,6 +458,66 @@ function formatDate(date: Date | null | undefined) {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
 		gap: var(--spacing-12) var(--spacing-8);
+	}
+
+	/* Posts list compact (estilo Tua Saúde: badge + título + data, sem fotos) */
+	.posts-list-compact {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.posts-list-item {
+		padding: var(--spacing-6) 0;
+		border-bottom: 1px solid var(--color-border-subtle);
+	}
+
+	.posts-list-item:last-child {
+		border-bottom: none;
+	}
+
+	.posts-list-category {
+		display: inline-block;
+		padding: var(--tag-padding-y) var(--spacing-3);
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+		border-radius: var(--radius);
+		text-decoration: none;
+		margin-bottom: var(--spacing-3);
+		transition: background var(--transition-fast);
+	}
+
+	.posts-list-category:hover {
+		background: var(--color-border);
+	}
+
+	.posts-list-title-link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.posts-list-title {
+		font-size: clamp(var(--font-size-lg), 2.2vw, var(--font-size-2xl));
+		font-weight: 700;
+		line-height: var(--leading-snug);
+		letter-spacing: var(--tracking-snug);
+		margin-bottom: var(--spacing-2);
+		transition: color var(--transition-fast);
+	}
+
+	.posts-list-title-link:hover .posts-list-title {
+		color: var(--color-accent);
+	}
+
+	.posts-list-date {
+		display: block;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
 	}
 
 	/* Empty State */
