@@ -1,0 +1,69 @@
+---
+import { FEATURED_PILLARS } from "../data/pilares-visual";
+---
+
+<nav class="categories-bar" aria-label="Categorias">
+	<div class="categories-bar-inner">
+		<ul class="categories-bar-list">
+			{FEATURED_PILLARS.map((p) => (
+				<li>
+					<a href={`/blog/category/${p.slug}`} class="categories-bar-item">
+						{p.label}
+					</a>
+				</li>
+			))}
+		</ul>
+	</div>
+</nav>
+
+<style>
+	.categories-bar {
+		border-top: 1px solid var(--color-border-subtle);
+		border-bottom: 1px solid var(--color-border-subtle);
+		background: var(--color-bg);
+		margin: var(--spacing-12) auto 0;
+	}
+
+	.categories-bar-inner {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-6);
+	}
+
+	.categories-bar-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		gap: var(--spacing-8);
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+
+	.categories-bar-item {
+		display: inline-block;
+		padding: var(--spacing-4) var(--spacing-1);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-text);
+		text-decoration: none;
+		border-bottom: 2px solid transparent;
+		transition: color var(--transition-fast), border-color var(--transition-fast);
+	}
+
+	.categories-bar-item:hover,
+	.categories-bar-item:focus-visible {
+		color: var(--color-accent);
+		border-bottom-color: var(--color-accent);
+		outline: none;
+	}
+
+	/* Em mobile o acesso a categorias e via menu hamburger. */
+	@media (max-width: 768px) {
+		.categories-bar {
+			display: none;
+		}
+	}
+</style>

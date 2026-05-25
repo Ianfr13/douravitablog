@@ -7,7 +7,7 @@ import {
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 import PostCard from "../components/PostCard.astro";
-import PillarGrid from "../components/PillarGrid.astro";
+import CategoriesBar from "../components/CategoriesBar.astro";
 import { getReadingTime } from "../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
@@ -183,9 +183,9 @@ function formatDate(date: Date | null | undefined) {
 					</section>
 				)}
 
-				{/* Pillar grid: vitrine dos 6 featured (limite cognitivo 7±2 pro
-				 * público 55+). Os outros 6 são acessíveis via /blog/categorias. */}
-				<PillarGrid featuredOnly={true} />
+				{/* Categories bar: barra horizontal limpa estilo Tua Saúde.
+				 * Desktop only — em mobile o acesso é via menu hamburger no header. */}
+				<CategoriesBar />
 
 				{/* Latest Posts */}
 				{gridPostsWithTags.length > 0 && (
