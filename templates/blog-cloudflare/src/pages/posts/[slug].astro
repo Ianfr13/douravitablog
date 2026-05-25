@@ -72,7 +72,7 @@ const { siteTitle } = resolveBlogSiteIdentity(settings);
 const seo = getSeoMeta(post, {
 	siteTitle,
 	siteUrl: Astro.url.origin,
-	path: `/posts/${slug}`,
+	path: `/blog/posts/${slug}`,
 	defaultOgImage: featuredImageUrl,
 	titleSeparator: settings.seo?.titleSeparator,
 });
@@ -199,7 +199,7 @@ const publishDate =
 						category && (
 							<div class="meta-block">
 								<span class="meta-label">Categoria</span>
-								<a href={`/category/${category.slug}`} class="meta-category">
+								<a href={`/blog/category/${category.slug}`} class="meta-category">
 									{category.label}
 								</a>
 							</div>
@@ -211,7 +211,7 @@ const publishDate =
 								<span class="meta-label">Tags</span>
 								<div class="meta-tags">
 									{tags.map((t) => (
-										<a href={`/tag/${t.slug}`} class="meta-tag">
+										<a href={`/blog/tag/${t.slug}`} class="meta-tag">
 											{t.label}
 										</a>
 									))}
@@ -253,7 +253,7 @@ const publishDate =
 					</div>
 					{category && (
 						<a
-							href={`/category/${category.slug}`}
+							href={`/blog/category/${category.slug}`}
 							class="article-category"
 						>
 							{category.label}
@@ -306,7 +306,7 @@ const publishDate =
 									title={p.data.title}
 									excerpt={p.data.excerpt}
 									featuredImage={p.data.featured_image}
-									href={`/posts/${p.slug ?? p.id}`}
+									href={`/blog/posts/${p.slug ?? p.id}`}
 									date={p.data.publishedAt ?? undefined}
 									readingTime={getReadingTime(p.data.content)}
 									tags={postTags.map((t) => ({ slug: t.slug, label: t.label }))}

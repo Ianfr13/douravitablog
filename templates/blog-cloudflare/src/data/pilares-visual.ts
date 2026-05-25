@@ -1,7 +1,7 @@
 /**
  * Mapa visual dos 12 pilares (categorias do EmDash).
  *
- * Source-of-truth dos SLUGS: EmDash (Worker Route /category/<slug>). 3 slugs
+ * Source-of-truth dos SLUGS: EmDash (Worker Route /blog/category/<slug>). 3 slugs
  * divergem do pilares.py canônico do pipeline Python — aqui usamos os do
  * EmDash, validados via curl 2026-05-23 (todos respondem 200).
  *
@@ -13,8 +13,8 @@
  * volume atual de posts + posicionamento da marca + amplitude de interesse
  * 55+. A intenção é respeitar o limite cognitivo 7±2 (Miller) — mostrar 12
  * cards na home era sobrecarga pro público 55+. Os outros 6 continuam
- * funcionando normalmente em /category/<slug> e ficam acessíveis via página
- * /categorias.
+ * funcionando normalmente em /blog/category/<slug> e ficam acessíveis via página
+ * /blog/categorias.
  */
 
 export interface PillarVisual {
@@ -22,7 +22,7 @@ export interface PillarVisual {
 	label: string;
 	emoji: string;
 	color: string;
-	/** Se true, aparece na home. Se false/ausente, só em /categorias. */
+	/** Se true, aparece na home. Se false/ausente, só em /blog/categorias. */
 	featured?: boolean;
 }
 

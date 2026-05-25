@@ -24,6 +24,13 @@ export { PluginBridge } from "@emdash-cms/cloudflare/sandbox";
 const CACHEABLE_HTML_PATTERNS = [
 	/^\/$/,
 	/^\/blog\/?$/,
+	/^\/blog\/posts(\/|$)/,
+	/^\/blog\/tag\//,
+	/^\/blog\/category\//,
+	/^\/blog\/pages\//,
+	/^\/blog\/categorias\/?$/,
+	/^\/blog\/sitemap\.xml$/,
+	/^\/blog\/rss\.xml$/,
 	/^\/posts(\/|$)/,
 	/^\/tag\//,
 	/^\/category\//,
@@ -118,6 +125,45 @@ function makeSearchCacheKey(request: Request): Request {
 const SEARCH_CACHE_CONTROL =
 	"public, max-age=300, s-maxage=300, stale-while-revalidate=86400";
 
+const LEGACY_PUBLIC_PATHS = [
+	/^\/posts(\/|$)/,
+	/^\/tag\//,
+	/^\/category\//,
+	/^\/pages\//,
+	/^\/categorias\/?$/,
+	/^\/sitemap\.xml$/,
+	/^\/rss\.xml$/,
+];
+
+const BLOG_PREFIX_PATHS = [
+	"posts",
+	"tag",
+	"category",
+	"pages",
+	"categorias",
+	"sitemap.xml",
+	"rss.xml",
+	"search",
+];
+
+function redirectLegacyPublicPath(request: Request): Response | null {
+	if (request.method !== "GET" && request.method !== "HEAD") return null;
+	const url = new URL(request.url);
+	if (!LEGACY_PUBLIC_PATHS.some((re) => re.test(url.pathname))) return null;
+	url.pathname = `/blog${url.pathname}`;
+	return Response.redirect(url.toString(), 301);
+}
+
+function stripBlogPrefixForAstro(request: Request): Request {
+	const url = new URL(request.url);
+	const match = url.pathname.match(/^\/blog\/([^/]+)(\/.*)?$/);
+	if (!match) return request;
+	const firstSegment = match[1];
+	if (!firstSegment || !BLOG_PREFIX_PATHS.includes(firstSegment)) return request;
+	url.pathname = url.pathname.replace(/^\/blog/, "") || "/";
+	return new Request(url.toString(), request);
+}
+
 // Cache key separado pra variantes WebP de media. Sem isso, primeira request
 // (com Accept: image/webp) salvaria WebP no cache, mas a SEGUNDA (sem webp,
 // ex: bot/curl velho) leria o WebP e quebraria. Usando params distintos, cada
@@ -195,10 +241,14 @@ export default {
 		env: unknown,
 		ctx: ExecutionContext,
 	): Promise<Response> {
+		const redirect = redirectLegacyPublicPath(request);
+		if (redirect) return redirect;
+
 		const kind = classifyCacheable(request);
+		const handlerRequest = stripBlogPrefixForAstro(request);
 		if (!kind) {
 			// @ts-expect-error handler default export shape from @astrojs/cloudflare
-			return handler.fetch(request, env, ctx);
+			return handler.fetch(handlerRequest, env, ctx);
 		}
 
 		const cache = caches.default;
@@ -222,7 +272,7 @@ export default {
 		}
 
 		// @ts-expect-error handler default export shape from @astrojs/cloudflare
-		let response: Response = await handler.fetch(request, env, ctx);
+		let response: Response = await handler.fetch(handlerRequest, env, ctx);
 
 		// IMPORTANTE: o check `no-store` so se aplica a HTML/media. Pra search API
 		// o EmDash core SEMPRE manda `private, no-store` (assume contexto de
@@ -316,21 +366,21 @@ export default {
 		const origin = "https://douravita.com.br";
 
 		// Lista base: home + index de posts + blog. Sempre aquece.
-		const baseUrls = [
-			`${origin}/`,
-			`${origin}/blog`,
-			`${origin}/posts`,
-		];
+			const baseUrls = [
+				`${origin}/`,
+				`${origin}/blog`,
+				`${origin}/blog/posts`,
+			];
 
 		// Pre-warm de TODAS as URLs do sitemap (posts individuais, pages, etc).
-		// Sem isso, cada /posts/<slug> e MISS no primeiro acesso → ~2.5s render
+			// Sem isso, cada /blog/posts/<slug> e MISS no primeiro acesso → ~2.5s render
 		// (17-21 queries D1 + template). Com warmup, primeiro acesso vira HIT
 		// em ~150ms.
 		// Limite de 50 URLs por safety (cron tem ~30s wall clock; self-fetch
 		// em paralelo via Promise.allSettled). 50 cobre o blog atual com folga.
 		const sitemapUrls = await fetchSitemapUrls(this, env, ctx, origin, 50);
 
-		// Dedup: sitemap inclui /blog e /posts (que ja estao em baseUrls).
+			// Dedup: sitemap inclui /blog e /blog/posts (que ja estao em baseUrls).
 		const warmupUrls = Array.from(new Set([...baseUrls, ...sitemapUrls]));
 
 		// Pre-warm tambem a busca pra termos comuns. Sem isso, primeira
@@ -367,7 +417,7 @@ export default {
 	},
 };
 
-// Pega /sitemap.xml e extrai os <loc>. Filtra pra mesma origem (defesa em
+// Pega /blog/sitemap.xml e extrai os <loc>. Filtra pra mesma origem (defesa em
 // profundidade: sitemap nao deveria conter URLs cross-origin, mas se um dia
 // o template mudar nao queremos self-fetch em dominios externos).
 async function fetchSitemapUrls(
@@ -378,7 +428,7 @@ async function fetchSitemapUrls(
 	limit: number,
 ): Promise<string[]> {
 	try {
-		const sitemapReq = new Request(`${origin}/sitemap.xml`, { method: "GET" });
+		const sitemapReq = new Request(`${origin}/blog/sitemap.xml`, { method: "GET" });
 		const resp = await self.fetch(sitemapReq, env, ctx);
 		if (!resp.ok) {
 			console.log(`[cron warmup] sitemap fetch failed: ${resp.status}`);

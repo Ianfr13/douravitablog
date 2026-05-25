@@ -108,7 +108,7 @@ function formatDate(date: Date | null | undefined) {
 				{featuredPost && (
 					<section class="featured-section">
 						<div class="featured-grid">
-							<a href={`/posts/${featuredPost.slug ?? featuredPost.id}`} class="featured-image-link">
+							<a href={`/blog/posts/${featuredPost.slug ?? featuredPost.id}`} class="featured-image-link">
 								<div class="featured-image">
 									<Image image={featuredPost.data.featured_image} />
 								</div>
@@ -154,14 +154,14 @@ function formatDate(date: Date | null | undefined) {
 								</div>
 								{featuredCategory && (
 									<a
-										href={`/category/${featuredCategory.slug}`}
+										href={`/blog/category/${featuredCategory.slug}`}
 										class="featured-category"
 									>
 										{featuredCategory.label}
 									</a>
 								)}
 								<a
-									href={`/posts/${featuredPost.slug ?? featuredPost.id}`}
+									href={`/blog/posts/${featuredPost.slug ?? featuredPost.id}`}
 									class="featured-title-link"
 								>
 									<h2 class="featured-title">{featuredPost.data.title}</h2>
@@ -172,7 +172,7 @@ function formatDate(date: Date | null | undefined) {
 								{featuredTags.length > 0 && (
 									<div class="featured-tags">
 										{featuredTags.map((tag) => (
-											<a href={`/tag/${tag.slug}`} class="featured-tag">
+											<a href={`/blog/tag/${tag.slug}`} class="featured-tag">
 												{tag.label}
 											</a>
 										))}
@@ -184,7 +184,7 @@ function formatDate(date: Date | null | undefined) {
 				)}
 
 				{/* Pillar grid: vitrine dos 6 featured (limite cognitivo 7±2 pro
-				 * público 55+). Os outros 6 são acessíveis via /categorias. */}
+				 * público 55+). Os outros 6 são acessíveis via /blog/categorias. */}
 				<PillarGrid featuredOnly={true} />
 
 				{/* Latest Posts */}
@@ -193,7 +193,7 @@ function formatDate(date: Date | null | undefined) {
 						<header class="section-header">
 							<h2 class="section-title">Mais recentes</h2>
 							{hasMorePosts && (
-								<a href="/posts" class="section-link">
+								<a href="/blog/posts" class="section-link">
 									Ver todos
 								</a>
 							)}
@@ -204,7 +204,7 @@ function formatDate(date: Date | null | undefined) {
 									title={post.data.title ?? "Sem título"}
 									excerpt={post.data.excerpt}
 									featuredImage={post.data.featured_image}
-									href={`/posts/${post.slug ?? post.id}`}
+									href={`/blog/posts/${post.slug ?? post.id}`}
 									date={post.data.publishedAt ?? undefined}
 									readingTime={getReadingTime(post.data.content)}
 									tags={tags}

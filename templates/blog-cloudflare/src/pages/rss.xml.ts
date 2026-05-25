@@ -17,7 +17,7 @@ export const GET: APIRoute = async ({ site, url }) => {
 			if (!post.data.publishedAt) return null;
 			const pubDate = post.data.publishedAt.toUTCString();
 
-			const postUrl = `${siteUrl}/posts/${post.slug ?? post.id}`;
+			const postUrl = `${siteUrl}/blog/posts/${post.slug ?? post.id}`;
 			const title = escapeXml(post.data.title || "Sem título");
 			const description = escapeXml(post.data.excerpt || "");
 
@@ -38,7 +38,7 @@ export const GET: APIRoute = async ({ site, url }) => {
     <title>${escapeXml(siteTitle)}</title>
     <description>${escapeXml(siteTagline)}</description>
     <link>${siteUrl}</link>
-    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${siteUrl}/blog/rss.xml" rel="self" type="application/rss+xml"/>
     <language>pt-br</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${items}

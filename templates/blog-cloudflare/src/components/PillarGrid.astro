@@ -35,7 +35,7 @@ const shouldShowAllLink = showAllLink ?? featuredOnly;
 			pillarsToShow.map((p) => (
 				<li class="pillar-cell">
 					<a
-						href={`/category/${p.slug}`}
+						href={`/blog/category/${p.slug}`}
 						class="pillar-card"
 						style={`--pillar-color: ${p.color};`}
 					>
@@ -52,7 +52,7 @@ const shouldShowAllLink = showAllLink ?? featuredOnly;
 	{
 		shouldShowAllLink && (
 			<div class="pillar-grid-footer">
-				<a href="/categorias" class="pillar-grid-all-link">
+				<a href="/blog/categorias" class="pillar-grid-all-link">
 					Ver todos os assuntos →
 				</a>
 			</div>

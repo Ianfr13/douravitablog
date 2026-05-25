@@ -53,7 +53,7 @@ const formattedDate = date
 	}
 	<div class="card-body">
 		{category && (
-			<a href={`/category/${category.slug}`} class="card-category">
+			<a href={`/blog/category/${category.slug}`} class="card-category">
 				{category.label}
 			</a>
 		)}
@@ -110,7 +110,7 @@ const formattedDate = date
 		tags && tags.length > 0 && (
 			<div class="card-tags">
 				{tags.slice(0, 2).map((tag) => (
-					<a href={`/tag/${tag.slug}`} class="card-tag">
+					<a href={`/blog/tag/${tag.slug}`} class="card-tag">
 						{tag.label}
 					</a>
 				))}

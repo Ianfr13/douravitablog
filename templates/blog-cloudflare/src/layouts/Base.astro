@@ -171,11 +171,11 @@ const isLoggedIn = !!Astro.locals.user;
 						<h2 class="footer-heading">Navegação</h2>
 						<ul class="footer-links">
 							<li><a href="/blog">Início</a></li>
-							<li><a href="/posts">Todos os artigos</a></li>
+							<li><a href="/blog/posts">Todos os artigos</a></li>
 							{
 								pages.slice(0, 3).map((page) => (
 									<li>
-										<a href={`/pages/${page.data.slug || page.id}`}>
+										<a href={`/blog/pages/${page.data.slug || page.id}`}>
 											{page.data.title}
 										</a>
 									</li>

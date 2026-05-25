@@ -4,8 +4,8 @@ import { getEmDashCollection } from "emdash";
 /**
  * Sitemap dinâmico do blog Douravita.
  *
- * Inclui: home /blog, índice /posts, cada post publicado, cada página
- * institucional publicada. RSS (/rss.xml) fica fora — sitemap aponta pra
+ * Inclui: home /blog, índice /blog/posts, cada post publicado, cada página
+ * institucional publicada. RSS (/blog/rss.xml) fica fora — sitemap aponta pra
  * HTML, não pra feed.
  *
  * Cache: 1 hora (curto pra novos posts entrarem rápido na indexação).
@@ -28,14 +28,14 @@ export const GET: APIRoute = async ({ site, url }) => {
 
 	// Home + índice de posts (alta prioridade, atualização diária)
 	entries.push(urlEntry(`${siteUrl}/blog`, todayIso, "daily", 1.0));
-	entries.push(urlEntry(`${siteUrl}/posts`, todayIso, "daily", 0.8));
+	entries.push(urlEntry(`${siteUrl}/blog/posts`, todayIso, "daily", 0.8));
 
 	for (const post of posts) {
 		const slug = post.data.slug || post.id;
 		if (!slug) continue;
 		const lastmod = lastModIso(post);
 		entries.push(
-			urlEntry(`${siteUrl}/posts/${slug}`, lastmod, "weekly", 0.7),
+			urlEntry(`${siteUrl}/blog/posts/${slug}`, lastmod, "weekly", 0.7),
 		);
 	}
 
@@ -44,7 +44,7 @@ export const GET: APIRoute = async ({ site, url }) => {
 		if (!slug) continue;
 		const lastmod = lastModIso(page);
 		entries.push(
-			urlEntry(`${siteUrl}/pages/${slug}`, lastmod, "monthly", 0.5),
+			urlEntry(`${siteUrl}/blog/pages/${slug}`, lastmod, "monthly", 0.5),
 		);
 	}
 
