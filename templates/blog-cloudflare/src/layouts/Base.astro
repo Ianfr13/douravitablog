@@ -1441,11 +1441,13 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 
 				.footer-grid {
-					grid-template-columns: 1fr;
+					grid-template-columns: 1fr 1fr;
+					gap: var(--spacing-8) var(--spacing-6);
 				}
 
-				.footer-brand {
-					grid-column: span 1;
+				.footer-brand,
+				.footer-widgets-section {
+					grid-column: span 2;
 				}
 
 				.footer-bottom {
