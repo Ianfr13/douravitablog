@@ -6,19 +6,16 @@ import {
 } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import PostCard from "../components/PostCard.astro";
 import CategoriesBar from "../components/CategoriesBar.astro";
-import { getReadingTime } from "../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
-// Limit to what we render (1 hero + 2 top secondary + 4 lista compacta).
-// The DB does the slicing instead of fetching every post and discarding tail.
+// 1 featured + 6 grid = 7 posts. +1 lookahead pra detectar "ver todos".
 const POSTS_PER_PAGE = 7;
 
 const [{ entries: posts, cacheHint }, settings] = await Promise.all([
 	getEmDashCollection("posts", {
 		orderBy: { published_at: "desc" },
-		limit: POSTS_PER_PAGE + 1, // +1 to detect "view all" need
+		limit: POSTS_PER_PAGE + 1,
 	}),
 	getSiteSettings(),
 ]);
@@ -26,74 +23,35 @@ const { siteTitle, siteTagline } = resolveBlogSiteIdentity(settings);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
-// Edge cache: ver comentario em posts/[slug].astro.
 Astro.response.headers.set(
 	"Cache-Control",
 	"public, s-maxage=60, stale-while-revalidate=86400",
 );
 
-// Trim the lookahead post used to detect overflow
 const visiblePosts = posts.slice(0, POSTS_PER_PAGE);
 const hasMorePosts = posts.length > POSTS_PER_PAGE;
 
-// Find the first post with a featured image for the hero
+// Featured = primeiro post com imagem. Os outros 6 vão pro grid.
 const featuredPost = visiblePosts.find((p) => p.data.featured_image);
 const featuredIndex = featuredPost ? visiblePosts.indexOf(featuredPost) : -1;
-
-// Get remaining posts (exclude featured if found, limit to 6: 2 top secondary + 4 lista compacta)
 const gridPosts = visiblePosts.filter((_, i) => i !== featuredIndex).slice(0, 6);
 
-// Single batched query for tags across the featured post + grid posts.
-// Avoids the N+1 pattern of calling getEntryTerms() per entry.
-// Bylines are already hydrated on entry.data.bylines by getEmDashCollection.
-const tagEntryIds = [
+const entryIds = [
 	...(featuredPost ? [featuredPost.data.id] : []),
 	...gridPosts.map((p) => p.data.id),
 ];
-const tagsByEntry = await getTermsForEntries("posts", tagEntryIds, "tag");
-const categoriesByEntry = await getTermsForEntries(
-	"posts",
-	tagEntryIds,
-	"category",
-);
+const categoriesByEntry = await getTermsForEntries("posts", entryIds, "category");
 
-const featuredTags = featuredPost
-	? (tagsByEntry.get(featuredPost.data.id) ?? []).map((t) => ({
-			slug: t.slug,
-			label: t.label,
-		}))
-	: [];
-const featuredBylines = featuredPost?.data.bylines ?? [];
 const featuredCategory = featuredPost
 	? (categoriesByEntry.get(featuredPost.data.id) ?? [])[0]
 	: undefined;
 
-const gridPostsWithTags = gridPosts.map((post) => ({
+const gridPostsWithCategory = gridPosts.map((post) => ({
 	post,
-	tags: (tagsByEntry.get(post.data.id) ?? []).map((t) => ({
-		slug: t.slug,
-		label: t.label,
-	})),
 	category: ((categoriesByEntry.get(post.data.id) ?? [])[0]) as
 		| { slug: string; label: string }
 		| undefined,
-	bylines: post.data.bylines ?? [],
 }));
-
-// Top 2 e 3 (cards horizontais ao lado do hero featured)
-const topSecondaryPostsWithTags = gridPostsWithTags.slice(0, 2);
-// Posts da lista compacta (estilo Tua Saúde, sem imagem)
-const compactListPostsWithTags = gridPostsWithTags.slice(2, 6);
-
-// Format date helper
-function formatDate(date: Date | null | undefined) {
-	if (!date) return null;
-	return date.toLocaleDateString("pt-BR", {
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	});
-}
 ---
 
 <Base title={siteTitle} description={siteTagline}>
@@ -109,7 +67,7 @@ function formatDate(date: Date | null | undefined) {
 			</section>
 		) : (
 			<div class="home-content">
-				{/* Featured Post - Side by side */}
+				{/* Featured Post — destaque grande, imagem ao lado + categoria/título/excerpt */}
 				{featuredPost && (
 					<section class="featured-section">
 						<div class="featured-grid">
@@ -119,44 +77,6 @@ function formatDate(date: Date | null | undefined) {
 								</div>
 							</a>
 							<div class="featured-content">
-								<div class="featured-meta">
-									{featuredBylines.length > 0 && (
-										<>
-											<div class="featured-bylines">
-												{featuredBylines.slice(0, 2).map((credit, index) => (
-													<>
-														{index > 0 && <span class="byline-sep">,</span>}
-														<span class="featured-byline">
-															{credit.byline.avatarMediaId && (
-																<img
-																	src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-																	alt={credit.byline.displayName}
-																	class="featured-byline-avatar"
-																/>
-															)}
-															<span class="featured-byline-name">
-																{credit.byline.displayName}
-															</span>
-														</span>
-													</>
-												))}
-												{featuredBylines.length > 2 && (
-													<span class="byline-more">
-														+{featuredBylines.length - 2}
-													</span>
-												)}
-											</div>
-											<span class="meta-dot" />
-										</>
-									)}
-									{formatDate(featuredPost.data.publishedAt) && (
-										<time>{formatDate(featuredPost.data.publishedAt)}</time>
-									)}
-									<span class="meta-dot" />
-									<span>
-										{getReadingTime(featuredPost.data.content)} min de leitura
-									</span>
-								</div>
 								{featuredCategory && (
 									<a
 										href={`/blog/category/${featuredCategory.slug}`}
@@ -174,69 +94,17 @@ function formatDate(date: Date | null | undefined) {
 								{featuredPost.data.excerpt && (
 									<p class="featured-excerpt">{featuredPost.data.excerpt}</p>
 								)}
-								{featuredTags.length > 0 && (
-									<div class="featured-tags">
-										{featuredTags.map((tag) => (
-											<a href={`/blog/tag/${tag.slug}`} class="featured-tag">
-												{tag.label}
-											</a>
-										))}
-									</div>
-								)}
 							</div>
 						</div>
 					</section>
 				)}
 
-				{/* Top 2 e 3: 2 cards horizontais (imagem pequena + texto) abaixo
-				 * do hero. Estilo Tua Saúde — "mais acessados" do momento. */}
-				{topSecondaryPostsWithTags.length > 0 && (
-					<section class="top-secondary-section">
-						<div class="top-secondary-grid">
-							{topSecondaryPostsWithTags.map(({ post, category }) => (
-								<article class="top-secondary-card">
-									{post.data.featured_image && (
-										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="top-secondary-image-link"
-										>
-											<Image image={post.data.featured_image} />
-										</a>
-									)}
-									<div class="top-secondary-content">
-										{category && (
-											<a
-												href={`/blog/category/${category.slug}`}
-												class="top-secondary-category"
-											>
-												{category.label}
-											</a>
-										)}
-										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="top-secondary-title-link"
-										>
-											<h3 class="top-secondary-title">
-												{post.data.title ?? "Sem título"}
-											</h3>
-										</a>
-										{post.data.excerpt && (
-											<p class="top-secondary-excerpt">{post.data.excerpt}</p>
-										)}
-									</div>
-								</article>
-							))}
-						</div>
-					</section>
-				)}
-
-				{/* Categories bar: barra horizontal limpa estilo Tua Saúde.
-				 * Desktop only — em mobile o acesso é via menu hamburger no header. */}
+				{/* Categories bar */}
 				<CategoriesBar />
 
-				{/* Latest Posts — lista compacta estilo Tua Saúde: badge categoria
-				 * + título + data, sem imagens, separados por divisor fino. */}
-				{compactListPostsWithTags.length > 0 && (
+				{/* Main grid: 2 colunas, cards grandes estilo tuasaude.
+				 * Imagem 16:9 no topo + categoria + título + excerpt. */}
+				{gridPostsWithCategory.length > 0 && (
 					<section class="posts-section">
 						<header class="section-header">
 							<h2 class="section-title">Conteúdos mais recentes</h2>
@@ -246,33 +114,44 @@ function formatDate(date: Date | null | undefined) {
 								</a>
 							)}
 						</header>
-						<ul class="posts-list-compact">
-							{compactListPostsWithTags.map(({ post, category }) => (
-								<li class="posts-list-item">
-									{category && (
+						<div class="home-grid">
+							{gridPostsWithCategory.map(({ post, category }) => (
+								<article class="home-card">
+									{post.data.featured_image && (
 										<a
-											href={`/blog/category/${category.slug}`}
-											class="posts-list-category"
+											href={`/blog/posts/${post.slug ?? post.id}`}
+											class="home-card-image-link"
+											aria-label={post.data.title}
 										>
-											{category.label}
+											<div class="home-card-image">
+												<Image image={post.data.featured_image} />
+											</div>
 										</a>
 									)}
-									<a
-										href={`/blog/posts/${post.slug ?? post.id}`}
-										class="posts-list-title-link"
-									>
-										<h3 class="posts-list-title">
-											{post.data.title ?? "Sem título"}
-										</h3>
-									</a>
-									{post.data.publishedAt && (
-										<time class="posts-list-date">
-											Criado em {post.data.publishedAt.toLocaleDateString("pt-BR")}
-										</time>
-									)}
-								</li>
+									<div class="home-card-body">
+										{category && (
+											<a
+												href={`/blog/category/${category.slug}`}
+												class="home-card-category"
+											>
+												{category.label}
+											</a>
+										)}
+										<a
+											href={`/blog/posts/${post.slug ?? post.id}`}
+											class="home-card-title-link"
+										>
+											<h3 class="home-card-title">
+												{post.data.title ?? "Sem título"}
+											</h3>
+										</a>
+										{post.data.excerpt && (
+											<p class="home-card-excerpt">{post.data.excerpt}</p>
+										)}
+									</div>
+								</article>
 							))}
-						</ul>
+						</div>
 					</section>
 				)}
 			</div>
@@ -282,9 +161,6 @@ function formatDate(date: Date | null | undefined) {
 
 <style>
 	.home-page-heading {
-		/* Visualmente escondido mas presente no DOM pra SEO/screen readers.
-		   Browsers/Google enxergam o H1 da pagina (nome do blog); usuario
-		   vidente ve direto o featured post (que agora e H2). */
 		position: absolute;
 		width: 1px;
 		height: 1px;
@@ -302,7 +178,7 @@ function formatDate(date: Date | null | undefined) {
 		padding: var(--spacing-16) var(--spacing-6);
 	}
 
-	/* Featured Section - Side by side */
+	/* Featured Section */
 	.featured-section {
 		margin-bottom: var(--spacing-16);
 	}
@@ -333,8 +209,6 @@ function formatDate(date: Date | null | undefined) {
 		transition: transform 0.4s ease;
 	}
 
-	/* Desktop: limita altura da imagem do hero featured pra não dominar
-	 * a dobra. Mobile (<= 900px) usa altura natural via aspect-ratio. */
 	@media (min-width: 901px) {
 		.featured-image,
 		.featured-image img {
@@ -351,59 +225,6 @@ function formatDate(date: Date | null | undefined) {
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-4);
-	}
-
-	.featured-meta {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		column-gap: var(--spacing-3);
-		row-gap: var(--spacing-1);
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
-	}
-
-	.meta-dot {
-		width: 3px;
-		height: 3px;
-		border-radius: 50%;
-		background: var(--color-muted);
-	}
-
-	/* Featured bylines */
-	.featured-bylines {
-		display: flex;
-		align-items: center;
-		gap: 2px;
-	}
-
-	.featured-byline {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-2);
-	}
-
-	.featured-byline-avatar {
-		width: var(--avatar-size-md);
-		height: var(--avatar-size-md);
-		border-radius: 50%;
-		object-fit: cover;
-	}
-
-	.featured-byline-name {
-		font-weight: 500;
-		color: var(--color-text-secondary);
-	}
-
-	.byline-sep {
-		color: var(--color-muted);
-		margin-right: 2px;
-	}
-
-	.byline-more {
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		margin-left: 2px;
 	}
 
 	.featured-title-link {
@@ -432,6 +253,7 @@ function formatDate(date: Date | null | undefined) {
 
 	.featured-category {
 		display: inline-block;
+		align-self: start;
 		padding: var(--tag-padding-y) var(--spacing-3);
 		font-size: var(--font-size-sm);
 		font-weight: 500;
@@ -439,36 +261,10 @@ function formatDate(date: Date | null | undefined) {
 		background: var(--color-accent-ring, var(--color-surface));
 		border-radius: var(--radius);
 		text-decoration: none;
-		margin-bottom: var(--spacing-3);
 		transition: background var(--transition-fast);
 	}
 
 	.featured-category:hover {
-		background: var(--color-border);
-	}
-
-	.featured-tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-2);
-		margin-top: var(--spacing-2);
-	}
-
-	.featured-tag {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-2);
-		font-size: var(--font-size-xs);
-		color: var(--color-text-secondary);
-		background: var(--color-surface);
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
-	}
-
-	.featured-tag:hover {
-		color: var(--color-text);
 		background: var(--color-border);
 	}
 
@@ -501,170 +297,96 @@ function formatDate(date: Date | null | undefined) {
 		color: var(--color-accent-hover);
 	}
 
-	/* Top secondary cards (top 2 e 3) — abaixo do hero featured */
-	.top-secondary-section {
-		margin-top: var(--spacing-12);
-		margin-bottom: var(--spacing-8);
-	}
-
-	.top-secondary-grid {
+	/* Home grid — estilo tuasaude: 2 colunas, imagem grande no topo */
+	.home-grid {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--spacing-8);
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--spacing-12) var(--spacing-10);
 	}
 
-	.top-secondary-card {
-		display: grid;
-		grid-template-columns: 160px 1fr;
-		gap: var(--spacing-4);
-		align-items: start;
-	}
-
-	.top-secondary-image-link {
-		display: block;
-		overflow: hidden;
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-	}
-
-	.top-secondary-image-link img {
-		width: 100%;
-		height: 100%;
-		aspect-ratio: 4 / 3;
-		object-fit: cover;
-		transition: transform 0.4s ease;
-	}
-
-	.top-secondary-image-link:hover img,
-	.top-secondary-card:has(.top-secondary-title-link:hover) .top-secondary-image-link img {
-		transform: scale(1.04);
-	}
-
-	.top-secondary-content {
+	.home-card {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-2);
-		min-width: 0;
 	}
 
-	.top-secondary-category {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-3);
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		color: var(--color-accent);
-		background: var(--color-accent-ring, var(--color-surface));
-		border-radius: var(--radius);
-		text-decoration: none;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		align-self: start;
-		margin-bottom: var(--spacing-1);
-		transition: background var(--transition-fast);
-	}
-
-	.top-secondary-category:hover {
-		background: var(--color-border);
-	}
-
-	.top-secondary-title-link {
+	.home-card-image-link {
+		display: block;
 		text-decoration: none;
 		color: inherit;
 	}
 
-	.top-secondary-title {
-		font-size: var(--font-size-xl);
+	.home-card-image {
+		aspect-ratio: 16 / 9;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		margin-bottom: var(--spacing-4);
+	}
+
+	.home-card-image img {
+		width: 100% !important;
+		height: 100% !important;
+		object-fit: cover !important;
+		transition: transform 0.3s ease;
+	}
+
+	.home-card-image-link:hover .home-card-image img {
+		transform: scale(1.03);
+	}
+
+	.home-card-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+	}
+
+	.home-card-category {
+		display: inline-block;
+		align-self: start;
+		padding: var(--tag-padding-y) var(--spacing-3);
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+		border-radius: var(--radius);
+		text-decoration: none;
+		transition: background var(--transition-fast);
+	}
+
+	.home-card-category:hover {
+		background: var(--color-border);
+	}
+
+	.home-card-title-link {
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.home-card-title {
+		font-size: var(--font-size-2xl);
 		font-weight: 700;
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
 		transition: color var(--transition-fast);
 	}
 
-	.top-secondary-title-link:hover .top-secondary-title {
+	.home-card-title-link:hover .home-card-title {
 		color: var(--color-accent);
 	}
 
-	.top-secondary-excerpt {
-		font-size: var(--font-size-sm);
-		color: var(--color-text-secondary);
+	.home-card-excerpt {
+		font-size: var(--font-size-base);
 		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
 		display: -webkit-box;
-		-webkit-line-clamp: 2;
+		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
 
-	/* Posts Grid (legacy — mantido caso seja reutilizado) */
-	.posts-section {
-	}
-
-	.posts-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--spacing-12) var(--spacing-8);
-	}
-
-	/* Posts list compact (estilo Tua Saúde: badge + título + data, sem fotos) */
-	.posts-list-compact {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-
-	.posts-list-item {
-		padding: var(--spacing-6) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.posts-list-item:last-child {
-		border-bottom: none;
-	}
-
-	.posts-list-category {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-3);
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		color: var(--color-accent);
-		background: var(--color-accent-ring, var(--color-surface));
-		border-radius: var(--radius);
-		text-decoration: none;
-		margin-bottom: var(--spacing-3);
-		transition: background var(--transition-fast);
-	}
-
-	.posts-list-category:hover {
-		background: var(--color-border);
-	}
-
-	.posts-list-title-link {
-		display: block;
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.posts-list-title {
-		font-size: clamp(var(--font-size-lg), 2.2vw, var(--font-size-2xl));
-		font-weight: 700;
-		line-height: var(--leading-snug);
-		letter-spacing: var(--tracking-snug);
-		margin-bottom: var(--spacing-2);
-		transition: color var(--transition-fast);
-	}
-
-	.posts-list-title-link:hover .posts-list-title {
-		color: var(--color-accent);
-	}
-
-	.posts-list-date {
-		display: block;
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
-	}
-
-	/* Empty State */
+	/* Empty state */
 	.empty-state {
 		display: flex;
 		flex-direction: column;
@@ -708,31 +430,18 @@ function formatDate(date: Date | null | undefined) {
 			padding: var(--spacing-6) var(--spacing-4) var(--spacing-12);
 		}
 
-		.featured-image-link {
-			margin-left: 0;
-		}
-
 		.featured-grid {
 			grid-template-columns: 1fr;
 			gap: var(--spacing-6);
-		}
-
-		.featured-image {
-			border-radius: var(--radius-lg);
 		}
 
 		.featured-image img {
 			aspect-ratio: 16 / 9;
 		}
 
-		.posts-grid {
-			grid-template-columns: repeat(2, 1fr);
-			gap: var(--spacing-8) var(--spacing-6);
-		}
-
-		.top-secondary-grid {
+		.home-grid {
 			grid-template-columns: 1fr;
-			gap: var(--spacing-6);
+			gap: var(--spacing-10);
 		}
 	}
 
@@ -741,23 +450,8 @@ function formatDate(date: Date | null | undefined) {
 			font-size: var(--font-size-2xl);
 		}
 
-		.posts-grid {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-8);
-		}
-
-		.top-secondary-card {
-			grid-template-columns: 110px 1fr;
-			gap: var(--spacing-3);
-		}
-
-		.top-secondary-title {
-			font-size: var(--font-size-base);
-		}
-
-		/* Em mobile pequeno o excerpt come muito espaço; corta. */
-		.top-secondary-excerpt {
-			display: none;
+		.home-card-title {
+			font-size: var(--font-size-xl);
 		}
 	}
 </style>
