@@ -154,6 +154,7 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 	publishedTime={post.data.publishedAt?.toISOString() ?? null}
 	modifiedTime={post.data.updatedAt.toISOString()}
 	content={{ collection: "posts", id: post.data.id, slug }}
+	shareData={{ url: pageUrl, title: post.data.title }}
 >
 	<article class="article">
 		{/* Three-column layout */}
