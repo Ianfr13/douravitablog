@@ -236,6 +236,21 @@ const isLoggedIn = !!Astro.locals.user;
 
 		<footer class="site-footer">
 			<div class="footer-inner">
+				<div class="footer-institutional">
+					<p class="footer-about">
+						A DouraVita é um espaço informativo e educativo dedicado a quem
+						tem 55 anos ou mais. Reunimos conteúdo baseado em ciência sobre
+						suplementação, movimento, nutrição, saúde mental e cuidado com a
+						família, sempre em linguagem acessível. As informações
+						publicadas têm caráter educacional e não substituem o diagnóstico
+						ou tratamento de um profissional de saúde qualificado, nem
+						dispensam consulta médica.
+					</p>
+					<p class="footer-address">
+						<strong>Endereço:</strong> Av. Carmela Dutra, 180, Galpão 20,
+						Jardim Presidente Dutra, Guarulhos/SP, CEP 07170-150
+					</p>
+				</div>
 				<div class="footer-grid">
 					<div class="footer-brand">
 						<a href="/blog" class="footer-logo">
@@ -251,6 +266,12 @@ const isLoggedIn = !!Astro.locals.user;
 						<ul class="footer-links">
 							<li><a href="/blog">Início</a></li>
 							<li><a href="/blog/posts">Todos os artigos</a></li>
+							<li><a href="/blog/categorias">Categorias</a></li>
+						</ul>
+					</div>
+					<div class="footer-nav">
+						<h2 class="footer-heading">Institucional</h2>
+						<ul class="footer-links">
 							{
 								pages.slice(0, 3).map((page) => (
 									<li>
@@ -276,21 +297,6 @@ const isLoggedIn = !!Astro.locals.user;
 						</div>
 						<WidgetArea name="footer" />
 					</div>
-				</div>
-				<div class="footer-institutional">
-					<p class="footer-about">
-						A DouraVita é um espaço informativo e educativo dedicado a quem
-						tem 55 anos ou mais. Reunimos conteúdo baseado em ciência sobre
-						suplementação, movimento, nutrição, saúde mental e cuidado com a
-						família, sempre em linguagem acessível. As informações
-						publicadas têm caráter educacional e não substituem o diagnóstico
-						ou tratamento de um profissional de saúde qualificado, nem
-						dispensam consulta médica.
-					</p>
-					<p class="footer-address">
-						<strong>Endereço:</strong> Av. Carmela Dutra, 180, Galpão 20,
-						Jardim Presidente Dutra, Guarulhos/SP, CEP 07170-150
-					</p>
 				</div>
 				<div class="footer-bottom">
 					<p class="footer-copyright">
@@ -1035,10 +1041,9 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.footer-institutional {
-				max-width: var(--wide-width);
-				margin: 0 auto;
-				padding: var(--spacing-8) 0;
-				border-top: 1px solid var(--color-border-subtle);
+				padding-bottom: var(--spacing-8);
+				margin-bottom: var(--spacing-8);
+				border-bottom: 1px solid var(--color-border-subtle);
 			}
 
 			.footer-about {
