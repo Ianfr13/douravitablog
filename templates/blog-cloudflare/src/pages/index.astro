@@ -9,8 +9,8 @@ import Base from "../layouts/Base.astro";
 import CategoriesBar from "../components/CategoriesBar.astro";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
-// 1 featured + 6 grid = 7 posts. +1 lookahead pra detectar "ver todos".
-const POSTS_PER_PAGE = 7;
+// 6 cards no topo (2 large + 4 small) + 4 itens lista compacta + 1 lookahead.
+const POSTS_PER_PAGE = 10;
 
 const [{ entries: posts, cacheHint }, settings] = await Promise.all([
 	getEmDashCollection("posts", {
@@ -31,27 +31,32 @@ Astro.response.headers.set(
 const visiblePosts = posts.slice(0, POSTS_PER_PAGE);
 const hasMorePosts = posts.length > POSTS_PER_PAGE;
 
-// Featured = primeiro post com imagem. Os outros 6 vão pro grid.
-const featuredPost = visiblePosts.find((p) => p.data.featured_image);
-const featuredIndex = featuredPost ? visiblePosts.indexOf(featuredPost) : -1;
-const gridPosts = visiblePosts.filter((_, i) => i !== featuredIndex).slice(0, 6);
+// 6 cards superiores: 2 large + 4 small. Compact list: 4 títulos seguintes.
+const largeCards = visiblePosts.slice(0, 2);
+const smallCards = visiblePosts.slice(2, 6);
+const compactList = visiblePosts.slice(6, 10);
 
-const entryIds = [
-	...(featuredPost ? [featuredPost.data.id] : []),
-	...gridPosts.map((p) => p.data.id),
+const cardEntryIds = [
+	...largeCards.map((p) => p.data.id),
+	...smallCards.map((p) => p.data.id),
 ];
-const categoriesByEntry = await getTermsForEntries("posts", entryIds, "category");
+const categoriesByEntry = await getTermsForEntries(
+	"posts",
+	cardEntryIds,
+	"category",
+);
 
-const featuredCategory = featuredPost
-	? (categoriesByEntry.get(featuredPost.data.id) ?? [])[0]
-	: undefined;
+function withCategory(post: typeof visiblePosts[0]) {
+	return {
+		post,
+		category: ((categoriesByEntry.get(post.data.id) ?? [])[0]) as
+			| { slug: string; label: string }
+			| undefined,
+	};
+}
 
-const gridPostsWithCategory = gridPosts.map((post) => ({
-	post,
-	category: ((categoriesByEntry.get(post.data.id) ?? [])[0]) as
-		| { slug: string; label: string }
-		| undefined,
-}));
+const largeCardsWithCategory = largeCards.map(withCategory);
+const smallCardsWithCategory = smallCards.map(withCategory);
 ---
 
 <Base title={siteTitle} description={siteTagline}>
@@ -67,44 +72,96 @@ const gridPostsWithCategory = gridPosts.map((post) => ({
 			</section>
 		) : (
 			<div class="home-content">
-				{/* Featured Post — destaque grande, imagem ao lado + categoria/título/excerpt */}
-				{featuredPost && (
-					<section class="featured-section">
-						<div class="featured-grid">
-							<a href={`/blog/posts/${featuredPost.slug ?? featuredPost.id}`} class="featured-image-link">
-								<div class="featured-image">
-									<Image image={featuredPost.data.featured_image} />
-								</div>
-							</a>
-							<div class="featured-content">
-								{featuredCategory && (
-									<a
-										href={`/blog/category/${featuredCategory.slug}`}
-										class="featured-category"
-									>
-										{featuredCategory.label}
-									</a>
-								)}
-								<a
-									href={`/blog/posts/${featuredPost.slug ?? featuredPost.id}`}
-									class="featured-title-link"
-								>
-									<h2 class="featured-title">{featuredPost.data.title}</h2>
-								</a>
-								{featuredPost.data.excerpt && (
-									<p class="featured-excerpt">{featuredPost.data.excerpt}</p>
-								)}
-							</div>
+				{/* Top: 2 cards grandes lado a lado, imagem 16:9 no topo */}
+				{largeCardsWithCategory.length > 0 && (
+					<section class="large-cards-section">
+						<div class="large-cards-grid">
+							{largeCardsWithCategory.map(({ post, category }) => (
+								<article class="large-card">
+									{post.data.featured_image && (
+										<a
+											href={`/blog/posts/${post.slug ?? post.id}`}
+											class="large-card-image-link"
+											aria-label={post.data.title}
+										>
+											<div class="large-card-image">
+												<Image image={post.data.featured_image} />
+											</div>
+										</a>
+									)}
+									<div class="large-card-body">
+										{category && (
+											<a
+												href={`/blog/category/${category.slug}`}
+												class="large-card-category"
+											>
+												{category.label}
+											</a>
+										)}
+										<a
+											href={`/blog/posts/${post.slug ?? post.id}`}
+											class="large-card-title-link"
+										>
+											<h2 class="large-card-title">
+												{post.data.title ?? "Sem título"}
+											</h2>
+										</a>
+										{post.data.excerpt && (
+											<p class="large-card-excerpt">{post.data.excerpt}</p>
+										)}
+									</div>
+								</article>
+							))}
 						</div>
 					</section>
 				)}
 
-				{/* Categories bar */}
+				{/* 4 cards menores: imagem lateral pequena */}
+				{smallCardsWithCategory.length > 0 && (
+					<section class="small-cards-section">
+						<div class="small-cards-grid">
+							{smallCardsWithCategory.map(({ post, category }) => (
+								<article class="small-card">
+									{post.data.featured_image && (
+										<a
+											href={`/blog/posts/${post.slug ?? post.id}`}
+											class="small-card-image-link"
+											aria-label={post.data.title}
+										>
+											<Image image={post.data.featured_image} />
+										</a>
+									)}
+									<div class="small-card-body">
+										{category && (
+											<a
+												href={`/blog/category/${category.slug}`}
+												class="small-card-category"
+											>
+												{category.label}
+											</a>
+										)}
+										<a
+											href={`/blog/posts/${post.slug ?? post.id}`}
+											class="small-card-title-link"
+										>
+											<h3 class="small-card-title">
+												{post.data.title ?? "Sem título"}
+											</h3>
+										</a>
+										{post.data.excerpt && (
+											<p class="small-card-excerpt">{post.data.excerpt}</p>
+										)}
+									</div>
+								</article>
+							))}
+						</div>
+					</section>
+				)}
+
 				<CategoriesBar />
 
-				{/* Main grid: 2 colunas, cards grandes estilo tuasaude.
-				 * Imagem 16:9 no topo + categoria + título + excerpt. */}
-				{gridPostsWithCategory.length > 0 && (
+				{/* Lista compacta: só títulos clicáveis dos próximos posts */}
+				{compactList.length > 0 && (
 					<section class="posts-section">
 						<header class="section-header">
 							<h2 class="section-title">Conteúdos mais recentes</h2>
@@ -114,44 +171,25 @@ const gridPostsWithCategory = gridPosts.map((post) => ({
 								</a>
 							)}
 						</header>
-						<div class="home-grid">
-							{gridPostsWithCategory.map(({ post, category }) => (
-								<article class="home-card">
-									{post.data.featured_image && (
-										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="home-card-image-link"
-											aria-label={post.data.title}
-										>
-											<div class="home-card-image">
-												<Image image={post.data.featured_image} />
-											</div>
-										</a>
+						<ul class="posts-list-compact">
+							{compactList.map((post) => (
+								<li class="posts-list-item">
+									<a
+										href={`/blog/posts/${post.slug ?? post.id}`}
+										class="posts-list-title-link"
+									>
+										<h3 class="posts-list-title">
+											{post.data.title ?? "Sem título"}
+										</h3>
+									</a>
+									{post.data.publishedAt && (
+										<time class="posts-list-date">
+											{post.data.publishedAt.toLocaleDateString("pt-BR")}
+										</time>
 									)}
-									<div class="home-card-body">
-										{category && (
-											<a
-												href={`/blog/category/${category.slug}`}
-												class="home-card-category"
-											>
-												{category.label}
-											</a>
-										)}
-										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="home-card-title-link"
-										>
-											<h3 class="home-card-title">
-												{post.data.title ?? "Sem título"}
-											</h3>
-										</a>
-										{post.data.excerpt && (
-											<p class="home-card-excerpt">{post.data.excerpt}</p>
-										)}
-									</div>
-								</article>
+								</li>
 							))}
-						</div>
+						</ul>
 					</section>
 				)}
 			</div>
@@ -178,85 +216,61 @@ const gridPostsWithCategory = gridPosts.map((post) => ({
 		padding: var(--spacing-16) var(--spacing-6);
 	}
 
-	/* Featured Section */
-	.featured-section {
-		margin-bottom: var(--spacing-16);
+	/* Large cards (2 topo) — imagem 16:9 grande no topo */
+	.large-cards-section {
+		margin-bottom: var(--spacing-12);
 	}
 
-	.featured-grid {
+	.large-cards-grid {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--spacing-8);
-		align-items: center;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--spacing-10);
 	}
 
-	.featured-image-link {
-		grid-column: 1 / 3;
-		display: block;
-	}
-
-	.featured-image {
-		overflow: hidden;
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-	}
-
-	.featured-image img {
-		width: 100%;
-		height: auto;
-		aspect-ratio: 16 / 9;
-		object-fit: cover;
-		transition: transform 0.4s ease;
-	}
-
-	@media (min-width: 901px) {
-		.featured-image,
-		.featured-image img {
-			max-height: 420px;
-		}
-	}
-
-	.featured-image-link:hover .featured-image img,
-	.featured-grid:has(.featured-title-link:hover) .featured-image img {
-		transform: scale(1.02);
-	}
-
-	.featured-content {
+	.large-card {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-4);
 	}
 
-	.featured-title-link {
+	.large-card-image-link {
+		display: block;
 		text-decoration: none;
 		color: inherit;
 	}
 
-	.featured-title {
-		font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-4xl));
-		font-weight: 700;
-		line-height: var(--leading-tight);
-		letter-spacing: var(--tracking-tight);
-		transition: color var(--transition-fast);
+	.large-card-image {
+		aspect-ratio: 16 / 9;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		margin-bottom: var(--spacing-4);
 	}
 
-	.featured-title-link:hover .featured-title,
-	.featured-grid:has(.featured-image-link:hover) .featured-title {
-		color: var(--color-accent);
+	.large-card-image img {
+		width: 100% !important;
+		height: 100% !important;
+		object-fit: cover !important;
+		transition: transform 0.3s ease;
 	}
 
-	.featured-excerpt {
-		font-size: var(--font-size-lg);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
+	.large-card-image-link:hover .large-card-image img {
+		transform: scale(1.03);
 	}
 
-	.featured-category {
+	.large-card-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+	}
+
+	.large-card-category {
 		display: inline-block;
 		align-self: start;
 		padding: var(--tag-padding-y) var(--spacing-3);
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-xs);
 		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
 		color: var(--color-accent);
 		background: var(--color-accent-ring, var(--color-surface));
 		border-radius: var(--radius);
@@ -264,16 +278,133 @@ const gridPostsWithCategory = gridPosts.map((post) => ({
 		transition: background var(--transition-fast);
 	}
 
-	.featured-category:hover {
+	.large-card-category:hover {
 		background: var(--color-border);
 	}
 
-	/* Section header */
+	.large-card-title-link {
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.large-card-title {
+		font-size: clamp(var(--font-size-xl), 2.6vw, var(--font-size-2xl));
+		font-weight: 700;
+		line-height: var(--leading-snug);
+		letter-spacing: var(--tracking-snug);
+		transition: color var(--transition-fast);
+	}
+
+	.large-card-title-link:hover .large-card-title {
+		color: var(--color-accent);
+	}
+
+	.large-card-excerpt {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	/* Small cards (4 abaixo) — imagem lateral pequena, estilo Tua Saude */
+	.small-cards-section {
+		margin-bottom: var(--spacing-16);
+	}
+
+	.small-cards-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--spacing-8);
+	}
+
+	.small-card {
+		display: grid;
+		grid-template-columns: 160px 1fr;
+		gap: var(--spacing-4);
+		align-items: start;
+	}
+
+	.small-card-image-link {
+		display: block;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+	}
+
+	.small-card-image-link img {
+		width: 100% !important;
+		height: 100% !important;
+		aspect-ratio: 4 / 3;
+		object-fit: cover !important;
+		transition: transform 0.3s ease;
+	}
+
+	.small-card-image-link:hover img {
+		transform: scale(1.04);
+	}
+
+	.small-card-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+		min-width: 0;
+	}
+
+	.small-card-category {
+		display: inline-block;
+		align-self: start;
+		padding: var(--tag-padding-y) var(--spacing-3);
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+		border-radius: var(--radius);
+		text-decoration: none;
+		transition: background var(--transition-fast);
+	}
+
+	.small-card-category:hover {
+		background: var(--color-border);
+	}
+
+	.small-card-title-link {
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.small-card-title {
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		line-height: var(--leading-snug);
+		letter-spacing: var(--tracking-snug);
+		transition: color var(--transition-fast);
+	}
+
+	.small-card-title-link:hover .small-card-title {
+		color: var(--color-accent);
+	}
+
+	.small-card-excerpt {
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	/* Section header (lista compacta) */
 	.section-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
-		margin-bottom: var(--spacing-8);
+		margin-bottom: var(--spacing-6);
 		padding-bottom: var(--spacing-4);
 		border-bottom: 1px solid var(--color-border-subtle);
 	}
@@ -297,93 +428,45 @@ const gridPostsWithCategory = gridPosts.map((post) => ({
 		color: var(--color-accent-hover);
 	}
 
-	/* Home grid — estilo tuasaude: 2 colunas, imagem grande no topo */
-	.home-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: var(--spacing-12) var(--spacing-10);
+	/* Lista compacta de títulos clicáveis */
+	.posts-list-compact {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 	}
 
-	.home-card {
-		display: flex;
-		flex-direction: column;
+	.posts-list-item {
+		padding: var(--spacing-5) 0;
+		border-bottom: 1px solid var(--color-border-subtle);
 	}
 
-	.home-card-image-link {
+	.posts-list-item:last-child {
+		border-bottom: none;
+	}
+
+	.posts-list-title-link {
 		display: block;
 		text-decoration: none;
 		color: inherit;
 	}
 
-	.home-card-image {
-		aspect-ratio: 16 / 9;
-		overflow: hidden;
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		margin-bottom: var(--spacing-4);
-	}
-
-	.home-card-image img {
-		width: 100% !important;
-		height: 100% !important;
-		object-fit: cover !important;
-		transition: transform 0.3s ease;
-	}
-
-	.home-card-image-link:hover .home-card-image img {
-		transform: scale(1.03);
-	}
-
-	.home-card-body {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-2);
-	}
-
-	.home-card-category {
-		display: inline-block;
-		align-self: start;
-		padding: var(--tag-padding-y) var(--spacing-3);
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		color: var(--color-accent);
-		background: var(--color-accent-ring, var(--color-surface));
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition: background var(--transition-fast);
-	}
-
-	.home-card-category:hover {
-		background: var(--color-border);
-	}
-
-	.home-card-title-link {
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.home-card-title {
-		font-size: var(--font-size-2xl);
-		font-weight: 700;
+	.posts-list-title {
+		font-size: var(--font-size-lg);
+		font-weight: 600;
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
+		margin-bottom: var(--spacing-1);
 		transition: color var(--transition-fast);
 	}
 
-	.home-card-title-link:hover .home-card-title {
+	.posts-list-title-link:hover .posts-list-title {
 		color: var(--color-accent);
 	}
 
-	.home-card-excerpt {
-		font-size: var(--font-size-base);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
+	.posts-list-date {
+		display: block;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
 	}
 
 	/* Empty state */
@@ -430,28 +513,33 @@ const gridPostsWithCategory = gridPosts.map((post) => ({
 			padding: var(--spacing-6) var(--spacing-4) var(--spacing-12);
 		}
 
-		.featured-grid {
+		.large-cards-grid {
+			grid-template-columns: 1fr;
+			gap: var(--spacing-8);
+		}
+
+		.small-cards-grid {
 			grid-template-columns: 1fr;
 			gap: var(--spacing-6);
-		}
-
-		.featured-image img {
-			aspect-ratio: 16 / 9;
-		}
-
-		.home-grid {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-10);
 		}
 	}
 
 	@media (max-width: 600px) {
-		.featured-title {
-			font-size: var(--font-size-2xl);
+		.large-card-title {
+			font-size: var(--font-size-xl);
 		}
 
-		.home-card-title {
-			font-size: var(--font-size-xl);
+		.small-card {
+			grid-template-columns: 110px 1fr;
+			gap: var(--spacing-3);
+		}
+
+		.small-card-title {
+			font-size: var(--font-size-base);
+		}
+
+		.small-card-excerpt {
+			display: none;
 		}
 	}
 </style>
