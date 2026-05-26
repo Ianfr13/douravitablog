@@ -1322,8 +1322,8 @@ const isLoggedIn = !!Astro.locals.user;
 					flex-wrap: wrap;
 					align-items: center;
 					height: auto;
-					gap: var(--spacing-2);
-					padding: var(--spacing-1) var(--spacing-4);
+					gap: var(--spacing-2) var(--spacing-1);
+					padding: var(--spacing-1) var(--spacing-3);
 				}
 
 				.site-logo-img {
@@ -1340,30 +1340,42 @@ const isLoggedIn = !!Astro.locals.user;
 
 				.mobile-menu-toggle {
 					order: 2;
-					padding: var(--spacing-2) var(--spacing-4);
-					min-height: 40px;
-					font-size: var(--font-size-sm);
+					padding: var(--spacing-1) var(--spacing-3);
+					min-height: 36px;
+					font-size: var(--font-size-xs);
+					letter-spacing: 0;
+					gap: var(--spacing-1);
 					flex-shrink: 0;
 				}
 
 				.mobile-menu-toggle svg {
-					width: 22px;
-					height: 22px;
+					width: 18px;
+					height: 18px;
 				}
 
 				.nav-right {
 					order: 3;
-					flex: 1 1 auto;
+					flex: 1 1 0;
 					display: flex;
 					flex-wrap: nowrap;
 					align-items: center;
-					gap: var(--spacing-2);
+					gap: var(--spacing-1);
 					min-width: 0;
 				}
 
 				.site-search {
-					flex: 1 1 auto;
-					min-width: 0;
+					flex: 1 1 0;
+					min-width: 100px;
+				}
+
+				.nav-theme-switcher {
+					flex-shrink: 0;
+					gap: 2px;
+				}
+
+				.nav-theme-switcher .theme-btn {
+					width: 28px;
+					height: 28px;
 				}
 
 				:global(.site-search-input) {
