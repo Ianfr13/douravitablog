@@ -237,6 +237,12 @@ const isLoggedIn = !!Astro.locals.user;
 		<footer class="site-footer">
 			<div class="footer-inner">
 				<div class="footer-institutional">
+					<a href="/blog" class="footer-logo footer-logo--institutional">
+						{siteLogo
+							? <img src={siteLogo.url} alt={siteLogo.alt || siteTitle} class="footer-logo-img" />
+							: siteTitle
+						}
+					</a>
 					<p class="footer-about">
 						A DouraVita é um espaço informativo e educativo dedicado a quem
 						tem 55 anos ou mais. Reunimos conteúdo baseado em ciência sobre
@@ -253,12 +259,6 @@ const isLoggedIn = !!Astro.locals.user;
 				</div>
 				<div class="footer-grid">
 					<div class="footer-brand">
-						<a href="/blog" class="footer-logo">
-							{siteLogo
-								? <img src={siteLogo.url} alt={siteLogo.alt || siteTitle} class="footer-logo-img" />
-								: siteTitle
-							}
-						</a>
 						<p class="footer-tagline">{siteTagline}</p>
 					</div>
 					<div class="footer-nav">
@@ -1038,6 +1038,11 @@ const isLoggedIn = !!Astro.locals.user;
 				color: var(--color-text-secondary);
 				font-size: var(--font-size-sm);
 				line-height: var(--leading-relaxed);
+			}
+
+			.footer-logo--institutional {
+				display: inline-block;
+				margin-bottom: var(--spacing-4);
 			}
 
 			.footer-institutional {
