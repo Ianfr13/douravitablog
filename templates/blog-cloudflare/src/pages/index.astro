@@ -8,6 +8,8 @@ import {
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
+import creatinaPoteImg from "../assets/creatina-pote.webp";
+import creatinaLaudoImg from "../assets/creatina-laudo.webp";
 
 // Fetch generoso: 30 posts em DESC. Vamos splittar em "momento" (5 mais
 // recentes), "mais lidos" (8 mais antigos) e "recentes" (6 do meio sem
@@ -464,7 +466,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 								<h3 class="edu-subtitle">A creatina Douravita</h3>
 								<div class="edu-product">
 									<img
-										src="/creatina-pote.webp"
+										src={creatinaPoteImg.src}
 										alt="Pote da creatina monohidratada DouraVita 100% pura"
 										class="edu-product-img"
 										loading="lazy"
@@ -481,7 +483,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 											refeição rica em proteína e treino de força regular.
 										</p>
 										<a
-											href="/creatina-laudo.webp"
+											href={creatinaLaudoImg.src}
 											target="_blank"
 											rel="noopener"
 											class="edu-laudo-link"
