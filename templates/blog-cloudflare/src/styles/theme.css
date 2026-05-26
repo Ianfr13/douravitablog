@@ -1,108 +1,147 @@
 /*
-  theme.css -- override any :root variable here to retheme the blog.
+  theme.css — DouraVita redesign 2026-05-26
+  Register: brand. Lane: diario institucional brasileiro de saude.
 
-  This is the only file you need to edit to customize the site's visual
-  appearance. All defaults are listed below as comments. Uncomment and
-  change any value to override it.
+  Body Atkinson Hyperlegible (Braille Institute, low-vision safe).
+  Headings Source Serif 4 (gravidade institucional, sem glamour Klim).
+  Accent ambar-grafite oklch(58% 0.08 75): warm, papel envelhecido.
 
-  Base.astro puts its defaults inside @layer base, so declarations here
-  (which are unlayered) always take priority -- no specificity tricks needed.
-
-  Note: this template defines explicit dark mode colors in Base.astro.
-  Overriding light-mode --color-* variables here won't affect dark mode.
-  To customize dark mode, also override --color-* variables inside a
-  @media (prefers-color-scheme: dark) block and/or in the :root.dark rule.
+  Defaults vivem em Base.astro @layer base; este arquivo (unlayered)
+  sempre vence. Dark mode tem que ser overridado em :root.dark E no
+  @media (prefers-color-scheme: dark) :root:not(.light).
 */
 
 :root {
-	/* --- Colors ---
-	--color-bg: #ffffff;
-	--color-bg-subtle: #fafafa;
-	--color-text: #1a1a1a;
-	--color-text-secondary: #525252;
-	--color-muted: #8b8b8b;
-	--color-border: #e5e5e5;
-	--color-border-subtle: #f0f0f0;
-	--color-surface: #f7f7f7;
-	--color-accent: #0066cc;
-	--color-accent-hover: #0052a3;
-	--color-on-accent: white;
-	--color-accent-ring: color-mix(in srgb, var(--color-accent) 25%, transparent);
-	*/
+	/* === Cor (light) — warm tinted neutrals + amber-graphite accent === */
+	--color-bg: oklch(98% 0.003 75);
+	--color-bg-subtle: oklch(96% 0.004 75);
+	--color-text: oklch(22% 0.005 60);
+	--color-text-secondary: oklch(42% 0.005 60);
+	--color-muted: oklch(58% 0.005 60);
+	--color-border: oklch(88% 0.005 75);
+	--color-border-subtle: oklch(93% 0.005 75);
+	--color-surface: oklch(95% 0.006 75);
+	--color-accent: oklch(58% 0.08 75);
+	--color-accent-hover: oklch(50% 0.085 75);
+	--color-on-accent: oklch(98% 0.003 75);
+	--color-accent-ring: color-mix(in oklch, var(--color-accent) 18%, transparent);
 
-	/* --- Type scale ---
-	--font-size-xs: 0.8125rem;
-	--font-size-sm: 0.875rem;
-	--font-size-base: 1rem;
-	--font-size-lg: 1.125rem;
-	--font-size-xl: 1.25rem;
-	--font-size-2xl: 1.5rem;
-	--font-size-3xl: 2rem;
-	--font-size-4xl: 2.5rem;
-	--font-size-5xl: 3.5rem;
-	*/
+	/* === Type scale (18px base para leitor 55+) === */
+	--font-size-xs: 0.875rem;
+	--font-size-sm: 1rem;
+	--font-size-base: 1.125rem;
+	--font-size-lg: 1.25rem;
+	--font-size-xl: 1.4rem;
+	--font-size-2xl: 1.75rem;
+	--font-size-3xl: 2.25rem;
+	--font-size-4xl: 3rem;
+	--font-size-5xl: 4rem;
 
-	/* --- Line heights ---
-	--leading-tight: 1.15;
-	--leading-snug: 1.3;
+	--leading-tight: 1.1;
+	--leading-snug: 1.25;
 	--leading-normal: 1.5;
-	--leading-relaxed: 1.7;
-	*/
+	--leading-relaxed: 1.75;
 
-	/* --- Letter spacing ---
-	--tracking-tight: -0.03em;    used on h1 and large titles
-	--tracking-snug: -0.02em;     used on h2–h6, site/card titles
-	--tracking-wide: 0.06em;      used on meta labels, TOC/widget titles
-	--tracking-wider: 0.08em;     used on footer headings, section labels
-	*/
+	/* === Radius (mais sutil, mais papel) === */
+	--radius: 3px;
+	--radius-lg: 6px;
 
-	/* --- Spacing ---
-	--spacing-1: 0.25rem;
-	--spacing-2: 0.5rem;
-	--spacing-3: 0.75rem;
-	--spacing-4: 1rem;
-	--spacing-5: 1.25rem;
-	--spacing-6: 1.5rem;
-	--spacing-8: 2rem;
-	--spacing-10: 2.5rem;
-	--spacing-12: 3rem;
-	--spacing-16: 4rem;
-	--spacing-20: 5rem;
-	--spacing-24: 6rem;
-	*/
+	/* === Search theming inerda das vars de cor (sem override aqui) === */
+}
 
-	/* --- Layout ---
-	--content-width: 680px;       article/page body column width
-	--wide-width: 1200px;         max container width (home, archives)
-	--gutter-width: 200px;        right sidebar column (TOC) on article pages
-	--meta-col-width: 180px;      left meta column on article pages
-	--nav-height: 64px;           sticky header height
-	--search-input-width: 180px;  nav search box width
-	*/
+/* Headings em serif. Override o default sans do Base.astro. */
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-serif);
+	font-weight: 600;
+}
 
-	/* --- Borders & radius ---
-	--radius: 4px;
-	--radius-lg: 8px;
-	*/
+h1 {
+	font-weight: 700;
+	letter-spacing: -0.022em;
+}
 
-	/* --- Transitions ---
-	--transition-fast: 120ms ease;
-	--transition-base: 180ms ease;
-	*/
+/* Body usa Atkinson (configurada via Astro font como --font-sans), com
+ * leading mais aberto que o default do template para 18px. */
+body {
+	font-family: var(--font-sans);
+	line-height: var(--leading-relaxed);
+}
 
-	/* --- Avatars ---
-	--avatar-size-xs: 18px;    card byline avatars
-	--avatar-size-sm: 20px;    post list byline avatars
-	--avatar-size-md: 24px;    featured post byline avatars
-	--avatar-size-lg: 32px;    single post byline avatars
-	*/
+/* Header opaco com border visivel. Anti-glassmorphism (Principle #2 do
+ * PRODUCT.md: confianca via sobriedade, nao via "uau"). */
+.site-header {
+	background: var(--color-bg);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	border-bottom: 1px solid var(--color-border);
+}
 
-	/* --- Shadows ---
-	--shadow-dropdown: 0 8px 30px rgba(0, 0, 0, 0.12);
-	--shadow-btn-active: 0 1px 2px rgba(0, 0, 0, 0.05);
-	*/
+/* Foco visivel grande e contrastado (Principle #5: a11y 55+). */
+:where(a, button, input, textarea, select):focus-visible {
+	outline: 3px solid var(--color-accent);
+	outline-offset: 2px;
+	border-radius: var(--radius);
+}
 
-	/* --- Misc ---
-	--tag-padding-y: 2px;    vertical padding on tag pills
-	*/
+/* Links no corpo: sublinhado discreto, hover muda cor sem mover layout. */
+.post-content a:not(.no-decoration),
+.post-body a {
+	color: var(--color-accent);
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+
+.post-content a:hover,
+.post-body a:hover {
+	text-decoration-thickness: 2px;
+}
+
+::selection {
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+}
+
+/* === Dark mode (system preference) === */
+@media (prefers-color-scheme: dark) {
+	:root:not(.light) {
+		--color-bg: oklch(18% 0.006 75);
+		--color-bg-subtle: oklch(22% 0.006 75);
+		--color-text: oklch(92% 0.004 75);
+		--color-text-secondary: oklch(75% 0.005 75);
+		--color-muted: oklch(60% 0.005 75);
+		--color-border: oklch(30% 0.006 75);
+		--color-border-subtle: oklch(25% 0.006 75);
+		--color-surface: oklch(24% 0.006 75);
+		--color-accent: oklch(70% 0.07 75);
+		--color-accent-hover: oklch(76% 0.075 75);
+		--color-on-accent: oklch(18% 0.006 75);
+		--color-accent-ring: color-mix(in oklch, var(--color-accent) 22%, transparent);
+	}
+}
+
+/* === Dark mode (explicit class) === */
+:root.dark {
+	--color-bg: oklch(18% 0.006 75);
+	--color-bg-subtle: oklch(22% 0.006 75);
+	--color-text: oklch(92% 0.004 75);
+	--color-text-secondary: oklch(75% 0.005 75);
+	--color-muted: oklch(60% 0.005 75);
+	--color-border: oklch(30% 0.006 75);
+	--color-border-subtle: oklch(25% 0.006 75);
+	--color-surface: oklch(24% 0.006 75);
+	--color-accent: oklch(70% 0.07 75);
+	--color-accent-hover: oklch(76% 0.075 75);
+	--color-on-accent: oklch(18% 0.006 75);
+	--color-accent-ring: color-mix(in oklch, var(--color-accent) 22%, transparent);
+}
+
+/* Reduced motion: zera todas as transitions/animations. */
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+		scroll-behavior: auto !important;
+	}
 }

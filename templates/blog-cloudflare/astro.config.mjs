@@ -31,10 +31,19 @@ export default defineConfig({
 	fonts: [
 		{
 			provider: fontProviders.google(),
-			name: "Inter",
+			name: "Atkinson Hyperlegible",
 			cssVariable: "--font-sans",
-			weights: [400, 500, 600, 700],
-			fallbacks: ["sans-serif"],
+			weights: [400, 700],
+			styles: ["normal", "italic"],
+			fallbacks: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "system-ui", "sans-serif"],
+		},
+		{
+			provider: fontProviders.google(),
+			name: "Source Serif 4",
+			cssVariable: "--font-serif",
+			weights: [400, 600, 700],
+			styles: ["normal", "italic"],
+			fallbacks: ["Georgia", "Times New Roman", "serif"],
 		},
 		{
 			provider: fontProviders.google(),
