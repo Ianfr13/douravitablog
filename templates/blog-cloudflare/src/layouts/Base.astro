@@ -234,14 +234,6 @@ const isLoggedIn = !!Astro.locals.user;
 			<slot />
 		</main>
 
-		<section class="inspirational-quote" aria-label="Mensagem">
-			<div class="inspirational-quote-inner">
-				<blockquote class="inspirational-quote-text">
-					Cuidar de você é o melhor presente que você pode dar a quem te ama.
-				</blockquote>
-			</div>
-		</section>
-
 		<footer class="site-footer">
 			<div class="footer-inner">
 				<div class="footer-grid">
@@ -1425,55 +1417,6 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 			}
 
-			/* ---- Frase inspiradora antes do footer ---- */
-			.inspirational-quote {
-				background: var(--color-bg-subtle);
-				padding: var(--spacing-16) var(--spacing-6);
-				border-top: 1px solid var(--color-border-subtle);
-			}
-
-			.inspirational-quote-inner {
-				max-width: 720px;
-				margin: 0 auto;
-				text-align: center;
-			}
-
-			.inspirational-quote-text {
-				/* Fonte serif elegante (Georgia built-in, sem download).
-				 * Italic + tracking solto + line-height generoso = visual editorial. */
-				font-family: Georgia, "Times New Roman", "DejaVu Serif", serif;
-				font-size: clamp(var(--font-size-2xl), 3.5vw, var(--font-size-4xl));
-				font-weight: 400;
-				font-style: italic;
-				line-height: 1.4;
-				color: var(--color-text);
-				letter-spacing: -0.01em;
-				margin: 0;
-				quotes: "“" "”";
-			}
-
-			/* Aspas decorativas grandes acima da frase. */
-			.inspirational-quote-text::before {
-				content: open-quote;
-				display: block;
-				font-size: 3em;
-				line-height: 0.5;
-				color: var(--color-accent);
-				opacity: 0.4;
-				margin-bottom: var(--spacing-4);
-				font-style: normal;
-			}
-
-			.inspirational-quote-text::after {
-				content: close-quote;
-				display: none;
-			}
-
-			@media (max-width: 640px) {
-				.inspirational-quote {
-					padding: var(--spacing-12) var(--spacing-5);
-				}
-			}
 		</style>
 
 		<script>
