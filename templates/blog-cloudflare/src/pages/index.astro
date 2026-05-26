@@ -463,24 +463,60 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 					</div>
 				</section>
 
-				{/* ====== 2.5 ESTATISTICA SARCOPENIA (quebra visual) ====== */}
-				<section class="section stat-section">
-					<div class="stat-banner">
-						<div class="stat-number">1 em cada 3</div>
-						<div class="stat-body">
-							<p class="stat-text">
-								pessoas acima de 60 anos pode ter algum grau de{" "}
-								<strong>sarcopenia</strong> — perda de massa e força muscular
-								ligada ao envelhecimento.
+				{/* ====== 2.5 SARCOPENIA + CREATINA (educacional) ====== */}
+				<section class="section edu-section">
+					<article class="edu-card">
+						<header class="edu-header">
+							<span class="edu-eyebrow">Aprofunde-se</span>
+							<h2 class="edu-title">
+								Sarcopenia: o que a ciência diz (e como a creatina ajuda)
+							</h2>
+						</header>
+
+						<div class="edu-body">
+							<p>
+								A <strong>sarcopenia</strong> — perda progressiva de massa e
+								força muscular ligada ao envelhecimento — atinge cerca de{" "}
+								<strong>1 em cada 3 brasileiros acima de 60 anos</strong>,
+								segundo o estudo SABE (Saúde, Bem-estar e Envelhecimento) da
+								USP. Ela está diretamente ligada a quedas, perda de
+								independência e mortalidade precoce — mas pode ser
+								desacelerada (e em parte revertida) com duas intervenções
+								simples: <strong>musculação regular</strong> e{" "}
+								<strong>ingestão adequada de proteína</strong>.
 							</p>
-							<p class="stat-source">
-								Estimativa baseada em estudos brasileiros (SABE/USP)
+
+							<h3 class="edu-subtitle">O que a ciência mostra</h3>
+							<p>
+								Uma <strong>meta-análise de Chilibeck et al. (2017)</strong>{" "}
+								reuniu 22 estudos com idosos e demonstrou que combinar
+								creatina (3–5 g/dia) com treino de força 2–3x por semana
+								resulta, em média, em <strong>1,4 kg a mais de massa
+								muscular magra</strong> em comparação à musculação isolada.
+								A revisão de{" "}
+								<strong>Forbes et al. (2021)</strong> confirma o perfil de
+								segurança da creatina em adultos 55+ e aponta ganhos
+								adicionais em densidade óssea e desempenho cognitivo.
 							</p>
-							<a href="/blog/search?q=sarcopenia" class="stat-link">
-								Veja como prevenir <span aria-hidden="true">→</span>
+
+							<h3 class="edu-subtitle">A creatina Douravita</h3>
+							<p>
+								A creatina monohidratada Douravita foi formulada pensando
+								no público 55+: <strong>5 g por dia</strong>, sabor neutro,
+								sem corantes nem aditivos desnecessários. Dissolve fácil em
+								água, suco ou iogurte — e funciona melhor quando combinada
+								com uma refeição rica em proteína e treino de força regular.
+							</p>
+
+							<a
+								href="/blog/category/suplementacao"
+								class="edu-cta"
+							>
+								Conheça a creatina Douravita{" "}
+								<span aria-hidden="true">→</span>
 							</a>
 						</div>
-					</div>
+					</article>
 				</section>
 
 				{/* ====== 3. MAIS LIDOS ====== */}
@@ -1214,55 +1250,70 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		transition: background var(--transition-fast);
 	}
 
-	/* ===== Stat banner (quebra entre quiz e mais lidos) ===== */
-	.stat-banner {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-3);
-		padding: var(--spacing-6) var(--spacing-5);
-		background: var(--color-accent);
-		color: var(--color-on-accent);
+	/* ===== Educational section: sarcopenia + creatina ===== */
+	.edu-card {
+		background: var(--color-bg-subtle, var(--color-surface));
 		border-radius: var(--radius-lg);
+		padding: var(--spacing-6) var(--spacing-5);
+		border-left: 4px solid var(--color-accent);
 	}
 
-	.stat-number {
-		font-size: clamp(2.5rem, 9vw, 4.5rem);
-		font-weight: 800;
-		line-height: 1;
+	.edu-header {
+		margin-bottom: var(--spacing-5);
+	}
+
+	.edu-eyebrow {
+		display: inline-block;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wider);
+		color: var(--color-accent);
+		margin-bottom: var(--spacing-2);
+	}
+
+	.edu-title {
+		font-size: clamp(1.5rem, 4vw, 2rem);
+		font-weight: 700;
+		line-height: var(--leading-tight);
 		letter-spacing: var(--tracking-tight);
+		color: var(--color-text);
 	}
 
-	.stat-body {
+	.edu-body {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-3);
+		gap: var(--spacing-4);
 	}
 
-	.stat-text {
-		font-size: var(--font-size-lg);
-		line-height: var(--leading-snug);
-		font-weight: 500;
+	.edu-body p {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text);
 	}
 
-	.stat-text strong {
+	.edu-body strong {
 		font-weight: 700;
+		color: var(--color-text);
 	}
 
-	.stat-source {
-		font-size: var(--font-size-sm);
-		opacity: 0.85;
-		font-style: italic;
+	.edu-subtitle {
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		line-height: var(--leading-snug);
+		color: var(--color-accent);
+		margin-top: var(--spacing-2);
 	}
 
-	.stat-link {
+	.edu-cta {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--spacing-2);
 		align-self: start;
-		padding: var(--spacing-2) var(--spacing-4);
-		margin-top: var(--spacing-1);
-		background: var(--color-on-accent);
-		color: var(--color-accent);
+		margin-top: var(--spacing-3);
+		padding: var(--spacing-3) var(--spacing-6);
+		background: var(--color-accent);
+		color: var(--color-on-accent);
 		border-radius: 999px;
 		font-size: var(--font-size-sm);
 		font-weight: 600;
@@ -1270,7 +1321,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		transition: transform var(--transition-fast);
 	}
 
-	.stat-link:hover {
+	.edu-cta:hover {
 		transform: translateX(3px);
 	}
 
@@ -1278,15 +1329,8 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 
 	/* Tablet: 2 colunas pros large cards + small ainda em coluna */
 	@media (min-width: 700px) {
-		.stat-banner {
-			flex-direction: row;
-			align-items: center;
-			gap: var(--spacing-8);
+		.edu-card {
 			padding: var(--spacing-8) var(--spacing-10);
-		}
-
-		.stat-number {
-			flex-shrink: 0;
 		}
 
 		.home-content {
