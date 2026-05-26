@@ -11,6 +11,7 @@ import LiveSearch from "emdash/ui/search";
 import { Font } from "astro:assets";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 import { FEATURED_PILLARS } from "../data/pilares-visual";
+import CategoriesBar from "../components/CategoriesBar.astro";
 import "../styles/theme.css";
 
 interface Props {
@@ -172,6 +173,8 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 			</nav>
 		</header>
+
+		<CategoriesBar />
 
 		<aside
 			class="mobile-menu-overlay"
