@@ -1,0 +1,279 @@
+---
+/**
+ * Form de comentários, versão Douravita (PT-BR + visual do tema).
+ *
+ * Substitui o <CommentForm> do EmDash pra ter controle total sobre strings,
+ * disclaimer LGPD e visual. Hoje (Fase 1) usa o endpoint EmDash padrão
+ * (/_emdash/api/comments/...). Na Fase 4 vai apontar pra endpoint custom
+ * /blog/api/comments/submit que valida Turnstile e injeta reader session.
+ *
+ * Honeypot anti-spam: campo `website_url` escondido. Bots preenchem; o
+ * backend descarta. Não muda na Fase 4.
+ */
+
+interface Props {
+	collection: string;
+	contentId: string;
+	parentId?: string | null;
+	class?: string;
+}
+
+const {
+	collection,
+	contentId,
+	parentId = null,
+	class: className,
+} = Astro.props;
+
+const formId = `dv-comment-form-${parentId ?? "root"}`;
+const endpoint = `/_emdash/api/comments/${encodeURIComponent(collection)}/${encodeURIComponent(contentId)}`;
+---
+
+<form
+	id={formId}
+	class:list={["dv-comment-form", className]}
+	data-dv-comment-form
+	data-endpoint={endpoint}
+>
+	<div class="dv-comment-form-fields">
+		<label class="dv-comment-form-field">
+			<span>Nome</span>
+			<input type="text" name="authorName" required maxlength="100" autocomplete="name" />
+		</label>
+
+		<label class="dv-comment-form-field">
+			<span>E-mail</span>
+			<input type="email" name="authorEmail" required autocomplete="email" />
+		</label>
+	</div>
+
+	{/* Honeypot — escondido de humanos, bots preenchem */}
+	<div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;">
+		<label>
+			Não preencha este campo
+			<input type="text" name="website_url" tabindex="-1" autocomplete="off" />
+		</label>
+	</div>
+
+	<label class="dv-comment-form-field">
+		<span>Comentário</span>
+		<textarea name="body" required maxlength="5000" rows="5" placeholder="Compartilhe sua experiência ou pergunta..." />
+	</label>
+
+	{parentId && <input type="hidden" name="parentId" value={parentId} />}
+
+	<button type="submit" class="dv-comment-form-submit">
+		Enviar comentário
+	</button>
+
+	<p class="dv-comment-form-disclaimer">
+		Comentários passam por moderação antes de aparecer. Opiniões de leitores não substituem orientação médica. Ao enviar, você concorda que seu nome poderá ser exibido publicamente e aceita nossa <a href="/blog/pages/privacidade">Política de Privacidade</a>.
+	</p>
+
+	<div class="dv-comment-form-status" role="status" aria-live="polite"></div>
+</form>
+
+<script>
+	document.addEventListener("submit", async (e) => {
+		const form = e.target;
+		if (
+			!(form instanceof HTMLFormElement) ||
+			!form.hasAttribute("data-dv-comment-form")
+		)
+			return;
+		e.preventDefault();
+
+		const endpoint = form.dataset.endpoint;
+		if (!endpoint) return;
+
+		const submitBtn = form.querySelector<HTMLButtonElement>(".dv-comment-form-submit");
+		const statusEl = form.querySelector<HTMLElement>(".dv-comment-form-status");
+		if (!submitBtn || !statusEl) return;
+
+		submitBtn.disabled = true;
+		const originalLabel = submitBtn.textContent;
+		submitBtn.textContent = "Enviando...";
+		statusEl.textContent = "";
+		statusEl.className = "dv-comment-form-status";
+
+		const data = new FormData(form);
+		const body: Record<string, string> = {};
+		for (const [key, value] of data.entries()) {
+			if (typeof value === "string") body[key] = value;
+		}
+
+		try {
+			const res = await fetch(endpoint, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-EmDash-Request": "1",
+				},
+				body: JSON.stringify(body),
+			});
+
+			const result = await res.json().catch(() => ({}));
+
+			if (res.ok) {
+				statusEl.textContent =
+					result.message ||
+					"Comentário enviado! Após aprovação ele aparecerá aqui.";
+				statusEl.classList.add("dv-comment-form-success");
+				const textarea = form.querySelector<HTMLTextAreaElement>("textarea[name='body']");
+				if (textarea) textarea.value = "";
+			} else {
+				statusEl.textContent =
+					result.error?.message ||
+					result.message ||
+					"Não foi possível enviar o comentário. Tente novamente em instantes.";
+				statusEl.classList.add("dv-comment-form-error");
+			}
+		} catch {
+			statusEl.textContent = "Erro de conexão. Verifique sua internet e tente de novo.";
+			statusEl.classList.add("dv-comment-form-error");
+		} finally {
+			submitBtn.disabled = false;
+			submitBtn.textContent = originalLabel;
+		}
+	});
+</script>
+
+<style>
+	.dv-comment-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-4);
+		padding: var(--spacing-6);
+		background: var(--color-bg-subtle, var(--color-surface));
+		border: 1px solid var(--color-border-subtle, var(--color-border));
+		border-radius: var(--radius-lg);
+	}
+
+	.dv-comment-form-fields {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-3);
+	}
+
+	@media (min-width: 640px) {
+		.dv-comment-form-fields {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.dv-comment-form-field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-1);
+	}
+
+	.dv-comment-form-field > span {
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--color-text-secondary);
+	}
+
+	.dv-comment-form-field input,
+	.dv-comment-form-field textarea {
+		padding: var(--spacing-3);
+		font: inherit;
+		font-size: var(--font-size-base);
+		line-height: var(--leading-snug);
+		color: var(--color-text);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
+	}
+
+	.dv-comment-form-field textarea {
+		resize: vertical;
+		min-height: 7rem;
+		font-family: inherit;
+	}
+
+	.dv-comment-form-field input::placeholder,
+	.dv-comment-form-field textarea::placeholder {
+		color: var(--color-muted);
+	}
+
+	.dv-comment-form-field input:focus-visible,
+	.dv-comment-form-field textarea:focus-visible {
+		outline: none;
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 3px var(--color-accent-ring, rgba(138, 111, 42, 0.18));
+	}
+
+	.dv-comment-form-submit {
+		align-self: flex-start;
+		padding: var(--spacing-3) var(--spacing-6);
+		font: inherit;
+		font-size: var(--font-size-base);
+		font-weight: 600;
+		color: var(--color-on-accent, #fff);
+		background: var(--color-accent);
+		border: none;
+		border-radius: var(--radius);
+		cursor: pointer;
+		transition:
+			background var(--transition-fast),
+			transform var(--transition-fast);
+	}
+
+	.dv-comment-form-submit:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--color-accent) 88%, black);
+	}
+
+	.dv-comment-form-submit:active:not(:disabled) {
+		transform: translateY(1px);
+	}
+
+	.dv-comment-form-submit:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.dv-comment-form-disclaimer {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-relaxed);
+		color: var(--color-muted);
+	}
+
+	.dv-comment-form-disclaimer a {
+		color: var(--color-accent);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.dv-comment-form-status:empty {
+		display: none;
+	}
+
+	.dv-comment-form-status {
+		padding: var(--spacing-3);
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-snug);
+		border-radius: var(--radius);
+	}
+
+	.dv-comment-form-success {
+		color: #047857;
+		background: color-mix(in srgb, #10b981 12%, transparent);
+		border: 1px solid color-mix(in srgb, #10b981 32%, transparent);
+	}
+
+	.dv-comment-form-error {
+		color: #b91c1c;
+		background: color-mix(in srgb, #ef4444 10%, transparent);
+		border: 1px solid color-mix(in srgb, #ef4444 28%, transparent);
+	}
+
+	@media (max-width: 640px) {
+		.dv-comment-form {
+			padding: var(--spacing-4);
+		}
+	}
+</style>
