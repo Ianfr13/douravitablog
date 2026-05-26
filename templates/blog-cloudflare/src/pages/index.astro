@@ -462,14 +462,44 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 								</p>
 
 								<h3 class="edu-subtitle">A creatina Douravita</h3>
-								<p>
-									A creatina monohidratada Douravita foi formulada pensando
-									no público 55+: <strong>5 g por dia</strong>, sabor
-									neutro, sem corantes nem aditivos desnecessários.
-									Dissolve fácil em água, suco ou iogurte, e funciona melhor
-									quando combinada com uma refeição rica em proteína e
-									treino de força regular.
-								</p>
+								<div class="edu-product">
+									<img
+										src="/creatina-pote.webp"
+										alt="Pote da creatina monohidratada DouraVita 100% pura"
+										class="edu-product-img"
+										loading="lazy"
+										width="320"
+										height="320"
+									/>
+									<div class="edu-product-body">
+										<p>
+											A creatina monohidratada Douravita foi formulada
+											pensando no público 55+: <strong>5 g por dia</strong>,
+											sabor neutro, sem corantes nem aditivos
+											desnecessários. Dissolve fácil em água, suco ou
+											iogurte, e funciona melhor quando combinada com uma
+											refeição rica em proteína e treino de força regular.
+										</p>
+										<a
+											href="/creatina-laudo.webp"
+											target="_blank"
+											rel="noopener"
+											class="edu-laudo-link"
+											onclick="event.stopPropagation();"
+										>
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+												<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+												<polyline points="14 2 14 8 20 8"></polyline>
+												<line x1="16" y1="13" x2="8" y2="13"></line>
+												<line x1="16" y1="17" x2="8" y2="17"></line>
+											</svg>
+											<span>
+												Veja o laudo analítico Eurofins
+												<small>99,10% creatina monohidratada</small>
+											</span>
+										</a>
+									</div>
+								</div>
 							</div>
 						</article>
 					</a>
@@ -1350,6 +1380,91 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 
 	.edu-title {
 		transition: color var(--transition-fast);
+	}
+
+	/* ===== Product (pote + laudo) dentro do edu-card ===== */
+	.edu-product {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-4);
+		align-items: stretch;
+	}
+
+	.edu-product-img {
+		width: 100%;
+		max-width: 280px;
+		height: auto;
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+		border-radius: var(--radius-lg);
+		align-self: center;
+		background: #0a0a1a;
+	}
+
+	.edu-product-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-3);
+		flex: 1;
+		min-width: 0;
+	}
+
+	.edu-laudo-link {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-3);
+		align-self: start;
+		padding: var(--spacing-3) var(--spacing-4);
+		background: var(--color-bg);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		text-decoration: none;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		transition: border-color var(--transition-fast), background var(--transition-fast);
+	}
+
+	.edu-laudo-link:hover,
+	.edu-laudo-link:focus-visible {
+		border-color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+		outline: none;
+	}
+
+	.edu-laudo-link svg {
+		width: 22px;
+		height: 22px;
+		flex-shrink: 0;
+		color: var(--color-accent);
+	}
+
+	.edu-laudo-link span {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		line-height: var(--leading-snug);
+	}
+
+	.edu-laudo-link small {
+		font-size: var(--font-size-xs);
+		font-weight: 400;
+		color: var(--color-muted);
+	}
+
+	/* Desktop: pote a esquerda, texto a direita */
+	@media (min-width: 600px) {
+		.edu-product {
+			flex-direction: row;
+			gap: var(--spacing-6);
+		}
+
+		.edu-product-img {
+			width: 220px;
+			max-width: 220px;
+			flex-shrink: 0;
+			align-self: flex-start;
+		}
 	}
 
 	/* ===== Responsive ===== */
