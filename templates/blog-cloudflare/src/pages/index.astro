@@ -6,16 +6,17 @@ import {
 } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import CategoriesBar from "../components/CategoriesBar.astro";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
-// 6 cards no topo (2 large + 4 small) + 4 itens lista compacta + 1 lookahead.
-const POSTS_PER_PAGE = 10;
+// Fetch generoso: 30 posts em DESC. Vamos splittar em "momento" (5 mais
+// recentes), "mais lidos" (8 mais antigos) e "recentes" (6 do meio sem
+// repetir). Em produção (~21 posts) cabe tudo sem N+1.
+const POSTS_TO_FETCH = 30;
 
-const [{ entries: posts, cacheHint }, settings] = await Promise.all([
+const [{ entries: allPosts, cacheHint }, settings] = await Promise.all([
 	getEmDashCollection("posts", {
 		orderBy: { published_at: "desc" },
-		limit: POSTS_PER_PAGE + 1,
+		limit: POSTS_TO_FETCH,
 	}),
 	getSiteSettings(),
 ]);
@@ -28,41 +29,223 @@ Astro.response.headers.set(
 	"public, s-maxage=60, stale-while-revalidate=86400",
 );
 
-const visiblePosts = posts.slice(0, POSTS_PER_PAGE);
-const hasMorePosts = posts.length > POSTS_PER_PAGE;
+// Section 1 — Assuntos do momento: 2 large + 3 small (5 mais recentes)
+const trending = allPosts.slice(0, 5);
+const trendingLarge = trending.slice(0, 2);
+const trendingSmall = trending.slice(2, 5);
+const usedIds = new Set(trending.map((p) => p.data.id));
 
-// 6 cards superiores: 2 large + 4 small. Compact list: 4 títulos seguintes.
-const largeCards = visiblePosts.slice(0, 2);
-const smallCards = visiblePosts.slice(2, 6);
-const compactList = visiblePosts.slice(6, 10);
+// Section 3 — Mais lidos: 8 mais antigos (proxy de "tempo exposto")
+const mostRead: typeof allPosts = [];
+for (let i = allPosts.length - 1; i >= 0 && mostRead.length < 8; i--) {
+	const post = allPosts[i];
+	if (usedIds.has(post.data.id)) continue;
+	mostRead.push(post);
+	usedIds.add(post.data.id);
+}
 
-const cardEntryIds = [
-	...largeCards.map((p) => p.data.id),
-	...smallCards.map((p) => p.data.id),
+// Section 5 — Conteúdos recentes (só títulos): 6 do meio sem repetir
+const recentTitles: typeof allPosts = [];
+for (const post of allPosts) {
+	if (recentTitles.length >= 6) break;
+	if (usedIds.has(post.data.id)) continue;
+	recentTitles.push(post);
+	usedIds.add(post.data.id);
+}
+
+// Batch query: categorias dos posts que aparecem como card (não dos só-título)
+const cardIds = [
+	...trending.map((p) => p.data.id),
+	...mostRead.map((p) => p.data.id),
 ];
 const categoriesByEntry = await getTermsForEntries(
 	"posts",
-	cardEntryIds,
+	cardIds,
 	"category",
 );
 
-function withCategory(post: typeof visiblePosts[0]) {
+type CategoryRef = { slug: string; label: string };
+
+function withCategory(post: typeof allPosts[0]) {
 	return {
 		post,
 		category: ((categoriesByEntry.get(post.data.id) ?? [])[0]) as
-			| { slug: string; label: string }
+			| CategoryRef
 			| undefined,
 	};
 }
 
-const largeCardsWithCategory = largeCards.map(withCategory);
-const smallCardsWithCategory = smallCards.map(withCategory);
+const trendingLargeWithCat = trendingLarge.map(withCategory);
+const trendingSmallWithCat = trendingSmall.map(withCategory);
+const mostReadWithCat = mostRead.map(withCategory);
+
+// Section 4 — Recomendações de palavras-chave por categoria.
+// Derivado de src/pilares.py (subtópicos dos 12 pilares). Linka pra
+// /blog/search?q=<keyword> — endpoint existente em pages/search.astro.
+const keywordsByCategory: {
+	slug: string;
+	label: string;
+	keywords: string[];
+}[] = [
+	{
+		slug: "suplementacao",
+		label: "Suplementação",
+		keywords: [
+			"creatina",
+			"whey protein",
+			"vitamina D",
+			"ômega 3",
+			"colágeno",
+			"magnésio",
+		],
+	},
+	{
+		slug: "movimento",
+		label: "Movimento",
+		keywords: [
+			"musculação 55+",
+			"caminhada",
+			"yoga",
+			"alongamento",
+			"prevenção de quedas",
+			"exercícios em casa",
+		],
+	},
+	{
+		slug: "nutricao",
+		label: "Nutrição",
+		keywords: [
+			"proteína por dia",
+			"dieta mediterrânea",
+			"hidratação",
+			"jejum intermitente",
+			"cálcio",
+			"vitamina B12",
+		],
+	},
+	{
+		slug: "saude-mental",
+		label: "Saúde Mental",
+		keywords: [
+			"memória",
+			"sono",
+			"ansiedade",
+			"depressão",
+			"demência",
+			"Alzheimer",
+		],
+	},
+	{
+		slug: "mulher-55",
+		label: "Saúde da Mulher",
+		keywords: [
+			"menopausa",
+			"climatério",
+			"osteoporose",
+			"reposição hormonal",
+			"incontinência",
+		],
+	},
+	{
+		slug: "homem-55",
+		label: "Saúde do Homem",
+		keywords: [
+			"próstata",
+			"testosterona",
+			"andropausa",
+			"PSA",
+			"cardiologia preventiva",
+		],
+	},
+	{
+		slug: "doencas-cronicas",
+		label: "Doenças Crônicas",
+		keywords: [
+			"diabetes tipo 2",
+			"hipertensão",
+			"artrose",
+			"colesterol",
+			"AVC",
+			"refluxo",
+		],
+	},
+	{
+		slug: "pele-e-estetica",
+		label: "Pele e Estética",
+		keywords: [
+			"flacidez",
+			"manchas",
+			"queda de cabelo",
+			"próteses dentárias",
+			"colágeno",
+		],
+	},
+	{
+		slug: "vida-plena",
+		label: "Vida Plena",
+		keywords: [
+			"solidão",
+			"viagem 55+",
+			"finanças",
+			"netos",
+			"voluntariado",
+			"sexo na maturidade",
+		],
+	},
+	{
+		slug: "ciencia",
+		label: "Ciência",
+		keywords: [
+			"Blue Zones",
+			"longevidade",
+			"idade biológica",
+			"jejum 16h",
+			"biohacking",
+		],
+	},
+	{
+		slug: "cuidador",
+		label: "Cuidador",
+		keywords: [
+			"cuidar do pai",
+			"cuidar da mãe",
+			"polifarmácia",
+			"casa segura",
+			"sinais de alerta",
+		],
+	},
+	{
+		slug: "noticias",
+		label: "Notícias",
+		keywords: [
+			"alerta Anvisa",
+			"novo estudo",
+			"recall",
+			"Outubro Rosa",
+			"Novembro Azul",
+		],
+	},
+];
+
+// Quiz de sarcopenia: 6 perguntas sim/não. JS calcula score no client.
+// Critérios baseados em SARC-F (validado) + fatores de risco comuns 55+.
+const sarcQuestions = [
+	"Tenho 65 anos ou mais",
+	"Sinto fraqueza ou dor nas pernas ao subir escadas",
+	"Perdi mais de 3 kg sem querer nos últimos 6 meses",
+	"Fico mais de 6 horas por dia sentado(a) ou parado(a)",
+	"NÃO faço exercícios de força (musculação) pelo menos 2 vezes por semana",
+	"Tenho dificuldade em abrir potes ou garrafas que abria fácil antes",
+];
+
+const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 ---
 
 <Base title={siteTitle} description={siteTagline}>
 	<h1 class="home-page-heading">{siteTitle}</h1>
+
 	{
-		posts.length === 0 ? (
+		allPosts.length === 0 ? (
 			<section class="empty-state">
 				<h2>Nenhum artigo ainda</h2>
 				<p>Crie seu primeiro artigo no painel administrativo.</p>
@@ -72,85 +255,170 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 			</section>
 		) : (
 			<div class="home-content">
-				{/* Top: 2 cards grandes lado a lado, imagem 16:9 no topo */}
-				{largeCardsWithCategory.length > 0 && (
-					<section class="large-cards-section">
-						<div class="large-cards-grid">
-							{largeCardsWithCategory.map(({ post, category }) => (
-								<article class="large-card">
+				{/* ====== 1. ASSUNTOS DO MOMENTO ====== */}
+				<section class="section trending">
+					<header class="section-header">
+						<h2 class="section-title">Assuntos do momento</h2>
+					</header>
+
+					<div class="trending-large-grid">
+						{trendingLargeWithCat.map(({ post, category }) => (
+							<article class="card-large">
+								{post.data.featured_image && (
+									<a
+										href={`/blog/posts/${slugFor(post)}`}
+										class="card-large-image-link"
+										aria-label={post.data.title}
+									>
+										<div class="card-large-image">
+											<Image image={post.data.featured_image} />
+										</div>
+									</a>
+								)}
+								<div class="card-large-body">
+									{category && (
+										<a
+											href={`/blog/category/${category.slug}`}
+											class="badge"
+										>
+											{category.label}
+										</a>
+									)}
+									<a
+										href={`/blog/posts/${slugFor(post)}`}
+										class="card-title-link"
+									>
+										<h3 class="card-large-title">
+											{post.data.title ?? "Sem título"}
+										</h3>
+									</a>
+									{post.data.excerpt && (
+										<p class="card-large-excerpt">{post.data.excerpt}</p>
+									)}
+								</div>
+							</article>
+						))}
+					</div>
+
+					<div class="trending-small-list">
+						{trendingSmallWithCat.map(({ post, category }) => (
+							<article class="card-small">
+								{post.data.featured_image && (
+									<a
+										href={`/blog/posts/${slugFor(post)}`}
+										class="card-small-image-link"
+										aria-label={post.data.title}
+									>
+										<Image image={post.data.featured_image} />
+									</a>
+								)}
+								<div class="card-small-body">
+									{category && (
+										<a
+											href={`/blog/category/${category.slug}`}
+											class="badge"
+										>
+											{category.label}
+										</a>
+									)}
+									<a
+										href={`/blog/posts/${slugFor(post)}`}
+										class="card-title-link"
+									>
+										<h3 class="card-small-title">
+											{post.data.title ?? "Sem título"}
+										</h3>
+									</a>
+								</div>
+							</article>
+						))}
+					</div>
+				</section>
+
+				{/* ====== 2. QUIZ INTERATIVO: SARCOPENIA ====== */}
+				<section class="section quiz-section">
+					<div class="quiz-card" data-quiz>
+						<header class="quiz-header">
+							<span class="quiz-eyebrow">Conteúdo interativo</span>
+							<h2 class="quiz-title">Você está em risco de sarcopenia?</h2>
+							<p class="quiz-subtitle">
+								Sarcopenia é a perda de massa e força muscular ligada ao
+								envelhecimento. Responda 6 perguntas rápidas e descubra seu
+								nível de risco.
+							</p>
+						</header>
+
+						<form class="quiz-form" data-quiz-form>
+							{sarcQuestions.map((q, i) => (
+								<fieldset class="quiz-question">
+									<legend class="quiz-q-text">
+										<span class="quiz-q-num">{i + 1}.</span> {q}
+									</legend>
+									<div class="quiz-q-options">
+										<label class="quiz-option">
+											<input type="radio" name={`q${i}`} value="1" />
+											<span>Sim</span>
+										</label>
+										<label class="quiz-option">
+											<input type="radio" name={`q${i}`} value="0" />
+											<span>Não</span>
+										</label>
+									</div>
+								</fieldset>
+							))}
+
+							<button type="submit" class="quiz-submit">
+								Ver meu resultado
+							</button>
+						</form>
+
+						<div class="quiz-result" data-quiz-result hidden>
+							<h3 class="quiz-result-title" data-result-title></h3>
+							<p class="quiz-result-text" data-result-text></p>
+							<button class="quiz-reset" type="button" data-quiz-reset>
+								Refazer o teste
+							</button>
+						</div>
+					</div>
+				</section>
+
+				{/* ====== 3. MAIS LIDOS ====== */}
+				{mostReadWithCat.length > 0 && (
+					<section class="section most-read">
+						<header class="section-header">
+							<h2 class="section-title">Mais lidos</h2>
+						</header>
+						<div class="most-read-grid">
+							{mostReadWithCat.map(({ post, category }) => (
+								<article class="card-tile">
 									{post.data.featured_image && (
 										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="large-card-image-link"
+											href={`/blog/posts/${slugFor(post)}`}
+											class="card-tile-image-link"
 											aria-label={post.data.title}
 										>
-											<div class="large-card-image">
+											<div class="card-tile-image">
 												<Image image={post.data.featured_image} />
 											</div>
 										</a>
 									)}
-									<div class="large-card-body">
+									<div class="card-tile-body">
 										{category && (
 											<a
 												href={`/blog/category/${category.slug}`}
-												class="large-card-category"
+												class="badge"
 											>
 												{category.label}
 											</a>
 										)}
 										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="large-card-title-link"
+											href={`/blog/posts/${slugFor(post)}`}
+											class="card-title-link"
 										>
-											<h2 class="large-card-title">
-												{post.data.title ?? "Sem título"}
-											</h2>
-										</a>
-										{post.data.excerpt && (
-											<p class="large-card-excerpt">{post.data.excerpt}</p>
-										)}
-									</div>
-								</article>
-							))}
-						</div>
-					</section>
-				)}
-
-				{/* 4 cards menores: imagem lateral pequena */}
-				{smallCardsWithCategory.length > 0 && (
-					<section class="small-cards-section">
-						<div class="small-cards-grid">
-							{smallCardsWithCategory.map(({ post, category }) => (
-								<article class="small-card">
-									{post.data.featured_image && (
-										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="small-card-image-link"
-											aria-label={post.data.title}
-										>
-											<Image image={post.data.featured_image} />
-										</a>
-									)}
-									<div class="small-card-body">
-										{category && (
-											<a
-												href={`/blog/category/${category.slug}`}
-												class="small-card-category"
-											>
-												{category.label}
-											</a>
-										)}
-										<a
-											href={`/blog/posts/${post.slug ?? post.id}`}
-											class="small-card-title-link"
-										>
-											<h3 class="small-card-title">
+											<h3 class="card-tile-title">
 												{post.data.title ?? "Sem título"}
 											</h3>
 										</a>
-										{post.data.excerpt && (
-											<p class="small-card-excerpt">{post.data.excerpt}</p>
-										)}
 									</div>
 								</article>
 							))}
@@ -158,32 +426,52 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 					</section>
 				)}
 
-				<CategoriesBar />
+				{/* ====== 4. PALAVRAS-CHAVE POR CATEGORIA ====== */}
+				<section class="section keywords">
+					<header class="section-header">
+						<h2 class="section-title">Explore por assunto</h2>
+					</header>
+					<div class="keywords-grid">
+						{keywordsByCategory.map((cat) => (
+							<div class="kw-block">
+								<a href={`/blog/category/${cat.slug}`} class="kw-cat-title">
+									{cat.label.toUpperCase()} <span class="kw-arrow">→</span>
+								</a>
+								<div class="kw-pills">
+									{cat.keywords.map((kw) => (
+										<a
+											href={`/blog/search?q=${encodeURIComponent(kw)}`}
+											class="kw-pill"
+										>
+											{kw}
+										</a>
+									))}
+								</div>
+							</div>
+						))}
+					</div>
+				</section>
 
-				{/* Lista compacta: só títulos clicáveis dos próximos posts */}
-				{compactList.length > 0 && (
-					<section class="posts-section">
+				{/* ====== 5. CONTEÚDOS RECENTES (só títulos) ====== */}
+				{recentTitles.length > 0 && (
+					<section class="section recent">
 						<header class="section-header">
 							<h2 class="section-title">Conteúdos mais recentes</h2>
-							{hasMorePosts && (
-								<a href="/blog/posts" class="section-link">
-									Ver todos
-								</a>
-							)}
 						</header>
-						<ul class="posts-list-compact">
-							{compactList.map((post) => (
-								<li class="posts-list-item">
+						<ul class="recent-list">
+							{recentTitles.map((post) => (
+								<li class="recent-item">
 									<a
-										href={`/blog/posts/${post.slug ?? post.id}`}
-										class="posts-list-title-link"
+										href={`/blog/posts/${slugFor(post)}`}
+										class="recent-link"
 									>
-										<h3 class="posts-list-title">
+										<h3 class="recent-title">
 											{post.data.title ?? "Sem título"}
 										</h3>
 									</a>
 									{post.data.publishedAt && (
-										<time class="posts-list-date">
+										<time class="recent-date">
+											Criado em{" "}
 											{post.data.publishedAt.toLocaleDateString("pt-BR")}
 										</time>
 									)}
@@ -192,12 +480,83 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 						</ul>
 					</section>
 				)}
+
+				{/* ====== 6. VER MAIS CONTEÚDOS ====== */}
+				<section class="see-all-section">
+					<a href="/blog/posts" class="see-all-btn">
+						VER MAIS CONTEÚDOS <span aria-hidden="true">→</span>
+					</a>
+				</section>
 			</div>
 		)
 	}
+
+	<script>
+		// Quiz de sarcopenia — score 0-6.
+		// Faixas baseadas em SARC-F: 4+ indica risco significativo.
+		const quiz = document.querySelector("[data-quiz]") as HTMLElement | null;
+		if (quiz) {
+			const form = quiz.querySelector(
+				"[data-quiz-form]",
+			) as HTMLFormElement | null;
+			const result = quiz.querySelector(
+				"[data-quiz-result]",
+			) as HTMLElement | null;
+			const titleEl = quiz.querySelector(
+				"[data-result-title]",
+			) as HTMLElement | null;
+			const textEl = quiz.querySelector(
+				"[data-result-text]",
+			) as HTMLElement | null;
+			const resetBtn = quiz.querySelector(
+				"[data-quiz-reset]",
+			) as HTMLButtonElement | null;
+
+			form?.addEventListener("submit", (e) => {
+				e.preventDefault();
+				const fd = new FormData(form);
+				let score = 0;
+				let answered = 0;
+				for (const [, v] of fd.entries()) {
+					answered++;
+					score += parseInt(v as string, 10) || 0;
+				}
+				if (answered < 6) {
+					alert("Responda todas as perguntas para ver o resultado.");
+					return;
+				}
+				let title = "";
+				let text = "";
+				if (score <= 1) {
+					title = "Risco baixo";
+					text =
+						"Seus hábitos atuais protegem a massa muscular. Continue priorizando proteína, força e movimento regular.";
+				} else if (score <= 3) {
+					title = "Risco moderado";
+					text =
+						"Já existem sinais que vale a pena agir. Considere musculação 2-3x/semana, 1,2 g de proteína por kg/dia e exposição solar diária.";
+				} else {
+					title = "Risco alto";
+					text =
+						"Vários fatores aparecem no seu perfil. Procure um geriatra ou nutricionista — sarcopenia tem tratamento eficaz quando identificada cedo.";
+				}
+				if (titleEl) titleEl.textContent = `${title} — ${score}/6`;
+				if (textEl) textEl.textContent = text;
+				form.hidden = true;
+				if (result) result.hidden = false;
+			});
+
+			resetBtn?.addEventListener("click", () => {
+				form?.reset();
+				if (form) form.hidden = false;
+				if (result) result.hidden = true;
+			});
+		}
+	</script>
 </Base>
 
 <style>
+	/* ===== Globals ===== */
 	.home-page-heading {
 		position: absolute;
 		width: 1px;
@@ -213,57 +572,25 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 	.home-content {
 		max-width: var(--wide-width);
 		margin: 0 auto;
-		padding: var(--spacing-16) var(--spacing-6);
+		padding: var(--spacing-8) var(--spacing-4) var(--spacing-16);
 	}
 
-	/* Large cards (2 topo) — imagem 16:9 grande no topo */
-	.large-cards-section {
-		margin-bottom: var(--spacing-12);
+	.section {
+		margin-bottom: var(--spacing-16);
 	}
 
-	.large-cards-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: var(--spacing-10);
+	.section-header {
+		margin-bottom: var(--spacing-6);
 	}
 
-	.large-card {
-		display: flex;
-		flex-direction: column;
+	.section-title {
+		font-size: var(--font-size-2xl);
+		font-weight: 700;
+		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-snug);
 	}
 
-	.large-card-image-link {
-		display: block;
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.large-card-image {
-		aspect-ratio: 16 / 9;
-		overflow: hidden;
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		margin-bottom: var(--spacing-4);
-	}
-
-	.large-card-image img {
-		width: 100% !important;
-		height: 100% !important;
-		object-fit: cover !important;
-		transition: transform 0.3s ease;
-	}
-
-	.large-card-image-link:hover .large-card-image img {
-		transform: scale(1.03);
-	}
-
-	.large-card-body {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-2);
-	}
-
-	.large-card-category {
+	.badge {
 		display: inline-block;
 		align-self: start;
 		padding: var(--tag-padding-y) var(--spacing-3);
@@ -273,33 +600,81 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 		letter-spacing: var(--tracking-wide);
 		color: var(--color-accent);
 		background: var(--color-accent-ring, var(--color-surface));
-		border-radius: var(--radius);
+		border-radius: 999px;
 		text-decoration: none;
 		transition: background var(--transition-fast);
 	}
 
-	.large-card-category:hover {
+	.badge:hover {
 		background: var(--color-border);
 	}
 
-	.large-card-title-link {
+	.card-title-link {
 		text-decoration: none;
 		color: inherit;
 	}
 
-	.large-card-title {
-		font-size: clamp(var(--font-size-xl), 2.6vw, var(--font-size-2xl));
+	/* ===== 1. Assuntos do momento ===== */
+
+	/* Mobile-first: 2 large empilhados + 3 small empilhados */
+	.trending-large-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-8);
+		margin-bottom: var(--spacing-8);
+	}
+
+	.card-large {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.card-large-image-link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.card-large-image {
+		aspect-ratio: 16 / 10;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.card-large-image img {
+		width: 100% !important;
+		height: 100% !important;
+		object-fit: cover !important;
+		transition: transform 0.3s ease;
+	}
+
+	.card-large-image-link:hover .card-large-image img {
+		transform: scale(1.03);
+	}
+
+	.card-large-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+	}
+
+	.card-large-title {
+		font-size: var(--font-size-xl);
 		font-weight: 700;
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
 		transition: color var(--transition-fast);
 	}
 
-	.large-card-title-link:hover .large-card-title {
+	.card-title-link:hover .card-large-title,
+	.card-title-link:hover .card-small-title,
+	.card-title-link:hover .card-tile-title {
 		color: var(--color-accent);
 	}
 
-	.large-card-excerpt {
+	.card-large-excerpt {
 		font-size: var(--font-size-base);
 		line-height: var(--leading-relaxed);
 		color: var(--color-text-secondary);
@@ -309,32 +684,27 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 		overflow: hidden;
 	}
 
-	/* Small cards (4 abaixo) — imagem lateral pequena, estilo Tua Saude */
-	.small-cards-section {
-		margin-bottom: var(--spacing-16);
+	.trending-small-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-5);
 	}
 
-	.small-cards-grid {
+	.card-small {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: var(--spacing-8);
-	}
-
-	.small-card {
-		display: grid;
-		grid-template-columns: 160px 1fr;
-		gap: var(--spacing-4);
+		grid-template-columns: 110px 1fr;
+		gap: var(--spacing-3);
 		align-items: start;
 	}
 
-	.small-card-image-link {
+	.card-small-image-link {
 		display: block;
 		overflow: hidden;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius);
 		background: var(--color-surface);
 	}
 
-	.small-card-image-link img {
+	.card-small-image-link img {
 		width: 100% !important;
 		height: 100% !important;
 		aspect-ratio: 4 / 3;
@@ -342,115 +712,327 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 		transition: transform 0.3s ease;
 	}
 
-	.small-card-image-link:hover img {
+	.card-small-image-link:hover img {
 		transform: scale(1.04);
 	}
 
-	.small-card-body {
+	.card-small-body {
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-2);
 		min-width: 0;
 	}
 
-	.small-card-category {
-		display: inline-block;
-		align-self: start;
-		padding: var(--tag-padding-y) var(--spacing-3);
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		color: var(--color-accent);
-		background: var(--color-accent-ring, var(--color-surface));
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition: background var(--transition-fast);
-	}
-
-	.small-card-category:hover {
-		background: var(--color-border);
-	}
-
-	.small-card-title-link {
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.small-card-title {
-		font-size: var(--font-size-lg);
-		font-weight: 700;
+	.card-small-title {
+		font-size: var(--font-size-base);
+		font-weight: 600;
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
 		transition: color var(--transition-fast);
 	}
 
-	.small-card-title-link:hover .small-card-title {
-		color: var(--color-accent);
+	/* ===== 2. Quiz ===== */
+	.quiz-card {
+		background: var(--color-bg-subtle, var(--color-surface));
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-6) var(--spacing-5);
+		border: 1px solid var(--color-border-subtle);
 	}
 
-	.small-card-excerpt {
-		font-size: var(--font-size-sm);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
+	.quiz-header {
+		margin-bottom: var(--spacing-5);
 	}
 
-	/* Section header (lista compacta) */
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: var(--spacing-6);
-		padding-bottom: var(--spacing-4);
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.section-title {
-		font-size: var(--font-size-sm);
-		font-weight: 500;
+	.quiz-eyebrow {
+		display: inline-block;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: var(--tracking-wider);
-		color: var(--color-muted);
-	}
-
-	.section-link {
-		font-size: var(--font-size-sm);
 		color: var(--color-accent);
-		text-decoration: none;
-		transition: color var(--transition-fast);
+		margin-bottom: var(--spacing-2);
 	}
 
-	.section-link:hover {
-		color: var(--color-accent-hover);
+	.quiz-title {
+		font-size: var(--font-size-2xl);
+		font-weight: 700;
+		line-height: var(--leading-tight);
+		letter-spacing: var(--tracking-tight);
+		margin-bottom: var(--spacing-2);
 	}
 
-	/* Lista compacta de títulos clicáveis */
-	.posts-list-compact {
-		list-style: none;
-		margin: 0;
+	.quiz-subtitle {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+	}
+
+	.quiz-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-4);
+	}
+
+	.quiz-question {
+		border: none;
 		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
 	}
 
-	.posts-list-item {
-		padding: var(--spacing-5) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
+	.quiz-q-text {
+		font-size: var(--font-size-base);
+		font-weight: 500;
+		line-height: var(--leading-snug);
+		color: var(--color-text);
 	}
 
-	.posts-list-item:last-child {
-		border-bottom: none;
+	.quiz-q-num {
+		color: var(--color-accent);
+		font-weight: 700;
+		margin-right: var(--spacing-1);
 	}
 
-	.posts-list-title-link {
+	.quiz-q-options {
+		display: flex;
+		gap: var(--spacing-3);
+	}
+
+	.quiz-option {
+		flex: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-bg);
+		cursor: pointer;
+		font-size: var(--font-size-base);
+		font-weight: 500;
+		transition: all var(--transition-fast);
+	}
+
+	.quiz-option:hover {
+		border-color: var(--color-accent);
+	}
+
+	.quiz-option input {
+		appearance: none;
+		width: 16px;
+		height: 16px;
+		border: 2px solid var(--color-border);
+		border-radius: 50%;
+		margin: 0;
+		flex-shrink: 0;
+	}
+
+	.quiz-option input:checked {
+		border-color: var(--color-accent);
+		background: radial-gradient(
+			circle,
+			var(--color-accent) 40%,
+			transparent 45%
+		);
+	}
+
+	.quiz-option:has(input:checked) {
+		border-color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+	}
+
+	.quiz-submit {
+		margin-top: var(--spacing-2);
+		padding: var(--spacing-3) var(--spacing-6);
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border: none;
+		border-radius: 999px;
+		font-size: var(--font-size-base);
+		font-weight: 600;
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+
+	.quiz-submit:hover {
+		background: var(--color-accent-hover);
+	}
+
+	.quiz-result {
+		padding: var(--spacing-4);
+		background: var(--color-bg);
+		border-radius: var(--radius);
+		border-left: 4px solid var(--color-accent);
+	}
+
+	.quiz-result-title {
+		font-size: var(--font-size-xl);
+		font-weight: 700;
+		margin-bottom: var(--spacing-2);
+	}
+
+	.quiz-result-text {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.quiz-reset {
+		padding: var(--spacing-2) var(--spacing-4);
+		background: transparent;
+		color: var(--color-accent);
+		border: 1px solid var(--color-accent);
+		border-radius: 999px;
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.quiz-reset:hover {
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+	}
+
+	/* ===== 3. Mais lidos ===== */
+	.most-read-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--spacing-5) var(--spacing-4);
+	}
+
+	.card-tile {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.card-tile-image-link {
 		display: block;
 		text-decoration: none;
 		color: inherit;
 	}
 
-	.posts-list-title {
+	.card-tile-image {
+		aspect-ratio: 4 / 3;
+		overflow: hidden;
+		border-radius: var(--radius);
+		background: var(--color-surface);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.card-tile-image img {
+		width: 100% !important;
+		height: 100% !important;
+		object-fit: cover !important;
+		transition: transform 0.3s ease;
+	}
+
+	.card-tile-image-link:hover .card-tile-image img {
+		transform: scale(1.03);
+	}
+
+	.card-tile-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+	}
+
+	.card-tile-title {
+		font-size: var(--font-size-base);
+		font-weight: 600;
+		line-height: var(--leading-snug);
+		letter-spacing: var(--tracking-snug);
+		transition: color var(--transition-fast);
+	}
+
+	/* ===== 4. Palavras-chave ===== */
+	.keywords-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-6);
+	}
+
+	.kw-block {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-3);
+	}
+
+	.kw-cat-title {
+		font-size: var(--font-size-base);
+		font-weight: 700;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-text);
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+	}
+
+	.kw-arrow {
+		color: var(--color-muted);
+		font-weight: 400;
+		transition: transform var(--transition-fast);
+	}
+
+	.kw-cat-title:hover .kw-arrow {
+		transform: translateX(3px);
+		color: var(--color-accent);
+	}
+
+	.kw-pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-2);
+	}
+
+	.kw-pill {
+		display: inline-block;
+		padding: var(--spacing-2) var(--spacing-4);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--color-on-accent);
+		background: var(--color-accent);
+		border-radius: 999px;
+		text-decoration: none;
+		transition: background var(--transition-fast);
+	}
+
+	.kw-pill:hover {
+		background: var(--color-accent-hover);
+	}
+
+	/* ===== 5. Conteúdos recentes ===== */
+	.recent-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.recent-item {
+		padding: var(--spacing-5) 0;
+		border-bottom: 1px solid var(--color-border-subtle);
+	}
+
+	.recent-item:first-child {
+		padding-top: 0;
+	}
+
+	.recent-item:last-child {
+		border-bottom: none;
+	}
+
+	.recent-link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.recent-title {
 		font-size: var(--font-size-lg);
 		font-weight: 600;
 		line-height: var(--leading-snug);
@@ -459,17 +1041,44 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 		transition: color var(--transition-fast);
 	}
 
-	.posts-list-title-link:hover .posts-list-title {
+	.recent-link:hover .recent-title {
 		color: var(--color-accent);
 	}
 
-	.posts-list-date {
+	.recent-date {
 		display: block;
 		font-size: var(--font-size-sm);
 		color: var(--color-muted);
 	}
 
-	/* Empty state */
+	/* ===== 6. Ver mais conteúdos ===== */
+	.see-all-section {
+		display: flex;
+		justify-content: center;
+		margin-top: var(--spacing-8);
+	}
+
+	.see-all-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-3) var(--spacing-6);
+		color: var(--color-accent);
+		border: 1px solid var(--color-accent);
+		border-radius: 999px;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		letter-spacing: var(--tracking-wide);
+		text-decoration: none;
+		transition: all var(--transition-fast);
+	}
+
+	.see-all-btn:hover {
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+	}
+
+	/* ===== Empty state ===== */
 	.empty-state {
 		display: flex;
 		flex-direction: column;
@@ -503,43 +1112,62 @@ const smallCardsWithCategory = smallCards.map(withCategory);
 		transition: background var(--transition-fast);
 	}
 
-	.btn:hover {
-		background: var(--color-accent-hover);
-	}
+	/* ===== Responsive ===== */
 
-	/* Responsive */
-	@media (max-width: 900px) {
+	/* Tablet: 2 colunas pros large cards + small ainda em coluna */
+	@media (min-width: 700px) {
 		.home-content {
-			padding: var(--spacing-6) var(--spacing-4) var(--spacing-12);
+			padding: var(--spacing-12) var(--spacing-6) var(--spacing-16);
 		}
 
-		.large-cards-grid {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-8);
+		.trending-large-grid {
+			grid-template-columns: 1fr 1fr;
 		}
 
-		.small-cards-grid {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-6);
+		.card-large-title {
+			font-size: var(--font-size-2xl);
+		}
+
+		.most-read-grid {
+			grid-template-columns: repeat(4, 1fr);
+			gap: var(--spacing-6) var(--spacing-5);
+		}
+
+		.card-tile-title {
+			font-size: var(--font-size-lg);
+		}
+
+		.keywords-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.section-title {
+			font-size: var(--font-size-3xl);
 		}
 	}
 
-	@media (max-width: 600px) {
-		.large-card-title {
-			font-size: var(--font-size-xl);
+	/* Desktop: keywords em 3 colunas, mais respiro */
+	@media (min-width: 1000px) {
+		.keywords-grid {
+			grid-template-columns: repeat(3, 1fr);
+			gap: var(--spacing-8) var(--spacing-10);
 		}
 
-		.small-card {
-			grid-template-columns: 110px 1fr;
-			gap: var(--spacing-3);
+		.section {
+			margin-bottom: var(--spacing-20);
 		}
 
-		.small-card-title {
-			font-size: var(--font-size-base);
+		.card-large-title {
+			font-size: clamp(var(--font-size-xl), 2.4vw, var(--font-size-3xl));
 		}
 
-		.small-card-excerpt {
-			display: none;
+		.card-small {
+			grid-template-columns: 140px 1fr;
+			gap: var(--spacing-4);
+		}
+
+		.card-small-title {
+			font-size: var(--font-size-lg);
 		}
 	}
 </style>
