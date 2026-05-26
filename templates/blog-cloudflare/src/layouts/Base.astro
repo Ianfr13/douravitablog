@@ -277,6 +277,21 @@ const isLoggedIn = !!Astro.locals.user;
 						<WidgetArea name="footer" />
 					</div>
 				</div>
+				<div class="footer-institutional">
+					<p class="footer-about">
+						A DouraVita é um espaço informativo e educativo dedicado a quem
+						tem 55 anos ou mais. Reunimos conteúdo baseado em ciência sobre
+						suplementação, movimento, nutrição, saúde mental e cuidado com a
+						família, sempre em linguagem acessível. As informações
+						publicadas têm caráter educacional e não substituem o diagnóstico
+						ou tratamento de um profissional de saúde qualificado, nem
+						dispensam consulta médica.
+					</p>
+					<p class="footer-address">
+						<strong>Endereço:</strong> Av. Carmela Dutra, 180, Galpão 20,
+						Jardim Presidente Dutra, Guarulhos/SP, CEP 07170-150
+					</p>
+				</div>
 				<div class="footer-bottom">
 					<p class="footer-copyright">
 						&copy; {new Date().getFullYear()} DouraVita. Todos os direitos reservados.
@@ -1017,6 +1032,32 @@ const isLoggedIn = !!Astro.locals.user;
 				color: var(--color-text-secondary);
 				font-size: var(--font-size-sm);
 				line-height: var(--leading-relaxed);
+			}
+
+			.footer-institutional {
+				max-width: var(--wide-width);
+				margin: 0 auto;
+				padding: var(--spacing-8) 0;
+				border-top: 1px solid var(--color-border-subtle);
+			}
+
+			.footer-about {
+				font-size: var(--font-size-sm);
+				line-height: var(--leading-relaxed);
+				color: var(--color-text-secondary);
+				margin-bottom: var(--spacing-4);
+			}
+
+			.footer-address {
+				font-size: var(--font-size-sm);
+				line-height: var(--leading-relaxed);
+				color: var(--color-text-secondary);
+				margin: 0;
+			}
+
+			.footer-address strong {
+				color: var(--color-text);
+				font-weight: 600;
 			}
 
 			.footer-bottom {
