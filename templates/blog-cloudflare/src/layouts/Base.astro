@@ -11,8 +11,19 @@ import LiveSearch from "emdash/ui/search";
 import { Font } from "astro:assets";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 import { FEATURED_PILLARS } from "../data/pilares-visual";
-import CategoriesBar from "../components/CategoriesBar.astro";
 import "../styles/theme.css";
+
+// Categorias visiveis na barra horizontal do header (desktop).
+// Labels CURTOS pra caber entre logo e busca sem enrolar.
+const NAV_CATEGORIES = [
+	{ slug: "suplementacao", label: "Suplementos" },
+	{ slug: "movimento", label: "Movimento" },
+	{ slug: "cuidador", label: "Cuidador" },
+	{ slug: "saude-mental", label: "Mente" },
+	{ slug: "doencas-cronicas", label: "Doenças" },
+	{ slug: "vida-plena", label: "Vida Plena" },
+	{ slug: "noticias", label: "Notícias" },
+];
 
 interface Props {
 	title: string;
@@ -127,6 +138,15 @@ const isLoggedIn = !!Astro.locals.user;
 						: siteTitle
 					}
 				</a>
+				<ul class="nav-categories" aria-label="Categorias">
+					{NAV_CATEGORIES.map((c) => (
+						<li>
+							<a href={`/blog/category/${c.slug}`} class="nav-category-item">
+								{c.label}
+							</a>
+						</li>
+					))}
+				</ul>
 				<div class="nav-right">
 					<LiveSearch
 						placeholder="Buscar..."
@@ -173,8 +193,6 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 			</nav>
 		</header>
-
-		<CategoriesBar />
 
 		<aside
 			class="mobile-menu-overlay"
@@ -733,6 +751,42 @@ const isLoggedIn = !!Astro.locals.user;
 				width: auto;
 				display: block;
 				margin: -16px 0;
+			}
+
+			.nav-categories {
+				display: flex;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				gap: var(--spacing-4);
+				align-items: center;
+				flex: 1 1 auto;
+				justify-content: center;
+			}
+
+			.nav-category-item {
+				display: inline-block;
+				padding: var(--spacing-2) 0;
+				font-size: var(--font-size-xs);
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: var(--tracking-wide);
+				color: var(--color-text);
+				text-decoration: none;
+				border-bottom: 2px solid transparent;
+				white-space: nowrap;
+				transition: color var(--transition-fast), border-color var(--transition-fast);
+			}
+
+			.nav-category-item:hover,
+			.nav-category-item:focus-visible {
+				color: var(--color-accent);
+				border-bottom-color: var(--color-accent);
+				outline: none;
+			}
+
+			@media (max-width: 900px) {
+				.nav-categories { display: none; }
 			}
 
 			.nav-right {
