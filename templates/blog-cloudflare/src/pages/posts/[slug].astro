@@ -149,15 +149,6 @@ const publishDate =
 	content={{ collection: "posts", id: post.data.id, slug }}
 >
 	<article class="article">
-		{/* Hero: Full-width featured image */}
-		{
-			post.data.featured_image && (
-				<div class="article-hero" {...post.edit.featured_image}>
-					<Image image={post.data.featured_image} />
-				</div>
-			)
-		}
-
 		{/* Three-column layout */}
 		<div class="article-grid">
 			{/* Left gutter: Meta information */}
