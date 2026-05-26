@@ -465,58 +465,55 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 
 				{/* ====== 2.5 SARCOPENIA + CREATINA (educacional) ====== */}
 				<section class="section edu-section">
-					<article class="edu-card">
-						<header class="edu-header">
-							<span class="edu-eyebrow">Aprofunde-se</span>
-							<h2 class="edu-title">
-								Sarcopenia: o que a ciência diz (e como a creatina ajuda)
-							</h2>
-						</header>
+					<a href="/blog/category/suplementacao" class="edu-card-link">
+						<article class="edu-card">
+							<header class="edu-header">
+								<span class="edu-eyebrow">Aprofunde-se</span>
+								<h2 class="edu-title">
+									Sarcopenia: o que a ciência diz (e como a creatina ajuda)
+								</h2>
+							</header>
 
-						<div class="edu-body">
-							<p>
-								A <strong>sarcopenia</strong> — perda progressiva de massa e
-								força muscular ligada ao envelhecimento — atinge cerca de{" "}
-								<strong>1 em cada 3 brasileiros acima de 60 anos</strong>,
-								segundo o estudo SABE (Saúde, Bem-estar e Envelhecimento) da
-								USP. Ela está diretamente ligada a quedas, perda de
-								independência e mortalidade precoce — mas pode ser
-								desacelerada (e em parte revertida) com duas intervenções
-								simples: <strong>musculação regular</strong> e{" "}
-								<strong>ingestão adequada de proteína</strong>.
-							</p>
+							<div class="edu-body">
+								<p>
+									A <strong>sarcopenia</strong>, perda progressiva de massa
+									e força muscular ligada ao envelhecimento, atinge cerca
+									de{" "}
+									<strong>1 em cada 3 brasileiros acima de 60 anos</strong>,
+									segundo o estudo SABE (Saúde, Bem-estar e Envelhecimento)
+									da USP. Ela está diretamente ligada a quedas, perda de
+									independência e mortalidade precoce. Mas pode ser
+									desacelerada (e em parte revertida) com duas intervenções
+									simples: <strong>musculação regular</strong> e{" "}
+									<strong>ingestão adequada de proteína</strong>.
+								</p>
 
-							<h3 class="edu-subtitle">O que a ciência mostra</h3>
-							<p>
-								Uma <strong>meta-análise de Chilibeck et al. (2017)</strong>{" "}
-								reuniu 22 estudos com idosos e demonstrou que combinar
-								creatina (3–5 g/dia) com treino de força 2–3x por semana
-								resulta, em média, em <strong>1,4 kg a mais de massa
-								muscular magra</strong> em comparação à musculação isolada.
-								A revisão de{" "}
-								<strong>Forbes et al. (2021)</strong> confirma o perfil de
-								segurança da creatina em adultos 55+ e aponta ganhos
-								adicionais em densidade óssea e desempenho cognitivo.
-							</p>
+								<h3 class="edu-subtitle">O que a ciência mostra</h3>
+								<p>
+									Uma{" "}
+									<strong>meta-análise de Chilibeck et al. (2017)</strong>{" "}
+									reuniu 22 estudos com idosos e demonstrou que combinar
+									creatina (3 a 5 g/dia) com treino de força 2 a 3x por
+									semana resulta, em média, em <strong>1,4 kg a mais de
+									massa muscular magra</strong> em comparação à musculação
+									isolada. A revisão de{" "}
+									<strong>Forbes et al. (2021)</strong> confirma o perfil de
+									segurança da creatina em adultos 55+ e aponta ganhos
+									adicionais em densidade óssea e desempenho cognitivo.
+								</p>
 
-							<h3 class="edu-subtitle">A creatina Douravita</h3>
-							<p>
-								A creatina monohidratada Douravita foi formulada pensando
-								no público 55+: <strong>5 g por dia</strong>, sabor neutro,
-								sem corantes nem aditivos desnecessários. Dissolve fácil em
-								água, suco ou iogurte — e funciona melhor quando combinada
-								com uma refeição rica em proteína e treino de força regular.
-							</p>
-
-							<a
-								href="/blog/category/suplementacao"
-								class="edu-cta"
-							>
-								Conheça a creatina Douravita{" "}
-								<span aria-hidden="true">→</span>
-							</a>
-						</div>
-					</article>
+								<h3 class="edu-subtitle">A creatina Douravita</h3>
+								<p>
+									A creatina monohidratada Douravita foi formulada pensando
+									no público 55+: <strong>5 g por dia</strong>, sabor
+									neutro, sem corantes nem aditivos desnecessários.
+									Dissolve fácil em água, suco ou iogurte, e funciona melhor
+									quando combinada com uma refeição rica em proteína e
+									treino de força regular.
+								</p>
+							</div>
+						</article>
+					</a>
 				</section>
 
 				{/* ====== 3. MAIS LIDOS ====== */}
@@ -1305,24 +1302,37 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		margin-top: var(--spacing-2);
 	}
 
-	.edu-cta {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-2);
-		align-self: start;
-		margin-top: var(--spacing-3);
-		padding: var(--spacing-3) var(--spacing-6);
-		background: var(--color-accent);
-		color: var(--color-on-accent);
-		border-radius: 999px;
-		font-size: var(--font-size-sm);
-		font-weight: 600;
+	/* Card todo clicavel — sem CTA pilula explicito */
+	.edu-card-link {
+		display: block;
 		text-decoration: none;
-		transition: transform var(--transition-fast);
+		color: inherit;
+		transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 	}
 
-	.edu-cta:hover {
-		transform: translateX(3px);
+	.edu-card-link:hover .edu-card,
+	.edu-card-link:focus-visible .edu-card {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+	}
+
+	.edu-card-link:hover .edu-title,
+	.edu-card-link:focus-visible .edu-title {
+		color: var(--color-accent);
+	}
+
+	.edu-card-link:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 4px;
+		border-radius: var(--radius-lg);
+	}
+
+	.edu-card {
+		transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.edu-title {
+		transition: color var(--transition-fast);
 	}
 
 	/* ===== Responsive ===== */
