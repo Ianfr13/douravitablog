@@ -463,6 +463,26 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 					</div>
 				</section>
 
+				{/* ====== 2.5 ESTATISTICA SARCOPENIA (quebra visual) ====== */}
+				<section class="section stat-section">
+					<div class="stat-banner">
+						<div class="stat-number">1 em cada 3</div>
+						<div class="stat-body">
+							<p class="stat-text">
+								pessoas acima de 60 anos pode ter algum grau de{" "}
+								<strong>sarcopenia</strong> — perda de massa e força muscular
+								ligada ao envelhecimento.
+							</p>
+							<p class="stat-source">
+								Estimativa baseada em estudos brasileiros (SABE/USP)
+							</p>
+							<a href="/blog/search?q=sarcopenia" class="stat-link">
+								Veja como prevenir <span aria-hidden="true">→</span>
+							</a>
+						</div>
+					</div>
+				</section>
+
 				{/* ====== 3. MAIS LIDOS ====== */}
 				{mostReadWithCat.length > 0 && (
 					<section class="section most-read">
@@ -1194,10 +1214,81 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		transition: background var(--transition-fast);
 	}
 
+	/* ===== Stat banner (quebra entre quiz e mais lidos) ===== */
+	.stat-banner {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-3);
+		padding: var(--spacing-6) var(--spacing-5);
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border-radius: var(--radius-lg);
+	}
+
+	.stat-number {
+		font-size: clamp(2.5rem, 9vw, 4.5rem);
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: var(--tracking-tight);
+	}
+
+	.stat-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-3);
+	}
+
+	.stat-text {
+		font-size: var(--font-size-lg);
+		line-height: var(--leading-snug);
+		font-weight: 500;
+	}
+
+	.stat-text strong {
+		font-weight: 700;
+	}
+
+	.stat-source {
+		font-size: var(--font-size-sm);
+		opacity: 0.85;
+		font-style: italic;
+	}
+
+	.stat-link {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		align-self: start;
+		padding: var(--spacing-2) var(--spacing-4);
+		margin-top: var(--spacing-1);
+		background: var(--color-on-accent);
+		color: var(--color-accent);
+		border-radius: 999px;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		text-decoration: none;
+		transition: transform var(--transition-fast);
+	}
+
+	.stat-link:hover {
+		transform: translateX(3px);
+	}
+
 	/* ===== Responsive ===== */
 
 	/* Tablet: 2 colunas pros large cards + small ainda em coluna */
 	@media (min-width: 700px) {
+		.stat-banner {
+			flex-direction: row;
+			align-items: center;
+			gap: var(--spacing-8);
+			padding: var(--spacing-8) var(--spacing-10);
+		}
+
+		.stat-number {
+			flex-shrink: 0;
+		}
+
 		.home-content {
 			padding: var(--spacing-12) var(--spacing-6) var(--spacing-16);
 		}
