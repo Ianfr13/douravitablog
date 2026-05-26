@@ -30,6 +30,12 @@
 	"images": {
 		"binding": "IMAGES",
 	},
+	// Comments / Reader Auth: site key publica do Turnstile (vai pro HTML).
+	// Os secrets TURNSTILE_SECRET_KEY e READER_SESSION_SECRET vivem em
+	// "encrypted secrets" do Worker (nao ficam aqui no repo).
+	"vars": {
+		"TURNSTILE_SITE_KEY": "0x4AAAAAADWzbE_A_uae235T",
+	},
 	// Worker Loader for plugin sandboxing
 	"worker_loaders": [
 		{
