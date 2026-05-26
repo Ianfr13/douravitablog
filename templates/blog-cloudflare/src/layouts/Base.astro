@@ -80,6 +80,11 @@ const pageCtx = createPublicPageContext({
 	siteName: siteTitle,
 });
 
+// Detecta slug da categoria atual a partir do path /blog/category/<slug>
+// pra destacar o item correspondente no menu fixo do header (desktop).
+const _categoryMatch = Astro.url.pathname.match(/^\/blog\/category\/([^/]+)/);
+const activeCategorySlug = _categoryMatch ? _categoryMatch[1] : null;
+
 // Check if user is logged in (for showing admin link)
 const isLoggedIn = !!Astro.locals.user;
 ---
@@ -142,7 +147,11 @@ const isLoggedIn = !!Astro.locals.user;
 				<ul class="nav-categories" aria-label="Categorias">
 					{NAV_CATEGORIES.map((c) => (
 						<li>
-							<a href={`/blog/category/${c.slug}`} class="nav-category-item">
+							<a
+								href={`/blog/category/${c.slug}`}
+								class="nav-category-item"
+								aria-current={c.slug === activeCategorySlug ? "page" : undefined}
+							>
 								{c.label}
 							</a>
 						</li>
@@ -791,7 +800,8 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.nav-category-item:hover,
-			.nav-category-item:focus-visible {
+			.nav-category-item:focus-visible,
+			.nav-category-item[aria-current="page"] {
 				color: var(--color-accent);
 				border-bottom-color: var(--color-accent);
 				outline: none;
