@@ -717,7 +717,8 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	}
 
 	.card-large-image {
-		aspect-ratio: 16 / 10;
+		aspect-ratio: 16 / 9;
+		max-height: 320px;
 		overflow: hidden;
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
