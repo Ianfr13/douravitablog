@@ -241,6 +241,20 @@ export default {
 		env: unknown,
 		ctx: ExecutionContext,
 	): Promise<Response> {
+		// Static assets do public/ (imagens, favicon, etc) vao pra ASSETS
+		// binding direto — sem isso, o handler do Astro engole o request
+		// e devolve a home (catch-all do SSR).
+		if (request.method === "GET" || request.method === "HEAD") {
+			const url = new URL(request.url);
+			if (/\.(webp|png|jpg|jpeg|gif|svg|ico|avif)$/i.test(url.pathname)) {
+				const assets = (env as { ASSETS?: { fetch: (r: Request) => Promise<Response> } }).ASSETS;
+				if (assets) {
+					const assetResponse = await assets.fetch(request);
+					if (assetResponse.status === 200) return assetResponse;
+				}
+			}
+		}
+
 		const redirect = redirectLegacyPublicPath(request);
 		if (redirect) return redirect;
 
