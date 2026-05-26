@@ -166,6 +166,8 @@ const isLoggedIn = !!Astro.locals.user;
 						resultsClass="site-search-results"
 						resultClass="site-search-result"
 						collections={["posts", "pages"]}
+						pathPrefix="/blog"
+						searchPagePath="/blog/search"
 					/>
 					<div class="nav-links">
 						{
