@@ -361,6 +361,9 @@ export default {
 			headers.set("Cache-Control", DEFAULT_CACHE_CONTROL);
 		} else if (kind === "api") {
 			headers.set("Cache-Control", SEARCH_CACHE_CONTROL);
+			// Debug marker: pra confirmar que o worker novo esta rodando o
+			// override de api cache. Remover depois que estabilizar.
+			headers.set("x-emdash-search-version", SEARCH_CACHE_VERSION);
 			// CORS: LiveSearch chama da mesma origem hoje, mas se algum dia for
 			// embedado, sem isso o cached response pode quebrar; barato adicionar.
 			if (!headers.has("Access-Control-Allow-Origin")) {
