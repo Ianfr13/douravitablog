@@ -103,6 +103,11 @@ function makeCacheKey(request: Request): Request {
 	return new Request(url.toString(), { method: "GET" });
 }
 
+// Versao do cache de search. Bump quando muda o shape do response
+// (campos novos no JSON, regras de sanitize, normalizacao do snippet) pra
+// invalidar TODAS as keys cached sem precisar esperar TTL ou purge manual.
+const SEARCH_CACHE_VERSION = "3"; // v3: PT JSON cleanup + best-column snippet
+
 // Cache key pra search API: normaliza o param `q` (trim + lowercase + collapse
 // whitespace) pra maximizar reuso entre usuarios. "Diabetes ", "diabetes",
 // "DIABETES" todas caem na mesma chave.
@@ -113,6 +118,7 @@ function makeSearchCacheKey(request: Request): Request {
 		const normalized = q.trim().toLowerCase().replace(/\s+/g, " ");
 		url.searchParams.set("q", normalized);
 	}
+	url.searchParams.set("_sv", SEARCH_CACHE_VERSION);
 	url.searchParams.sort();
 	return new Request(url.toString(), { method: "GET" });
 }
