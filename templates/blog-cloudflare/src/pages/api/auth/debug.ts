@@ -8,36 +8,39 @@ import type { APIRoute } from "astro";
 export const prerender = false;
 
 export const GET: APIRoute = async ({ locals }) => {
-	const l = locals as unknown as Record<string, unknown>;
-	const info: Record<string, unknown> = {
-		localsKeys: Object.keys(l),
-	};
+	try {
+		const info: Record<string, unknown> = { stage: "start" };
+		const l = locals as unknown as Record<string, unknown>;
+		info.stage = "got locals";
+		info.localsKeys = Object.keys(l);
 
-	const runtime = l.runtime as Record<string, unknown> | undefined;
-	if (runtime) {
-		info.runtimeKeys = Object.keys(runtime);
-		const env = runtime.env as Record<string, unknown> | undefined;
-		if (env) {
-			// So lista nomes — nao expoe values dos secrets
-			info.envKeys = Object.keys(env);
-			info.envFacebookAppIdType = typeof env.FACEBOOK_APP_ID;
-			info.envFacebookAppIdValue = typeof env.FACEBOOK_APP_ID === "string"
-				? (env.FACEBOOK_APP_ID as string).slice(0, 6) + "..."
-				: null;
-		} else {
-			info.envKeys = "runtime.env is undefined";
+		try {
+			const runtime = l.runtime as Record<string, unknown> | undefined;
+			info.stage = "got runtime";
+			if (runtime) {
+				info.runtimeKeys = Object.keys(runtime);
+				const env = runtime.env as Record<string, unknown> | undefined;
+				if (env) {
+					info.envKeys = Object.keys(env).sort();
+					info.fbAppIdPresent = typeof env.FACEBOOK_APP_ID === "string";
+				} else {
+					info.envKeys = "runtime.env is undefined";
+				}
+			} else {
+				info.runtimeKeys = "runtime is undefined";
+			}
+		} catch (err) {
+			info.runtimeErr = err instanceof Error ? err.message : String(err);
 		}
-	} else {
-		info.runtimeKeys = "runtime is undefined";
-	}
 
-	const emdash = l.emdash as Record<string, unknown> | undefined;
-	if (emdash) {
-		info.emdashKeys = Object.keys(emdash);
+		return new Response(JSON.stringify(info, null, 2), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	} catch (err) {
+		return new Response(
+			"crash: " + (err instanceof Error ? err.message + "\n" + (err.stack || "") : String(err)),
+			{ status: 500, headers: { "Content-Type": "text/plain" } },
+		);
 	}
-
-	return new Response(JSON.stringify(info, null, 2), {
-		status: 200,
-		headers: { "Content-Type": "application/json" },
-	});
 };
