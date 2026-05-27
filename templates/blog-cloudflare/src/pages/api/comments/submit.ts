@@ -38,6 +38,7 @@ interface SubmitBody {
 	authorEmail?: unknown;
 	website_url?: unknown;
 	turnstileToken?: unknown;
+	readerToken?: unknown;
 }
 
 
@@ -77,10 +78,16 @@ export const POST: APIRoute = async ({ request, url }) => {
 		return jsonError("O comentario nao pode ficar vazio", 400);
 	}
 
-	// Le reader session se houver
+	// Le reader session: tenta cookie primeiro, body.readerToken como fallback.
+	// Fallback existe porque alguns browsers (Chrome em certas condicoes) nao
+	// enviam o cookie reader_session em fetch POST mesmo com credentials=
+	// "include" + SameSite=Lax + same-origin. O form embeda o token via input
+	// hidden quando o SSR detecta sessao valida.
 	const cookieHeader = request.headers.get("cookie");
 	const sessionCookie = getReaderSessionCookie(cookieHeader);
-	const session = await decodeReaderSession(sessionCookie, readerSecret);
+	const tokenFromBody = typeof raw.readerToken === "string" ? raw.readerToken : null;
+	const tokenToTry = sessionCookie || tokenFromBody || undefined;
+	const session = await decodeReaderSession(tokenToTry, readerSecret);
 
 	let authorName: string;
 	let authorEmail: string;

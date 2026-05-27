@@ -29,6 +29,7 @@ interface Props {
 const { collection, contentId, parentId = null, class: className } = Astro.props;
 
 let session = null;
+let readerToken: string | undefined; // valor raw do cookie pra echar no form
 let turnstileSiteKey: string | undefined;
 try {
 	const env = await getWorkerEnv();
@@ -38,6 +39,7 @@ try {
 		const cookieHeader = Astro.request.headers.get("cookie");
 		const cookieValue = getReaderSessionCookie(cookieHeader);
 		session = await decodeReaderSession(cookieValue, readerSecret);
+		if (session) readerToken = cookieValue;
 	}
 } catch {
 	// Em build/dev sem env, renderiza form anonimo sem Turnstile
@@ -88,6 +90,11 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 	</label>
 
 	{parentId && <input type="hidden" name="parentId" value={parentId} />}
+
+	{/* Token de sessao do leitor — algunscanals Chrome stripam o cookie
+	    reader_session em fetch POST mesmo com SameSite=Lax + same-origin.
+	    Repassamos o token via input hidden + body do POST como fallback. */}
+	{readerToken && <input type="hidden" name="readerToken" value={readerToken} />}
 
 	{/* Turnstile widget — so pra anonimos */}
 	{!session && turnstileSiteKey && (
