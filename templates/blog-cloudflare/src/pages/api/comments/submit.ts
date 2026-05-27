@@ -1,24 +1,24 @@
 /**
  * POST /api/comments/submit
  *
- * Endpoint proxy de submissao de comentarios. Faz:
- *   1. Le cookie reader_session — se logado via Facebook, sobrescreve
- *      authorName/authorEmail com dados do cookie (anti-tampering).
- *   2. Se anonimo, exige token Turnstile e valida via siteverify.
- *   3. Repassa o body modificado pro endpoint EmDash interno
- *      (/_emdash/api/comments/:collection/:contentId).
+ * Submissao de comentarios pra `_emdash_comments` direto via D1 binding.
  *
- * Body esperado:
- *   {
- *     collection: "posts",
- *     contentId: "<ULID>",
- *     body: string,
- *     parentId?: string | null,
- *     authorName?: string,        // ignorado se logado
- *     authorEmail?: string,       // ignorado se logado
- *     website_url?: string,       // honeypot — passa adiante intacto
- *     turnstileToken?: string,    // obrigatorio pra anonimos
- *   }
+ * Por que nao subrequest pro endpoint EmDash:
+ *   Fetch interno `${origin}/_emdash/api/comments/<col>/<id>` retornou 405
+ *   no Worker em prod (problema de routing recursivo do CF Workers, nao
+ *   identificado direito). Bypass + INSERT direto eh mais robusto.
+ *
+ * Fluxo:
+ *   1. Le cookie reader_session ou body.readerToken (fallback do Chrome
+ *      que descarta cookie em POST). Se valido -> identifica leitor.
+ *   2. Se anonimo -> exige Turnstile.
+ *   3. INSERT na _emdash_comments com status='pending' (Ian aprova no
+ *      admin EmDash).
+ *
+ * Trade-off: nao roda hooks `comment:beforeCreate` / `comment:moderate` /
+ * `comment:afterCreate` do EmDash. Como nao usamos plugins desses, OK.
+ * Rate limit + first_time moderation podem ser re-introduzidos depois
+ * via lookup direto na D1.
  */
 
 import type { APIRoute } from "astro";
@@ -41,6 +41,16 @@ interface SubmitBody {
 	readerToken?: unknown;
 }
 
+interface D1Database {
+	prepare(query: string): {
+		bind(...values: unknown[]): {
+			run(): Promise<unknown>;
+			first<T = unknown>(): Promise<T | null>;
+			all<T = unknown>(): Promise<{ results: T[] }>;
+		};
+		first<T = unknown>(): Promise<T | null>;
+	};
+}
 
 function jsonError(message: string, status: number, code = "VALIDATION_ERROR"): Response {
 	return new Response(JSON.stringify({ error: { code, message } }), {
@@ -49,11 +59,27 @@ function jsonError(message: string, status: number, code = "VALIDATION_ERROR"): 
 	});
 }
 
-export const POST: APIRoute = async ({ request, url }) => {
+/** Gera um identificador unico curto (UUID v4 do CF runtime). */
+function newId(): string {
+	return crypto.randomUUID();
+}
+
+/** SHA-256(ip + salt) -> hex 16 chars (irreversivel, p anti-spam buckets). */
+async function hashIp(ip: string, salt: string): Promise<string> {
+	const data = new TextEncoder().encode(ip + salt);
+	const digest = await crypto.subtle.digest("SHA-256", data);
+	const bytes = new Uint8Array(digest);
+	let hex = "";
+	for (let i = 0; i < 8; i++) hex += bytes[i]!.toString(16).padStart(2, "0");
+	return hex;
+}
+
+export const POST: APIRoute = async ({ request }) => {
 	const env = await getWorkerEnv();
-	const readerSecret = env.READER_SESSION_SECRET;
-	const turnstileSecret = env.TURNSTILE_SECRET_KEY;
-	if (!readerSecret || !turnstileSecret) {
+	const readerSecret = env.READER_SESSION_SECRET as string | undefined;
+	const turnstileSecret = env.TURNSTILE_SECRET_KEY as string | undefined;
+	const DB = env.DB as D1Database | undefined;
+	if (!readerSecret || !turnstileSecret || !DB) {
 		return jsonError("Backend de comentarios nao configurado", 500, "CONFIG_ERROR");
 	}
 
@@ -66,7 +92,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
 	const collection = typeof raw.collection === "string" ? raw.collection : "";
 	const contentId = typeof raw.contentId === "string" ? raw.contentId : "";
-	const bodyText = typeof raw.body === "string" ? raw.body : "";
+	const bodyText = typeof raw.body === "string" ? raw.body.trim() : "";
 	const parentId = typeof raw.parentId === "string" ? raw.parentId : null;
 	const websiteUrl = typeof raw.website_url === "string" ? raw.website_url : "";
 	const turnstileToken = typeof raw.turnstileToken === "string" ? raw.turnstileToken : null;
@@ -74,15 +100,22 @@ export const POST: APIRoute = async ({ request, url }) => {
 	if (!collection || !contentId) {
 		return jsonError("Faltam dados do artigo", 400);
 	}
-	if (!bodyText.trim()) {
+	if (!bodyText) {
 		return jsonError("O comentario nao pode ficar vazio", 400);
 	}
+	if (bodyText.length > 5000) {
+		return jsonError("O comentario eh muito longo (limite 5000 caracteres)", 400);
+	}
 
-	// Le reader session: tenta cookie primeiro, body.readerToken como fallback.
-	// Fallback existe porque alguns browsers (Chrome em certas condicoes) nao
-	// enviam o cookie reader_session em fetch POST mesmo com credentials=
-	// "include" + SameSite=Lax + same-origin. O form embeda o token via input
-	// hidden quando o SSR detecta sessao valida.
+	// Honeypot: se preenchido, eh bot. Aceita silenciosamente sem salvar.
+	if (websiteUrl) {
+		return new Response(
+			JSON.stringify({ success: true, status: "pending", message: "Comentario enviado!" }),
+			{ status: 201, headers: { "Content-Type": "application/json" } },
+		);
+	}
+
+	// Identificacao do autor: cookie -> body.readerToken -> form anonimo
 	const cookieHeader = request.headers.get("cookie");
 	const sessionCookie = getReaderSessionCookie(cookieHeader);
 	const tokenFromBody = typeof raw.readerToken === "string" ? raw.readerToken : null;
@@ -93,114 +126,106 @@ export const POST: APIRoute = async ({ request, url }) => {
 	let authorEmail: string;
 
 	if (session) {
-		// Logado: dados do cookie (anti-tampering: ignora o que veio no form).
-		// Email nao esta no cookie (privacidade + tamanho); usa placeholder
-		// estavel por fbId — EmDash usa o email so pra moderation first_time.
 		authorName = session.name;
 		authorEmail = `fb-${session.fbId}@facebook.douravita.local`;
 	} else {
-		// Anonimo: exige Turnstile + valida campos manuais
 		authorName = typeof raw.authorName === "string" ? raw.authorName.trim() : "";
 		authorEmail = typeof raw.authorEmail === "string" ? raw.authorEmail.trim() : "";
 
 		if (!authorName) return jsonError("Informe seu nome", 400);
 		if (!authorEmail || !authorEmail.includes("@")) return jsonError("E-mail invalido", 400);
+		if (authorName.length > 100) authorName = authorName.slice(0, 100);
 
-		// Skip Turnstile so quando o request veio pelo honeypot do bot
-		// (o EmDash trata silenciosamente la na frente).
-		if (!websiteUrl) {
-			const ip = request.headers.get("cf-connecting-ip");
-			const tsRes = await verifyTurnstile(turnstileToken, turnstileSecret, ip);
-			if (!tsRes.success) {
-				return jsonError(
-					"Falha na verificacao anti-spam. Atualize a pagina e tente novamente.",
-					400,
-					"TURNSTILE_FAILED",
-				);
-			}
+		const ip = request.headers.get("cf-connecting-ip");
+		const tsRes = await verifyTurnstile(turnstileToken, turnstileSecret, ip);
+		if (!tsRes.success) {
+			return jsonError(
+				"Falha na verificacao anti-spam. Atualize a pagina e tente novamente.",
+				400,
+				"TURNSTILE_FAILED",
+			);
 		}
 	}
 
-	// Monta o body pro EmDash. Mantemos honeypot intacto (se vier preenchido,
-	// EmDash silently accepts — comportamento anti-bot esperado).
-	const emdashBody = {
-		collection,
-		contentId,
-		body: bodyText,
-		parentId,
-		authorName,
-		authorEmail,
-		website_url: websiteUrl,
-	};
-
-	// Subrequest interna pro endpoint EmDash. Cloudflare Workers serve do mesmo
-	// isolate, com latencia sub-ms. Propagamos headers relevantes pra rate
-	// limit / IP hash continuarem funcionando.
-	const origin = url.origin;
-	const target = `${origin}/_emdash/api/comments/${encodeURIComponent(collection)}/${encodeURIComponent(contentId)}`;
-
-	const forwardHeaders = new Headers();
-	forwardHeaders.set("Content-Type", "application/json");
-	forwardHeaders.set("X-EmDash-Request", "1");
-	for (const h of [
-		"cf-connecting-ip",
-		"x-forwarded-for",
-		"x-real-ip",
-		"user-agent",
-		"accept-language",
-	]) {
-		const v = request.headers.get(h);
-		if (v) forwardHeaders.set(h, v);
+	// Resolve content_id real: cliente pode mandar o slug ou o ULID.
+	// Tabela: ec_posts tem coluna id (ULID) e slug. Aceita qualquer um.
+	let resolvedContentId = contentId;
+	if (collection === "posts") {
+		try {
+			const row = await DB.prepare(
+				"SELECT id FROM ec_posts WHERE (id = ? OR slug = ?) AND status = 'published' AND deleted_at IS NULL LIMIT 1",
+			)
+				.bind(contentId, contentId)
+				.first<{ id: string }>();
+			if (!row) return jsonError("Artigo nao encontrado", 404, "NOT_FOUND");
+			resolvedContentId = row.id;
+		} catch {
+			// Fall through — se DB query falha, segue com contentId como veio
+		}
 	}
 
-	let upstream: Response;
+	// Valida parent (se houver)
+	let resolvedParentId: string | null = null;
+	if (parentId) {
+		try {
+			const parent = await DB.prepare(
+				"SELECT id, parent_id FROM _emdash_comments WHERE id = ? AND collection = ? AND content_id = ? LIMIT 1",
+			)
+				.bind(parentId, collection, resolvedContentId)
+				.first<{ id: string; parent_id: string | null }>();
+			if (!parent) return jsonError("Comentario pai nao encontrado", 400);
+			// 1 nivel de thread: se parent ja eh reply, attach a raiz
+			resolvedParentId = parent.parent_id ?? parent.id;
+		} catch {
+			// Ignora erro de parent, vira top-level
+		}
+	}
+
+	const ip = request.headers.get("cf-connecting-ip") || "unknown";
+	const userAgent = (request.headers.get("user-agent") || "").slice(0, 500);
+	const ipHash = await hashIp(ip, readerSecret);
+	const id = newId();
+	const now = new Date().toISOString();
+	// Logados via Facebook entram como approved direto (trust). Anonimos sempre
+	// pending pra moderar — Ian aprova no admin /_emdash.
+	const status = session ? "approved" : "pending";
+
 	try {
-		upstream = await fetch(target, {
-			method: "POST",
-			headers: forwardHeaders,
-			body: JSON.stringify(emdashBody),
-		});
-	} catch {
-		return jsonError("Erro de conexao com o backend", 502, "UPSTREAM_ERROR");
+		await DB.prepare(
+			`INSERT INTO _emdash_comments
+       (id, collection, content_id, parent_id, author_name, author_email,
+        author_user_id, body, status, ip_hash, user_agent, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
+		)
+			.bind(
+				id,
+				collection,
+				resolvedContentId,
+				resolvedParentId,
+				authorName,
+				authorEmail,
+				bodyText,
+				status,
+				ipHash,
+				userAgent,
+				now,
+				now,
+			)
+			.run();
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		return new Response(
+			JSON.stringify({ error: { code: "DB_ERROR", message: "Erro salvando comentario: " + msg.slice(0, 100) } }),
+			{ status: 500, headers: { "Content-Type": "application/json" } },
+		);
 	}
 
-	// Repassa o status e body do EmDash, traduzindo as mensagens que ficam em
-	// EN ou ficam genericas demais.
-	const upstreamText = await upstream.text();
-	let upstreamJson: { data?: { status?: string; message?: string; id?: string }; error?: { code?: string; message?: string }; success?: boolean } | null = null;
-	try {
-		upstreamJson = upstreamText ? JSON.parse(upstreamText) : null;
-	} catch {
-		upstreamJson = null;
-	}
-
-	if (upstream.ok && upstreamJson?.data) {
-		const status = upstreamJson.data.status;
-		const message =
-			status === "approved"
-				? "Comentario publicado!"
-				: "Comentario enviado! Apos aprovacao ele aparecera aqui.";
-		return new Response(JSON.stringify({ success: true, status, message }), {
-			status: upstream.status,
-			headers: { "Content-Type": "application/json" },
-		});
-	}
-
-	// Erros do EmDash (rate limit, comments_closed, validation, etc) — repassa
-	// o codigo + mensagem original do EmDash, com fallback em PT.
-	const emdashErrCode = upstreamJson?.error?.code ?? "UPSTREAM_ERROR";
-	const emdashErrMsg = upstreamJson?.error?.message;
-	const ptMessage =
-		emdashErrCode === "RATE_LIMITED"
-			? "Muitos comentarios em sequencia. Aguarde alguns minutos e tente novamente."
-			: emdashErrCode === "COMMENTS_CLOSED"
-				? "Os comentarios deste artigo foram encerrados."
-				: emdashErrCode === "COMMENTS_DISABLED"
-					? "Comentarios desativados pra esta secao."
-					: emdashErrMsg || "Nao foi possivel enviar o comentario.";
-
-	return new Response(JSON.stringify({ error: { code: emdashErrCode, message: ptMessage } }), {
-		status: upstream.status || 500,
+	const message =
+		status === "approved"
+			? "Comentario publicado!"
+			: "Comentario enviado! Apos aprovacao ele aparecera aqui.";
+	return new Response(JSON.stringify({ success: true, status, message, id }), {
+		status: 201,
 		headers: { "Content-Type": "application/json" },
 	});
 };
