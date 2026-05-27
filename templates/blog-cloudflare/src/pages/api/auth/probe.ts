@@ -8,8 +8,8 @@ import { getWorkerEnv } from "../../../lib/worker-env";
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request }) => {
-	const out: Record<string, unknown> = {};
+const handler: APIRoute = async ({ request }) => {
+	const out: Record<string, unknown> = { method: request.method };
 	try {
 		const cookieHeader = request.headers.get("cookie") || "";
 		out.hasReaderSubstring = cookieHeader.includes("reader_session=");
@@ -49,3 +49,6 @@ export const GET: APIRoute = async ({ request }) => {
 		headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
 	});
 };
+
+export const GET = handler;
+export const POST = handler;
