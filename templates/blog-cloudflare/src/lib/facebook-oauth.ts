@@ -27,14 +27,21 @@ export interface FacebookOAuthConfig {
 	redirectUri: string;
 }
 
-/** Monta a URL de inicio do flow OAuth. */
+/** Monta a URL de inicio do flow OAuth.
+ *
+ * Scope `public_profile` e default e nao requer App Review. `email` exige
+ * habilitar em "Permissoes e recursos" do FB App + (eventualmente) App Review
+ * pra modo live. Em dev mode, pedir `email` explicitamente joga "Invalid
+ * Scopes" pra contas que nao sao admin do app. So pedimos public_profile;
+ * email vem opcional via API Graph (fetchProfile faz fallback se vier vazio).
+ */
 export function buildAuthorizationUrl(config: FacebookOAuthConfig, state: string): string {
 	const url = new URL(AUTH_URL);
 	url.searchParams.set("client_id", config.appId);
 	url.searchParams.set("redirect_uri", config.redirectUri);
 	url.searchParams.set("state", state);
 	url.searchParams.set("response_type", "code");
-	url.searchParams.set("scope", "email,public_profile");
+	url.searchParams.set("scope", "public_profile");
 	return url.toString();
 }
 
