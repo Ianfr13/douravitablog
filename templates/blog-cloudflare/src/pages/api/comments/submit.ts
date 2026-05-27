@@ -25,6 +25,7 @@ import type { APIRoute } from "astro";
 
 import { decodeReaderSession, getReaderSessionCookie } from "../../../lib/reader-session";
 import { verifyTurnstile } from "../../../lib/turnstile";
+import { getWorkerEnv } from "../../../lib/worker-env";
 
 export const prerender = false;
 
@@ -39,26 +40,6 @@ interface SubmitBody {
 	turnstileToken?: unknown;
 }
 
-function readEnv(locals: unknown): Record<string, unknown> {
-	try {
-		const l = locals as { runtime?: { env?: unknown } } | null | undefined;
-		const env = l?.runtime?.env;
-		if (env && typeof env === "object") return env as Record<string, unknown>;
-	} catch {
-		// fall through
-	}
-	return {};
-}
-
-function getEnv(locals: unknown): { readerSecret?: string; turnstileSecret?: string } {
-	const env = readEnv(locals);
-	const pick = (k: string): string | undefined =>
-		typeof env[k] === "string" ? (env[k] as string) : undefined;
-	return {
-		readerSecret: pick("READER_SESSION_SECRET"),
-		turnstileSecret: pick("TURNSTILE_SECRET_KEY"),
-	};
-}
 
 function jsonError(message: string, status: number, code = "VALIDATION_ERROR"): Response {
 	return new Response(JSON.stringify({ error: { code, message } }), {
@@ -67,8 +48,10 @@ function jsonError(message: string, status: number, code = "VALIDATION_ERROR"): 
 	});
 }
 
-export const POST: APIRoute = async ({ request, locals, url }) => {
-	const { readerSecret, turnstileSecret } = getEnv(locals);
+export const POST: APIRoute = async ({ request, url }) => {
+	const env = await getWorkerEnv();
+	const readerSecret = env.READER_SESSION_SECRET;
+	const turnstileSecret = env.TURNSTILE_SECRET_KEY;
 	if (!readerSecret || !turnstileSecret) {
 		return jsonError("Backend de comentarios nao configurado", 500, "CONFIG_ERROR");
 	}

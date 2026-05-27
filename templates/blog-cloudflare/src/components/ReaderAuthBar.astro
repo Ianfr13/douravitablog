@@ -10,6 +10,7 @@ import {
 	decodeReaderSession,
 	getReaderSessionCookie,
 } from "../lib/reader-session";
+import { getWorkerEnv } from "../lib/worker-env";
 
 interface Props {
 	/** Path pra voltar apos login (default: URL atual). */
@@ -19,15 +20,18 @@ interface Props {
 
 const { returnTo: returnToProp, class: className } = Astro.props;
 
-const runtime = (Astro.locals as unknown as { runtime?: { env?: Record<string, unknown> } }).runtime;
-const env = runtime?.env ?? {};
-const readerSecret = typeof (env as Record<string, unknown>).READER_SESSION_SECRET === "string"
-	? ((env as Record<string, unknown>).READER_SESSION_SECRET as string)
-	: undefined;
-
-const cookieHeader = Astro.request.headers.get("cookie");
-const cookieValue = getReaderSessionCookie(cookieHeader);
-const session = readerSecret ? await decodeReaderSession(cookieValue, readerSecret) : null;
+let session = null;
+try {
+	const env = await getWorkerEnv();
+	const readerSecret = env.READER_SESSION_SECRET;
+	if (readerSecret) {
+		const cookieHeader = Astro.request.headers.get("cookie");
+		const cookieValue = getReaderSessionCookie(cookieHeader);
+		session = await decodeReaderSession(cookieValue, readerSecret);
+	}
+} catch {
+	// Em build/dev sem env, renderiza como anonimo
+}
 
 const returnTo = returnToProp ?? Astro.url.pathname + Astro.url.search;
 const loginHref = `/blog/api/auth/facebook/login?returnTo=${encodeURIComponent(returnTo)}`;

@@ -20,19 +20,9 @@ import {
 	encodeReaderSession,
 	readerSessionSetCookieHeader,
 } from "../../../../lib/reader-session";
+import { getWorkerEnv } from "../../../../lib/worker-env";
 
 export const prerender = false;
-
-function readEnv(locals: unknown): Record<string, unknown> {
-	try {
-		const l = locals as { runtime?: { env?: unknown } } | null | undefined;
-		const env = l?.runtime?.env;
-		if (env && typeof env === "object") return env as Record<string, unknown>;
-	} catch {
-		// fall through
-	}
-	return {};
-}
 
 function decodeReturnTo(state: string): string {
 	const dotIdx = state.indexOf(".");
@@ -60,14 +50,12 @@ function errorRedirect(returnTo: string, code: string, extraSetCookie?: string):
 	return new Response(null, { status: 302, headers });
 }
 
-export const GET: APIRoute = async ({ request, url, locals }) => {
+export const GET: APIRoute = async ({ request, url }) => {
 	try {
-		const env = readEnv(locals);
-		const appId = typeof env.FACEBOOK_APP_ID === "string" ? env.FACEBOOK_APP_ID : undefined;
-		const appSecret =
-			typeof env.FACEBOOK_APP_SECRET === "string" ? env.FACEBOOK_APP_SECRET : undefined;
-		const readerSecret =
-			typeof env.READER_SESSION_SECRET === "string" ? env.READER_SESSION_SECRET : undefined;
+		const env = await getWorkerEnv();
+		const appId = env.FACEBOOK_APP_ID;
+		const appSecret = env.FACEBOOK_APP_SECRET;
+		const readerSecret = env.READER_SESSION_SECRET;
 		if (!appId || !appSecret || !readerSecret) {
 			return new Response("Login do Facebook nao configurado (env vars ausentes)", {
 				status: 500,

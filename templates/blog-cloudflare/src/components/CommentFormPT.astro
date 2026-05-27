@@ -17,6 +17,7 @@ import {
 	decodeReaderSession,
 	getReaderSessionCookie,
 } from "../lib/reader-session";
+import { getWorkerEnv } from "../lib/worker-env";
 
 interface Props {
 	collection: string;
@@ -27,19 +28,20 @@ interface Props {
 
 const { collection, contentId, parentId = null, class: className } = Astro.props;
 
-// Le env vars + reader session server-side
-const runtime = (Astro.locals as unknown as { runtime?: { env?: Record<string, unknown> } }).runtime;
-const env = runtime?.env ?? {};
-const pickEnv = (k: string): string | undefined =>
-	typeof (env as Record<string, unknown>)[k] === "string"
-		? ((env as Record<string, unknown>)[k] as string)
-		: undefined;
-const readerSecret = pickEnv("READER_SESSION_SECRET");
-const turnstileSiteKey = pickEnv("TURNSTILE_SITE_KEY");
-
-const cookieHeader = Astro.request.headers.get("cookie");
-const cookieValue = getReaderSessionCookie(cookieHeader);
-const session = readerSecret ? await decodeReaderSession(cookieValue, readerSecret) : null;
+let session = null;
+let turnstileSiteKey: string | undefined;
+try {
+	const env = await getWorkerEnv();
+	turnstileSiteKey = env.TURNSTILE_SITE_KEY;
+	const readerSecret = env.READER_SESSION_SECRET;
+	if (readerSecret) {
+		const cookieHeader = Astro.request.headers.get("cookie");
+		const cookieValue = getReaderSessionCookie(cookieHeader);
+		session = await decodeReaderSession(cookieValue, readerSecret);
+	}
+} catch {
+	// Em build/dev sem env, renderiza form anonimo sem Turnstile
+}
 
 const formId = `dv-comment-form-${parentId ?? "root"}`;
 ---

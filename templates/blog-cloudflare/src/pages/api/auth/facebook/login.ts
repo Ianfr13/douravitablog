@@ -14,19 +14,9 @@ import {
 	generateState,
 	stateCookieSetHeader,
 } from "../../../../lib/facebook-oauth";
+import { getWorkerEnv } from "../../../../lib/worker-env";
 
 export const prerender = false;
-
-function readEnv(locals: unknown): Record<string, unknown> {
-	try {
-		const l = locals as { runtime?: { env?: unknown } } | null | undefined;
-		const env = l?.runtime?.env;
-		if (env && typeof env === "object") return env as Record<string, unknown>;
-	} catch {
-		// fall through
-	}
-	return {};
-}
 
 function safeReturnTo(raw: string | null): string {
 	if (!raw) return "/blog";
@@ -34,10 +24,10 @@ function safeReturnTo(raw: string | null): string {
 	return raw;
 }
 
-export const GET: APIRoute = async ({ request, url, locals }) => {
+export const GET: APIRoute = async ({ request, url }) => {
 	try {
-		const env = readEnv(locals);
-		const appId = typeof env.FACEBOOK_APP_ID === "string" ? env.FACEBOOK_APP_ID : undefined;
+		const env = await getWorkerEnv();
+		const appId = env.FACEBOOK_APP_ID;
 		if (!appId) {
 			return new Response("Facebook Login nao configurado: FACEBOOK_APP_ID ausente", {
 				status: 500,
