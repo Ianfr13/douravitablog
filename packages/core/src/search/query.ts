@@ -214,7 +214,12 @@ async function searchSingleCollection(
 	// Using raw SQL because Kysely doesn't have FTS5 support
 	const bm25Expr = bm25Args ? `bm25("${ftsTable}", ${bm25Args})` : `bm25("${ftsTable}")`;
 
-	// Snippet column index is 2 (after id=0, locale=1, first searchable field=2)
+	// Snippet column index -1 = "deixa o SQLite escolher a coluna com mais
+	// matches" (ver docs do FTS5 snippet()). Antes era 2 (= primeira coluna
+	// searchable, geralmente o título), o que fazia buscas por termos só
+	// presentes no body retornarem o título como snippet em vez do trecho
+	// relevante. Com -1, busca por "sarcopenia" devolve o parágrafo do body
+	// onde a palavra aparece, com <mark>...</mark> em volta do match.
 	let results;
 	try {
 		results = await sql<{
@@ -225,12 +230,12 @@ async function searchSingleCollection(
 			snippet: string | null;
 			score: number;
 		}>`
-		SELECT 
+		SELECT
 			c.id,
 			c.slug,
 			c.locale,
 			c.title,
-			snippet("${sql.raw(ftsTable)}", 2, '<mark>', '</mark>', '...', 32) as snippet,
+			snippet("${sql.raw(ftsTable)}", -1, '<mark>', '</mark>', '...', 32) as snippet,
 			${sql.raw(bm25Expr)} as score
 		FROM "${sql.raw(ftsTable)}" f
 		JOIN "${sql.raw(contentTable)}" c ON f.id = c.id
