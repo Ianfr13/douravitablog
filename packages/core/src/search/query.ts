@@ -305,6 +305,13 @@ const PT_STRAY_QUOT_RE = /&quot;/g;
 const PT_DANGLING_PUNCT_RE = /\s*[,:;]+\s*/g;
 const PT_MULTI_SPACE_RE = /\s{2,}/g;
 const PT_LEADING_TRAILING_PUNCT_RE = /^[\s,.:;\-]+|[\s,.:;\-]+$/g;
+// Quando o FTS5 corta o snippet no MEIO de uma chave JSON (`type&quot;:&quot;block`
+// em vez de `&quot;_type&quot;:&quot;block&quot;`), o regex acima não casa.
+// Esse cleanup secundário remove esses fragmentos órfãos no início/fim do
+// snippet — palavras estruturais (_type, _key, style etc) sem aspas em volta,
+// + opcional valor curto adjacente (block, span, normal, h2, h3, bullet etc).
+const PT_LEAKED_STRUCT_RE =
+	/(?:^|\s)(?:_?type|_?key|style|listItem|level|marks|markDefs|children|asset|alt|caption|src|href|blank|_ref|slug)(?:\s+(?:block|span|normal|h[1-6]|bullet|number|blockquote|image|true|false))?(?=\s|$)/gi;
 
 /**
  * Make an FTS5 snippet safe to render with `set:html` / `innerHTML` AND
@@ -334,8 +341,14 @@ function sanitizeSnippet(snippet: string): string {
 		.replaceAll("&lt;/mark&gt;", "</mark>");
 
 	// Heurística: só roda o cleanup se o snippet parece ter JSON do PT
-	// (chaves estruturais). Evita custo regex em snippets limpos.
-	if (!escaped.includes("&quot;_type&quot;") && !escaped.includes("&quot;_key&quot;")) {
+	// (chaves estruturais com aspas escapadas OU fragmentos órfãos do JSON
+	// cortado pelo snippet window). Evita custo regex em snippets limpos.
+	const hasEscapedPtKey =
+		escaped.includes("&quot;_type&quot;") || escaped.includes("&quot;_key&quot;");
+	const hasLeakedPtFragment = /(^|\s)(_?type|_?key|style|listItem|marks|children|asset|slug)(\s|$)/i.test(
+		escaped,
+	);
+	if (!hasEscapedPtKey && !hasLeakedPtFragment) {
 		return escaped;
 	}
 
@@ -345,6 +358,7 @@ function sanitizeSnippet(snippet: string): string {
 		.replace(PT_TEXT_KEY_PREFIX_RE, " ")
 		.replace(PT_STRAY_QUOT_RE, " ")
 		.replace(PT_DANGLING_PUNCT_RE, " ")
+		.replace(PT_LEAKED_STRUCT_RE, " ")
 		.replace(PT_MULTI_SPACE_RE, " ")
 		.replace(PT_LEADING_TRAILING_PUNCT_RE, "")
 		.trim();
