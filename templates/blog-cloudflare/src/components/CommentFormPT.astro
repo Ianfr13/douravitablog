@@ -158,9 +158,10 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
-				// CRITICO: sem isso, o cookie reader_session nao e enviado e o
-				// backend trata como anonimo (exige Nome+Email+Turnstile).
-				credentials: "same-origin",
+				// `include` em vez de `same-origin`. Comprovado via probe que
+				// `same-origin` em POST nao enviava o cookie reader_session
+				// (somente em GET). `include` forca o envio em qualquer caso.
+				credentials: "include",
 			});
 
 			const result = await res.json().catch(() => ({}));
