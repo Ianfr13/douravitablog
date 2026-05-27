@@ -38,16 +38,35 @@ function decodeReturnTo(state: string): string {
 	return "/blog";
 }
 
-function errorRedirect(returnTo: string, code: string, extraSetCookie?: string): Response {
-	const u = new URL(returnTo, "https://placeholder.local");
-	u.searchParams.set("login_error", code);
+function escapeHtmlAttr(s: string): string {
+	return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+/**
+ * Retorna HTML 200 com redirect via meta refresh + JS, em vez de 302.
+ *
+ * Por que nao 302: alguns browsers descartam cookies setados em response
+ * 302 quando o request original vem de cross-site (ex: facebook.com →
+ * douravita.com.br). Com 200 + meta refresh, o cookie eh sempre persistido
+ * antes do navigate.
+ */
+function htmlRedirect(target: string, setCookies: string[]): Response {
+	const safe = escapeHtmlAttr(target);
+	const safeJs = JSON.stringify(target);
+	const body = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Entrando...</title><meta http-equiv="refresh" content="0;url=${safe}"><script>location.replace(${safeJs});</script></head><body style="font-family:system-ui;padding:2rem;text-align:center;color:#555">Entrando... <a href="${safe}">clique aqui se nao for redirecionado</a></body></html>`;
 	const headers = new Headers({
-		Location: u.pathname + u.search,
+		"Content-Type": "text/html; charset=UTF-8",
 		"Cache-Control": "no-store",
 	});
-	headers.append("Set-Cookie", stateCookieClearHeader());
-	if (extraSetCookie) headers.append("Set-Cookie", extraSetCookie);
-	return new Response(null, { status: 302, headers });
+	for (const c of setCookies) headers.append("Set-Cookie", c);
+	return new Response(body, { status: 200, headers });
+}
+
+function errorRedirect(returnTo: string, code: string): Response {
+	const u = new URL(returnTo, "https://placeholder.local");
+	u.searchParams.set("login_error", code);
+	const target = u.pathname + u.search;
+	return htmlRedirect(target, [stateCookieClearHeader()]);
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
@@ -106,13 +125,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 			readerSecret,
 		);
 
-		const headers = new Headers({
-			Location: returnTo,
-			"Cache-Control": "no-store",
-		});
-		headers.append("Set-Cookie", readerSessionSetCookieHeader(cookieValue));
-		headers.append("Set-Cookie", stateCookieClearHeader());
-		return new Response(null, { status: 302, headers });
+		return htmlRedirect(returnTo, [
+			readerSessionSetCookieHeader(cookieValue),
+			stateCookieClearHeader(),
+		]);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.error("[fb-callback] crash:", msg, err instanceof Error ? err.stack : "");
