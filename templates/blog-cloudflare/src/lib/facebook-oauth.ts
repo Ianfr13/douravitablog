@@ -29,11 +29,12 @@ export interface FacebookOAuthConfig {
 
 /** Monta a URL de inicio do flow OAuth.
  *
- * Scope `public_profile` e default e nao requer App Review. `email` exige
- * habilitar em "Permissoes e recursos" do FB App + (eventualmente) App Review
- * pra modo live. Em dev mode, pedir `email` explicitamente joga "Invalid
- * Scopes" pra contas que nao sao admin do app. So pedimos public_profile;
- * email vem opcional via API Graph (fetchProfile faz fallback se vier vazio).
+ * Sem `scope` explicito: o app Douravitawp eh tipo Business e nao tem
+ * `public_profile` na lista de "supported permissions" (so tem permissoes
+ * tipo pages_*, ads_*). Pedir public_profile dispara "Este app precisa pelo
+ * menos de uma supported permission". Sem scope, FB faz auth basico e ainda
+ * permite /me?fields=id,name (campos public_profile sao default mesmo sem
+ * scope explicito quando o user autoriza).
  */
 export function buildAuthorizationUrl(config: FacebookOAuthConfig, state: string): string {
 	const url = new URL(AUTH_URL);
@@ -41,7 +42,6 @@ export function buildAuthorizationUrl(config: FacebookOAuthConfig, state: string
 	url.searchParams.set("redirect_uri", config.redirectUri);
 	url.searchParams.set("state", state);
 	url.searchParams.set("response_type", "code");
-	url.searchParams.set("scope", "public_profile");
 	return url.toString();
 }
 
