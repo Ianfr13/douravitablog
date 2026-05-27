@@ -275,6 +275,16 @@ export default {
 			return handler.fetch(handlerRequest, env, ctx);
 		}
 
+		// Bypass edge cache pra leitores logados via Facebook. O HTML inclui
+		// nome/avatar do leitor (ReaderAuthBar) + form custom sem campos
+		// name/email. Sem isso, anonimos cacheariam HTML e logados veriam
+		// "Continuar com Facebook" mesmo com cookie valido. Pula tanto a
+		// leitura quanto a escrita do cache pra esses requests.
+		if (kind === "html" && (request.headers.get("cookie") || "").includes("reader_session=")) {
+			// @ts-expect-error handler default export shape
+			return handler.fetch(handlerRequest, env, ctx);
+		}
+
 		const cache = caches.default;
 		// Pra media: cache key inclui marker `_fmt=webp` se cliente aceita WebP,
 		// pra evitar contaminacao cross-variant (ver makeMediaCacheKey).
