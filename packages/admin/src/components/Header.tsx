@@ -45,8 +45,8 @@ export function Header() {
 
 			{/* Right side actions */}
 			<div className="flex items-center gap-2">
-				{/* View site link */}
-				<LinkButton variant="ghost" size="sm" href="/" external>
+				{/* View site link — Douravita: blog mora em /blog (root é institucional) */}
+				<LinkButton variant="ghost" size="sm" href="/blog" external>
 					<ArrowSquareOut className="h-4 w-4 me-1" />
 					{t`View Site`}
 				</LinkButton>
