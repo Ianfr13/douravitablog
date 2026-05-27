@@ -35,6 +35,7 @@
 	// "encrypted secrets" do Worker (nao ficam aqui no repo).
 	"vars": {
 		"TURNSTILE_SITE_KEY": "0x4AAAAAADWzbE_A_uae235T",
+		"FACEBOOK_APP_ID": "1464151418848758",
 	},
 	// Worker Loader for plugin sandboxing
 	"worker_loaders": [
