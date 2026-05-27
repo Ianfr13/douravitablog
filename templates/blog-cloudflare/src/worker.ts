@@ -144,6 +144,10 @@ const BLOG_PREFIX_PATHS = [
 	"sitemap.xml",
 	"rss.xml",
 	"search",
+	// Rotas Astro custom do blog (reader auth Facebook + endpoint proxy
+	// de comentarios). Resolvem em src/pages/api/* — Astro nao adiciona
+	// prefixo /blog automaticamente, entao a gente strip aqui.
+	"api",
 ];
 
 function redirectLegacyPublicPath(request: Request): Response | null {
