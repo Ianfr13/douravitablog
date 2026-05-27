@@ -38,6 +38,26 @@ const loginHref = `/blog/api/auth/facebook/login?returnTo=${encodeURIComponent(r
 const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
 ---
 
+{!session && (
+	<script is:inline>
+		// Safety net: se cookie reader_session existe mas o SSR renderizou
+		// como anonimo, o browser serviu HTML cacheado pre-login. Forca
+		// refetch pra pegar a versao logada. sessionStorage previne loop.
+		(function () {
+			try {
+				if (document.cookie.indexOf("reader_session=") === -1) return;
+				if (sessionStorage.getItem("_dvReaderRefreshed")) return;
+				sessionStorage.setItem("_dvReaderRefreshed", "1");
+				fetch(window.location.href, { cache: "reload", credentials: "include" }).then(function () {
+					window.location.reload();
+				});
+			} catch (e) {
+				/* ignore */
+			}
+		})();
+	</script>
+)}
+
 <div class:list={["reader-auth-bar", className, session && "reader-auth-bar--logged"]}>
 	{session ? (
 		<Fragment>

@@ -80,10 +80,16 @@ const TRACKING_PARAMS = [
 //   visitou. Trade-off aceitavel; antes de aumentar mais, considerar invalidar
 //   via API quando o bot Discord aprova.
 // s-maxage=120: CF CDN edge cache, mesmo intervalo.
-// stale-while-revalidate=86400: serve stale por 24h se algum cliente tiver
-//   cache expirado mas o cron renovar o edge em background.
+// max-age=0 + must-revalidate: browser SEMPRE revalida ao acessar. Sem isso,
+//   leitor que visita post anonimo e depois loga via FB ve o HTML cacheado
+//   (anonimo) ate o ciclo expirar. Custo: cada navegacao do leitor faz
+//   round-trip pra CDN (mas response do CDN eh ~50ms, imperceptivel). CDN
+//   ainda cacheia agressivo via s-maxage; so o browser local que revalida.
+// SEM stale-while-revalidate pra HTML: ela serve stale por ate 24h, e o
+//   cookie reader_session muda durante essa janela quando user loga. Browser
+//   exibiria a versao anonima cacheada mesmo apos login bem-sucedido.
 const DEFAULT_CACHE_CONTROL =
-	"public, max-age=120, s-maxage=120, stale-while-revalidate=86400";
+	"public, max-age=0, must-revalidate, s-maxage=120";
 
 type CacheKind = "html" | "media" | "api" | null;
 
