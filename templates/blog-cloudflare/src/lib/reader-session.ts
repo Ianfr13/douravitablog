@@ -5,25 +5,26 @@
  * Formato do cookie `reader_session`:
  *   base64url(JSON payload).base64url(HMAC-SHA256(payload, secret))
  *
- * Payload:
+ * Payload (MINIMO — cookies tem limite de ~4KB; URLs de avatar do FB sao
+ * longas e estouravam o cookie em alguns browsers/proxies):
  *   {
  *     fb: string,    // Facebook user ID
- *     n:  string,    // nome publico
- *     e:  string,    // email
- *     p:  string,    // URL da foto de perfil
+ *     n:  string,    // nome publico (truncado se necessario)
  *     iat: number,   // issued at (unix seconds)
  *     exp: number    // expira em (unix seconds)
  *   }
  *
- * Validade: 30 dias. Renova a cada visita via middleware se a sessao tiver
- * <7 dias pra expirar.
+ * NAO armazenamos email nem picture URL no cookie. Email vem como placeholder
+ * `<fbId>@facebook.douravita.local` no submit do comentario (esse path nunca
+ * recebe email). Avatar e renderizado como iniciais coloridas — UX mais
+ * leve e privacidade-by-default.
+ *
+ * Validade: 30 dias.
  */
 
 export interface ReaderSession {
 	fbId: string;
 	name: string;
-	email: string;
-	picture: string;
 	issuedAt: number;
 	expiresAt: number;
 }
@@ -63,11 +64,12 @@ export async function encodeReaderSession(
 	const now = Math.floor(Date.now() / 1000);
 	const ttl = payload.ttlSeconds ?? TTL_SECONDS;
 	const expiresAt = now + ttl;
+	// Trunca nome em 80 chars pra manter cookie pequeno (suficiente pra qq
+	// nome real). UI corta com ellipsis se passar do CSS.
+	const name = (payload.name || "").slice(0, 80);
 	const compact = {
 		fb: payload.fbId,
-		n: payload.name,
-		e: payload.email,
-		p: payload.picture,
+		n: name,
 		iat: now,
 		exp: expiresAt,
 	};
@@ -102,7 +104,7 @@ export async function decodeReaderSession(
 	const valid = await crypto.subtle.verify("HMAC", key, sigBytes, payloadBytes);
 	if (!valid) return null;
 
-	let payload: { fb: string; n: string; e: string; p: string; iat: number; exp: number };
+	let payload: { fb: string; n: string; iat: number; exp: number };
 	try {
 		payload = JSON.parse(new TextDecoder().decode(payloadBytes));
 	} catch {
@@ -115,8 +117,6 @@ export async function decodeReaderSession(
 	return {
 		fbId: payload.fb,
 		name: payload.n,
-		email: payload.e,
-		picture: payload.p,
 		issuedAt: payload.iat,
 		expiresAt: payload.exp,
 	};

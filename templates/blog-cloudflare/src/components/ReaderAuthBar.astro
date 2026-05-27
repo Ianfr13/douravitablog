@@ -42,21 +42,9 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 	{session ? (
 		<Fragment>
 			<div class="reader-auth-bar__user">
-				{session.picture ? (
-					<img
-						src={session.picture}
-						alt=""
-						class="reader-auth-bar__avatar"
-						referrerpolicy="no-referrer"
-						loading="lazy"
-						width="32"
-						height="32"
-					/>
-				) : (
-					<span class="reader-auth-bar__avatar reader-auth-bar__avatar--placeholder" aria-hidden="true">
-						{session.name.slice(0, 1).toUpperCase()}
-					</span>
-				)}
+				<span class="reader-auth-bar__avatar reader-auth-bar__avatar--placeholder" aria-hidden="true">
+					{session.name.slice(0, 1).toUpperCase()}
+				</span>
 				<div class="reader-auth-bar__meta">
 					<span class="reader-auth-bar__label">Comentando como</span>
 					<span class="reader-auth-bar__name">{session.name}</span>

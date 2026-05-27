@@ -86,9 +86,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 	let authorEmail: string;
 
 	if (session) {
-		// Logado: dados do cookie (anti-tampering: ignora o que veio no form)
+		// Logado: dados do cookie (anti-tampering: ignora o que veio no form).
+		// Email nao esta no cookie (privacidade + tamanho); usa placeholder
+		// estavel por fbId — EmDash usa o email so pra moderation first_time.
 		authorName = session.name;
-		authorEmail = session.email;
+		authorEmail = `fb-${session.fbId}@facebook.douravita.local`;
 	} else {
 		// Anonimo: exige Turnstile + valida campos manuais
 		authorName = typeof raw.authorName === "string" ? raw.authorName.trim() : "";

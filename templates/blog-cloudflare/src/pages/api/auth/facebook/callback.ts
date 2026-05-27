@@ -98,14 +98,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 			return errorRedirect(returnTo, "profile_fetch_failed");
 		}
 
-		const email = profile.email ?? `${profile.id}@facebook.douravita.local`;
-
 		const { cookieValue } = await encodeReaderSession(
 			{
 				fbId: profile.id,
 				name: profile.name,
-				email,
-				picture: profile.pictureUrl ?? "",
 			},
 			readerSecret,
 		);
