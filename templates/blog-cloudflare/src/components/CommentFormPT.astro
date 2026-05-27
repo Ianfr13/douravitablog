@@ -1,15 +1,22 @@
 ---
 /**
- * Form de comentários, versão Douravita (PT-BR + visual do tema).
+ * Form de comentarios — versao Douravita com Reader Auth + Turnstile.
  *
- * Substitui o <CommentForm> do EmDash pra ter controle total sobre strings,
- * disclaimer LGPD e visual. Hoje (Fase 1) usa o endpoint EmDash padrão
- * (/_emdash/api/comments/...). Na Fase 4 vai apontar pra endpoint custom
- * /blog/api/comments/submit que valida Turnstile e injeta reader session.
+ * Comportamento:
+ * - Logado via Facebook (cookie reader_session valido):
+ *     - Esconde campos name/email (vem do cookie no backend)
+ *     - Pula Turnstile (cookie HMAC ja prova humano)
+ * - Anonimo:
+ *     - Mostra name/email
+ *     - Renderiza widget Turnstile (CAPTCHA invisivel/managed)
  *
- * Honeypot anti-spam: campo `website_url` escondido. Bots preenchem; o
- * backend descarta. Não muda na Fase 4.
+ * Submissao: POST /blog/api/comments/submit (endpoint proxy custom que
+ * valida + repassa pro EmDash).
  */
+import {
+	decodeReaderSession,
+	getReaderSessionCookie,
+} from "../lib/reader-session";
 
 interface Props {
 	collection: string;
@@ -18,62 +25,96 @@ interface Props {
 	class?: string;
 }
 
-const {
-	collection,
-	contentId,
-	parentId = null,
-	class: className,
-} = Astro.props;
+const { collection, contentId, parentId = null, class: className } = Astro.props;
+
+// Le env vars + reader session server-side
+const runtime = (Astro.locals as unknown as { runtime?: { env?: Record<string, unknown> } }).runtime;
+const env = runtime?.env ?? {};
+const pickEnv = (k: string): string | undefined =>
+	typeof (env as Record<string, unknown>)[k] === "string"
+		? ((env as Record<string, unknown>)[k] as string)
+		: undefined;
+const readerSecret = pickEnv("READER_SESSION_SECRET");
+const turnstileSiteKey = pickEnv("TURNSTILE_SITE_KEY");
+
+const cookieHeader = Astro.request.headers.get("cookie");
+const cookieValue = getReaderSessionCookie(cookieHeader);
+const session = readerSecret ? await decodeReaderSession(cookieValue, readerSecret) : null;
 
 const formId = `dv-comment-form-${parentId ?? "root"}`;
-const endpoint = `/_emdash/api/comments/${encodeURIComponent(collection)}/${encodeURIComponent(contentId)}`;
 ---
 
 <form
 	id={formId}
-	class:list={["dv-comment-form", className]}
+	class:list={["dv-comment-form", className, session && "dv-comment-form--logged"]}
 	data-dv-comment-form
-	data-endpoint={endpoint}
+	data-collection={collection}
+	data-content-id={contentId}
+	data-logged={session ? "1" : "0"}
 >
-	<div class="dv-comment-form-fields">
-		<label class="dv-comment-form-field">
-			<span>Nome</span>
-			<input type="text" name="authorName" required maxlength="100" autocomplete="name" />
-		</label>
+	{!session && (
+		<div class="dv-comment-form-fields">
+			<label class="dv-comment-form-field">
+				<span>Nome</span>
+				<input type="text" name="authorName" required maxlength="100" autocomplete="name" />
+			</label>
 
-		<label class="dv-comment-form-field">
-			<span>E-mail</span>
-			<input type="email" name="authorEmail" required autocomplete="email" />
-		</label>
-	</div>
+			<label class="dv-comment-form-field">
+				<span>E-mail <span class="dv-comment-form-hint">(nao publico)</span></span>
+				<input type="email" name="authorEmail" required autocomplete="email" />
+			</label>
+		</div>
+	)}
 
 	{/* Honeypot — escondido de humanos, bots preenchem */}
 	<div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;">
 		<label>
-			Não preencha este campo
+			Nao preencha este campo
 			<input type="text" name="website_url" tabindex="-1" autocomplete="off" />
 		</label>
 	</div>
 
 	<label class="dv-comment-form-field">
-		<span>Comentário</span>
-		<textarea name="body" required maxlength="5000" rows="5" placeholder="Compartilhe sua experiência ou pergunta..." />
+		<span>Comentario</span>
+		<textarea
+			name="body"
+			required
+			maxlength="5000"
+			rows="5"
+			placeholder="Compartilhe sua experiencia ou pergunta..."
+		/>
 	</label>
 
 	{parentId && <input type="hidden" name="parentId" value={parentId} />}
 
+	{/* Turnstile widget — so pra anonimos */}
+	{!session && turnstileSiteKey && (
+		<div
+			class="cf-turnstile dv-comment-form-turnstile"
+			data-sitekey={turnstileSiteKey}
+			data-theme="auto"
+			data-size="flexible"
+		/>
+	)}
+
 	<button type="submit" class="dv-comment-form-submit">
-		Enviar comentário
+		Enviar comentario
 	</button>
 
 	<p class="dv-comment-form-disclaimer">
-		Comentários passam por moderação antes de aparecer. Opiniões de leitores não substituem orientação médica. Ao enviar, você concorda que seu nome poderá ser exibido publicamente e aceita nossa <a href="/pages/politica-de-privacidade">Política de Privacidade</a>.
+		Comentarios passam por moderacao antes de aparecer. Opinioes de leitores nao substituem orientacao medica. Ao enviar, voce concorda que seu nome podera ser exibido publicamente e aceita nossa <a href="/pages/politica-de-privacidade">Politica de Privacidade</a>.
 	</p>
 
 	<div class="dv-comment-form-status" role="status" aria-live="polite"></div>
 </form>
 
+{!session && turnstileSiteKey && (
+	<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+)}
+
 <script>
+	const SUBMIT_ENDPOINT = "/blog/api/comments/submit";
+
 	document.addEventListener("submit", async (e) => {
 		const form = e.target;
 		if (
@@ -82,9 +123,6 @@ const endpoint = `/_emdash/api/comments/${encodeURIComponent(collection)}/${enco
 		)
 			return;
 		e.preventDefault();
-
-		const endpoint = form.dataset.endpoint;
-		if (!endpoint) return;
 
 		const submitBtn = form.querySelector<HTMLButtonElement>(".dv-comment-form-submit");
 		const statusEl = form.querySelector<HTMLElement>(".dv-comment-form-status");
@@ -97,39 +135,49 @@ const endpoint = `/_emdash/api/comments/${encodeURIComponent(collection)}/${enco
 		statusEl.className = "dv-comment-form-status";
 
 		const data = new FormData(form);
-		const body: Record<string, string> = {};
+		const payload: Record<string, string> = {
+			collection: form.dataset.collection ?? "",
+			contentId: form.dataset.contentId ?? "",
+		};
 		for (const [key, value] of data.entries()) {
-			if (typeof value === "string") body[key] = value;
+			if (typeof value === "string") payload[key] = value;
+		}
+
+		// Captura Turnstile token (se widget presente)
+		const turnstileInput = form.querySelector<HTMLInputElement>(
+			"[name='cf-turnstile-response']",
+		);
+		if (turnstileInput?.value) {
+			payload.turnstileToken = turnstileInput.value;
 		}
 
 		try {
-			const res = await fetch(endpoint, {
+			const res = await fetch(SUBMIT_ENDPOINT, {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"X-EmDash-Request": "1",
-				},
-				body: JSON.stringify(body),
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
 			});
 
 			const result = await res.json().catch(() => ({}));
 
-			if (res.ok) {
+			if (res.ok && result.success) {
 				statusEl.textContent =
 					result.message ||
-					"Comentário enviado! Após aprovação ele aparecerá aqui.";
+					"Comentario enviado! Apos aprovacao ele aparecera aqui.";
 				statusEl.classList.add("dv-comment-form-success");
 				const textarea = form.querySelector<HTMLTextAreaElement>("textarea[name='body']");
 				if (textarea) textarea.value = "";
+				if (typeof window.turnstile !== "undefined") {
+					window.turnstile.reset();
+				}
 			} else {
 				statusEl.textContent =
 					result.error?.message ||
-					result.message ||
-					"Não foi possível enviar o comentário. Tente novamente em instantes.";
+					"Nao foi possivel enviar o comentario. Tente novamente em instantes.";
 				statusEl.classList.add("dv-comment-form-error");
 			}
 		} catch {
-			statusEl.textContent = "Erro de conexão. Verifique sua internet e tente de novo.";
+			statusEl.textContent = "Erro de conexao. Verifique sua internet e tente de novo.";
 			statusEl.classList.add("dv-comment-form-error");
 		} finally {
 			submitBtn.disabled = false;
@@ -171,6 +219,15 @@ const endpoint = `/_emdash/api/comments/${encodeURIComponent(collection)}/${enco
 		font-size: var(--font-size-sm);
 		font-weight: 500;
 		color: var(--color-text-secondary);
+		display: flex;
+		align-items: baseline;
+		gap: var(--spacing-1);
+	}
+
+	.dv-comment-form-hint {
+		font-weight: 400;
+		font-size: var(--font-size-xs);
+		color: var(--color-muted);
 	}
 
 	.dv-comment-form-field input,
@@ -204,6 +261,10 @@ const endpoint = `/_emdash/api/comments/${encodeURIComponent(collection)}/${enco
 		outline: none;
 		border-color: var(--color-accent);
 		box-shadow: 0 0 0 3px var(--color-accent-ring, rgba(138, 111, 42, 0.18));
+	}
+
+	.dv-comment-form-turnstile {
+		min-height: 65px;
 	}
 
 	.dv-comment-form-submit {

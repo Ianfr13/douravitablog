@@ -1,0 +1,209 @@
+---
+/**
+ * Barra de identidade do leitor — mostra "Entrar com Facebook" se anonimo,
+ * ou avatar + nome + sair se logado.
+ *
+ * Server-rendered: le o cookie reader_session dentro do componente e decide
+ * o estado. Custo zero pro cliente (sem JS, sem flash).
+ */
+import {
+	decodeReaderSession,
+	getReaderSessionCookie,
+} from "../lib/reader-session";
+
+interface Props {
+	/** Path pra voltar apos login (default: URL atual). */
+	returnTo?: string;
+	class?: string;
+}
+
+const { returnTo: returnToProp, class: className } = Astro.props;
+
+const runtime = (Astro.locals as unknown as { runtime?: { env?: Record<string, unknown> } }).runtime;
+const env = runtime?.env ?? {};
+const readerSecret = typeof (env as Record<string, unknown>).READER_SESSION_SECRET === "string"
+	? ((env as Record<string, unknown>).READER_SESSION_SECRET as string)
+	: undefined;
+
+const cookieHeader = Astro.request.headers.get("cookie");
+const cookieValue = getReaderSessionCookie(cookieHeader);
+const session = readerSecret ? await decodeReaderSession(cookieValue, readerSecret) : null;
+
+const returnTo = returnToProp ?? Astro.url.pathname + Astro.url.search;
+const loginHref = `/blog/api/auth/facebook/login?returnTo=${encodeURIComponent(returnTo)}`;
+const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
+---
+
+<div class:list={["reader-auth-bar", className, session && "reader-auth-bar--logged"]}>
+	{session ? (
+		<>
+			<div class="reader-auth-bar__user">
+				{session.picture ? (
+					<img
+						src={session.picture}
+						alt=""
+						class="reader-auth-bar__avatar"
+						referrerpolicy="no-referrer"
+						loading="lazy"
+						width="32"
+						height="32"
+					/>
+				) : (
+					<span class="reader-auth-bar__avatar reader-auth-bar__avatar--placeholder" aria-hidden="true">
+						{session.name.slice(0, 1).toUpperCase()}
+					</span>
+				)}
+				<div class="reader-auth-bar__meta">
+					<span class="reader-auth-bar__label">Comentando como</span>
+					<span class="reader-auth-bar__name">{session.name}</span>
+				</div>
+			</div>
+			<a href={logoutHref} class="reader-auth-bar__logout" rel="nofollow">
+				Sair
+			</a>
+		</>
+	) : (
+		<>
+			<p class="reader-auth-bar__pitch">
+				Entre com o Facebook pra comentar mais rapido (foto + nome do seu perfil).
+			</p>
+			<a href={loginHref} class="reader-auth-bar__login" rel="nofollow">
+				<svg
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					aria-hidden="true"
+					focusable="false"
+				>
+					<path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.99 22 12z"/>
+				</svg>
+				<span>Continuar com Facebook</span>
+			</a>
+		</>
+	)}
+</div>
+
+<style>
+	.reader-auth-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-4);
+		padding: var(--spacing-3) var(--spacing-4);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border-subtle, var(--color-border));
+		border-radius: var(--radius);
+		flex-wrap: wrap;
+	}
+
+	.reader-auth-bar--logged {
+		background: color-mix(in srgb, var(--color-accent) 5%, var(--color-bg));
+		border-color: color-mix(in srgb, var(--color-accent) 20%, var(--color-border));
+	}
+
+	.reader-auth-bar__user {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-3);
+		min-width: 0;
+	}
+
+	.reader-auth-bar__avatar {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 50%;
+		object-fit: cover;
+		flex-shrink: 0;
+		background: var(--color-surface);
+	}
+
+	.reader-auth-bar__avatar--placeholder {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 600;
+		color: var(--color-on-accent, #fff);
+		background: var(--color-accent);
+	}
+
+	.reader-auth-bar__meta {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.reader-auth-bar__label {
+		font-size: var(--font-size-xs);
+		color: var(--color-muted);
+		line-height: 1.2;
+	}
+
+	.reader-auth-bar__name {
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--color-text);
+		line-height: 1.2;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.reader-auth-bar__logout {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.reader-auth-bar__logout:hover {
+		color: var(--color-text);
+	}
+
+	.reader-auth-bar__pitch {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		flex: 1 1 18rem;
+		min-width: 0;
+		line-height: var(--leading-snug);
+	}
+
+	.reader-auth-bar__login {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-2) var(--spacing-4);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: #fff;
+		background: #1877f2;
+		border-radius: var(--radius);
+		text-decoration: none;
+		transition: background var(--transition-fast);
+		flex-shrink: 0;
+	}
+
+	.reader-auth-bar__login:hover {
+		background: #166fe5;
+	}
+
+	.reader-auth-bar__login svg {
+		display: block;
+	}
+
+	@media (max-width: 640px) {
+		.reader-auth-bar {
+			padding: var(--spacing-3);
+		}
+
+		.reader-auth-bar__login {
+			width: 100%;
+			justify-content: center;
+		}
+
+		.reader-auth-bar__pitch {
+			flex: 1 1 100%;
+		}
+	}
+</style>

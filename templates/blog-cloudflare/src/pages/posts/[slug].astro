@@ -18,6 +18,7 @@ import PostCard from "../../components/PostCard.astro";
 import LeiaTambem from "../../components/LeiaTambem.astro";
 import CommentFormPT from "../../components/CommentFormPT.astro";
 import CommentsListPT from "../../components/CommentsListPT.astro";
+import ReaderAuthBar from "../../components/ReaderAuthBar.astro";
 import { getReadingTime } from "../../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../../utils/site-identity";
 
@@ -48,9 +49,17 @@ if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 // publish aparecem em ~1min); stale-while-revalidate=86400 = serve stale por
 // 24h em background enquanto revalida (usuário sempre vê página rápida).
 // Render server-side custa ~2s (15 queries no D1); cache HIT cai pra ~30ms.
+//
+// EXCEÇÃO: quando o leitor está logado via Facebook, o HTML inclui o nome/
+// avatar dele (ReaderAuthBar) e o form esconde os campos name/email. Pra não
+// vazar identidade pelo cache compartilhado, marcamos uncacheable nesse caso.
+// Detecta presença do cookie sem validar HMAC (rápido, só pra cache key).
+const hasReaderCookie = (Astro.request.headers.get("cookie") || "").includes("reader_session=");
 Astro.response.headers.set(
 	"Cache-Control",
-	"public, s-maxage=60, stale-while-revalidate=86400",
+	hasReaderCookie
+		? "private, no-store"
+		: "public, s-maxage=60, stale-while-revalidate=86400",
 );
 
 // Get featured image URL for OG fallback
@@ -333,6 +342,7 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 					<CommentsListPT collection="posts" contentId={post.data.id} threaded />
 					<div class="comments-form-wrapper">
 						<h3 class="comments-form-title">Deixe seu comentário</h3>
+						<ReaderAuthBar />
 						<CommentFormPT collection="posts" contentId={post.data.id} />
 					</div>
 				</div>
