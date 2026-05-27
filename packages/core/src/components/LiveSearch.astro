@@ -144,6 +144,45 @@ const config = {
 		searchPagePath: string;
 	}
 
+	// Defensive cleanup pra snippets que voltaram com ruído de PortableText JSON
+	// cru. Acontece quando o FTS5 indexou o body como JSON (não plain text) e o
+	// sanitizer server-side não rodou ou tá stale. Espelha a lógica do
+	// `sanitizeSnippet` em packages/core/src/search/query.ts pra ser robusto.
+	const PT_STRUCT_KV_RE_CL =
+		/&quot;(_type|_key|style|listItem|level|marks|markDefs|asset|alt|caption|src|href|blank|_ref|children)&quot;\s*:\s*[^,}\]]*[,}\]]?/g;
+	const PT_TEXT_KEY_PREFIX_RE_CL = /&quot;text&quot;\s*:\s*&quot;/g;
+	const PT_BRACES_RE_CL = /[\[\]{}]/g;
+	const PT_STRAY_QUOT_RE_CL = /&quot;/g;
+	const PT_DANGLING_PUNCT_RE_CL = /\s*[,:;]+\s*/g;
+	const PT_LEAKED_STRUCT_RE_CL =
+		/(?:^|\s)(?:_?type|_?key|style|listItem|level|marks|markDefs|children|asset|alt|caption|src|href|blank|_ref|slug)(?:\s+(?:block|span|normal|h[1-6]|bullet|number|blockquote|image|true|false))?(?=\s|$)/gi;
+	const PT_MULTI_SPACE_RE_CL = /\s{2,}/g;
+	const PT_TRIM_RE_CL = /^[\s,.:;\-]+|[\s,.:;\-]+$/g;
+
+	function cleanPortableTextNoise(html: string): string {
+		if (!html) return html;
+		// Detecta presença de ruído de PT. Suporta tanto JSON com aspas escapadas
+		// (&quot;) quanto fragmentos órfãos (_type, _key sem aspas) que o snippet
+		// do FTS5 deixa quando corta no meio de uma chave.
+		const hasEscapedKey =
+			html.includes("&quot;_type&quot;") || html.includes("&quot;_key&quot;");
+		const hasLeakedFragment =
+			/(^|\s)(_?type|_?key|style|listItem|marks|children|asset|slug)(\s|$)/i.test(
+				html,
+			);
+		if (!hasEscapedKey && !hasLeakedFragment) return html;
+		return html
+			.replace(PT_STRUCT_KV_RE_CL, " ")
+			.replace(PT_BRACES_RE_CL, " ")
+			.replace(PT_TEXT_KEY_PREFIX_RE_CL, " ")
+			.replace(PT_STRAY_QUOT_RE_CL, " ")
+			.replace(PT_DANGLING_PUNCT_RE_CL, " ")
+			.replace(PT_LEAKED_STRUCT_RE_CL, " ")
+			.replace(PT_MULTI_SPACE_RE_CL, " ")
+			.replace(PT_TRIM_RE_CL, "")
+			.trim();
+	}
+
 	class EmDashLiveSearch extends HTMLElement {
 		private input: HTMLInputElement | null = null;
 		private resultsContainer: HTMLElement | null = null;
@@ -414,15 +453,17 @@ const config = {
 						collectionEl.textContent = result.collection;
 					}
 
-					// Snippets returned by /api/search are already sanitised
-					// server-side by sanitizeSnippet() — they contain only
-					// HTML-escaped text plus literal <mark>...</mark> tags
-					// around matched terms.
+					// Snippets returned by /api/search SHOULD be sanitised server-side,
+					// mas em sites onde a coluna do FTS armazena PortableText JSON cru,
+					// pedaços do JSON estrutural ("_type":"block", "_key":"abc", etc)
+					// vazam no snippet quando o sanitizer server-side não roda ou está
+					// stale. Aplicamos um cleanup defensivo client-side aqui pra garantir
+					// que o usuário sempre veja texto legível.
 					const snippetEl = link.querySelector(
 						".emdash-live-search-result-snippet"
 					);
 					if (snippetEl && this.config.showSnippets && result.snippet) {
-						snippetEl.innerHTML = result.snippet;
+						snippetEl.innerHTML = cleanPortableTextNoise(result.snippet);
 					} else if (snippetEl) {
 						snippetEl.remove();
 					}
