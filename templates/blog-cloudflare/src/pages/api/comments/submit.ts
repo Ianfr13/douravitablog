@@ -39,9 +39,19 @@ interface SubmitBody {
 	turnstileToken?: unknown;
 }
 
-function getEnv(locals: App.Locals): { readerSecret?: string; turnstileSecret?: string } {
-	const runtime = (locals as unknown as { runtime?: { env?: Record<string, unknown> } }).runtime;
-	const env = runtime?.env ?? (import.meta.env as unknown as Record<string, unknown>);
+function readEnv(locals: unknown): Record<string, unknown> {
+	try {
+		const l = locals as { runtime?: { env?: unknown } } | null | undefined;
+		const env = l?.runtime?.env;
+		if (env && typeof env === "object") return env as Record<string, unknown>;
+	} catch {
+		// fall through
+	}
+	return {};
+}
+
+function getEnv(locals: unknown): { readerSecret?: string; turnstileSecret?: string } {
+	const env = readEnv(locals);
 	const pick = (k: string): string | undefined =>
 		typeof env[k] === "string" ? (env[k] as string) : undefined;
 	return {

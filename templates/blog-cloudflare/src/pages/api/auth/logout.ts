@@ -16,13 +16,16 @@ function safeReturnTo(raw: string | null): string {
 	return raw;
 }
 
-const handler: APIRoute = async ({ url, redirect }) => {
+const handler: APIRoute = async ({ url }) => {
 	const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
-	// @ts-expect-error Astro redirect typing
-	const res = redirect(returnTo, 302) as Response;
-	res.headers.append("Set-Cookie", readerSessionClearCookieHeader());
-	res.headers.set("Cache-Control", "no-store");
-	return res;
+	return new Response(null, {
+		status: 302,
+		headers: {
+			Location: returnTo,
+			"Set-Cookie": readerSessionClearCookieHeader(),
+			"Cache-Control": "no-store",
+		},
+	});
 };
 
 export const GET = handler;

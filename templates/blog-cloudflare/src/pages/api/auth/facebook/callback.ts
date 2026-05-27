@@ -23,19 +23,15 @@ import {
 
 export const prerender = false;
 
-function getEnv(locals: App.Locals): {
-	appId?: string;
-	appSecret?: string;
-	readerSecret?: string;
-} {
-	const runtime = (locals as unknown as { runtime?: { env?: Record<string, unknown> } }).runtime;
-	const env = runtime?.env ?? (import.meta.env as unknown as Record<string, unknown>);
-	const pick = (k: string): string | undefined => (typeof env[k] === "string" ? (env[k] as string) : undefined);
-	return {
-		appId: pick("FACEBOOK_APP_ID"),
-		appSecret: pick("FACEBOOK_APP_SECRET"),
-		readerSecret: pick("READER_SESSION_SECRET"),
-	};
+function readEnv(locals: unknown): Record<string, unknown> {
+	try {
+		const l = locals as { runtime?: { env?: unknown } } | null | undefined;
+		const env = l?.runtime?.env;
+		if (env && typeof env === "object") return env as Record<string, unknown>;
+	} catch {
+		// fall through
+	}
+	return {};
 }
 
 function decodeReturnTo(state: string): string {
@@ -52,81 +48,90 @@ function decodeReturnTo(state: string): string {
 	return "/blog";
 }
 
-function errorRedirect(redirect: APIRoute extends (ctx: infer C) => unknown ? (C extends { redirect: infer R } ? R : never) : never, returnTo: string, code: string): Response {
-	const url = new URL(returnTo, "https://placeholder.local");
-	url.searchParams.set("login_error", code);
-	const path = url.pathname + url.search;
-	// @ts-expect-error redirect signature
-	const res = redirect(path, 302) as Response;
-	res.headers.append("Set-Cookie", stateCookieClearHeader());
-	res.headers.set("Cache-Control", "no-store");
-	return res;
+function errorRedirect(returnTo: string, code: string, extraSetCookie?: string): Response {
+	const u = new URL(returnTo, "https://placeholder.local");
+	u.searchParams.set("login_error", code);
+	const headers = new Headers({
+		Location: u.pathname + u.search,
+		"Cache-Control": "no-store",
+	});
+	headers.append("Set-Cookie", stateCookieClearHeader());
+	if (extraSetCookie) headers.append("Set-Cookie", extraSetCookie);
+	return new Response(null, { status: 302, headers });
 }
 
-export const GET: APIRoute = async ({ request, url, locals, redirect }) => {
-	const { appId, appSecret, readerSecret } = getEnv(locals);
-	if (!appId || !appSecret || !readerSecret) {
-		return new Response("Login do Facebook nao configurado (env vars ausentes)", { status: 500 });
-	}
-
-	// Lê params do callback
-	const code = url.searchParams.get("code");
-	const state = url.searchParams.get("state");
-	const fbError = url.searchParams.get("error");
-	const cookieHeader = request.headers.get("cookie");
-	const savedState = getStateCookie(cookieHeader);
-	const returnTo = state ? decodeReturnTo(state) : "/blog";
-
-	// Erros vindos do proprio Facebook (user cancelou, etc)
-	if (fbError) {
-		return errorRedirect(redirect, returnTo, "oauth_denied");
-	}
-
-	if (!code || !state) {
-		return errorRedirect(redirect, returnTo, "missing_params");
-	}
-
-	// CSRF: state recebido tem que bater com cookie salvo
-	if (!savedState || savedState !== state) {
-		return errorRedirect(redirect, returnTo, "invalid_state");
-	}
-
-	const origin = new URL(request.url).origin;
-	const redirectUri = `${origin}/blog/api/auth/facebook/callback`;
-
-	let accessToken: string;
+export const GET: APIRoute = async ({ request, url, locals }) => {
 	try {
-		accessToken = await exchangeCodeForToken({ appId, appSecret, redirectUri }, code);
-	} catch {
-		return errorRedirect(redirect, returnTo, "token_exchange_failed");
+		const env = readEnv(locals);
+		const appId = typeof env.FACEBOOK_APP_ID === "string" ? env.FACEBOOK_APP_ID : undefined;
+		const appSecret =
+			typeof env.FACEBOOK_APP_SECRET === "string" ? env.FACEBOOK_APP_SECRET : undefined;
+		const readerSecret =
+			typeof env.READER_SESSION_SECRET === "string" ? env.READER_SESSION_SECRET : undefined;
+		if (!appId || !appSecret || !readerSecret) {
+			return new Response("Login do Facebook nao configurado (env vars ausentes)", {
+				status: 500,
+			});
+		}
+
+		const code = url.searchParams.get("code");
+		const state = url.searchParams.get("state");
+		const fbError = url.searchParams.get("error");
+		const cookieHeader = request.headers.get("cookie");
+		const savedState = getStateCookie(cookieHeader);
+		const returnTo = state ? decodeReturnTo(state) : "/blog";
+
+		if (fbError) {
+			return errorRedirect(returnTo, "oauth_denied");
+		}
+		if (!code || !state) {
+			return errorRedirect(returnTo, "missing_params");
+		}
+		if (!savedState || savedState !== state) {
+			return errorRedirect(returnTo, "invalid_state");
+		}
+
+		const origin = new URL(request.url).origin;
+		const redirectUri = `${origin}/blog/api/auth/facebook/callback`;
+
+		let accessToken: string;
+		try {
+			accessToken = await exchangeCodeForToken({ appId, appSecret, redirectUri }, code);
+		} catch (err) {
+			console.error("[fb-callback] token_exchange_failed:", err);
+			return errorRedirect(returnTo, "token_exchange_failed");
+		}
+
+		let profile: Awaited<ReturnType<typeof fetchProfile>>;
+		try {
+			profile = await fetchProfile(accessToken);
+		} catch (err) {
+			console.error("[fb-callback] profile_fetch_failed:", err);
+			return errorRedirect(returnTo, "profile_fetch_failed");
+		}
+
+		const email = profile.email ?? `${profile.id}@facebook.douravita.local`;
+
+		const { cookieValue } = await encodeReaderSession(
+			{
+				fbId: profile.id,
+				name: profile.name,
+				email,
+				picture: profile.pictureUrl ?? "",
+			},
+			readerSecret,
+		);
+
+		const headers = new Headers({
+			Location: returnTo,
+			"Cache-Control": "no-store",
+		});
+		headers.append("Set-Cookie", readerSessionSetCookieHeader(cookieValue));
+		headers.append("Set-Cookie", stateCookieClearHeader());
+		return new Response(null, { status: 302, headers });
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error("[fb-callback] crash:", msg, err instanceof Error ? err.stack : "");
+		return new Response(`Erro no callback Facebook: ${msg}`, { status: 500 });
 	}
-
-	let profile: Awaited<ReturnType<typeof fetchProfile>>;
-	try {
-		profile = await fetchProfile(accessToken);
-	} catch {
-		return errorRedirect(redirect, returnTo, "profile_fetch_failed");
-	}
-
-	// Email pode estar ausente se o user nao concedeu permissao.
-	// Sem email, geramos um placeholder estavel (so pra moderacao first_time
-	// funcionar — nao mandamos email pra esse endereco).
-	const email = profile.email ?? `${profile.id}@facebook.douravita.local`;
-
-	const { cookieValue } = await encodeReaderSession(
-		{
-			fbId: profile.id,
-			name: profile.name,
-			email,
-			picture: profile.pictureUrl ?? "",
-		},
-		readerSecret,
-	);
-
-	// @ts-expect-error Astro redirect typing
-	const res = redirect(returnTo, 302) as Response;
-	res.headers.append("Set-Cookie", readerSessionSetCookieHeader(cookieValue));
-	res.headers.append("Set-Cookie", stateCookieClearHeader());
-	res.headers.set("Cache-Control", "no-store");
-	return res;
 };

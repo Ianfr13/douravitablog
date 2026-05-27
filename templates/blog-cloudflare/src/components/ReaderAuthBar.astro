@@ -36,7 +36,7 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 
 <div class:list={["reader-auth-bar", className, session && "reader-auth-bar--logged"]}>
 	{session ? (
-		<>
+		<Fragment>
 			<div class="reader-auth-bar__user">
 				{session.picture ? (
 					<img
@@ -61,9 +61,9 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 			<a href={logoutHref} class="reader-auth-bar__logout" rel="nofollow">
 				Sair
 			</a>
-		</>
+		</Fragment>
 	) : (
-		<>
+		<Fragment>
 			<p class="reader-auth-bar__pitch">
 				Entre com o Facebook pra comentar mais rapido (foto + nome do seu perfil).
 			</p>
@@ -80,7 +80,7 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 				</svg>
 				<span>Continuar com Facebook</span>
 			</a>
-		</>
+		</Fragment>
 	)}
 </div>
 
