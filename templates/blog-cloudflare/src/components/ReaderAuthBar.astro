@@ -38,25 +38,32 @@ const loginHref = `/blog/api/auth/facebook/login?returnTo=${encodeURIComponent(r
 const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
 ---
 
-{!session && (
-	<script is:inline>
-		// Safety net: se cookie reader_session existe mas o SSR renderizou
-		// como anonimo, o browser serviu HTML cacheado pre-login. Forca
-		// refetch pra pegar a versao logada. sessionStorage previne loop.
-		(function () {
-			try {
-				if (document.cookie.indexOf("reader_session=") === -1) return;
-				if (sessionStorage.getItem("_dvReaderRefreshed")) return;
-				sessionStorage.setItem("_dvReaderRefreshed", "1");
-				fetch(window.location.href, { cache: "reload", credentials: "include" }).then(function () {
-					window.location.reload();
-				});
-			} catch (e) {
-				/* ignore */
+<script is:inline>
+	// Reader auth — duas funcoes em um:
+	//   1. Limpa o param _dvr da URL bar (foi colocado pra cache-bust no item 2)
+	//   2. Se cookie reader_session existe mas SSR renderizou anonimo
+	//      (HTML cacheado pre-login), navega pra mesma URL com _dvr=timestamp
+	//      pra forcar fetch fresh. URL diferente = browser/CDN nao hitam cache.
+	(function () {
+		try {
+			var url = new URL(window.location.href);
+			var hasDvr = url.searchParams.has("_dvr");
+			if (hasDvr) {
+				url.searchParams.delete("_dvr");
+				history.replaceState(null, "", url.pathname + url.search + url.hash);
 			}
-		})();
-	</script>
-)}
+			var hasCookie = document.cookie.indexOf("reader_session=") !== -1;
+			var isLogged = !!document.querySelector(".reader-auth-bar--logged");
+			if (hasCookie && !isLogged && !hasDvr) {
+				var fresh = new URL(window.location.href);
+				fresh.searchParams.set("_dvr", Date.now().toString());
+				window.location.replace(fresh.toString());
+			}
+		} catch (e) {
+			/* ignore */
+		}
+	})();
+</script>
 
 <div class:list={["reader-auth-bar", className, session && "reader-auth-bar--logged"]}>
 	{session ? (
