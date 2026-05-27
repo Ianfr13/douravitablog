@@ -45,21 +45,22 @@ if (!post) {
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
-// Edge cache pra Cloudflare. s-maxage=60 = CDN segura por 60s (mudanças via
-// publish aparecem em ~1min); stale-while-revalidate=86400 = serve stale por
-// 24h em background enquanto revalida (usuário sempre vê página rápida).
-// Render server-side custa ~2s (15 queries no D1); cache HIT cai pra ~30ms.
+// Edge cache. CDN segura por 60s via s-maxage. max-age=0 + must-revalidate
+// forca browser a revalidar SEMPRE — sem isso, leitor anonimo que loga via
+// FB ve HTML anonimo cacheado por ate 24h. SEM stale-while-revalidate (a
+// janela em que o cookie reader_session muda).
+// Render server-side custa ~2s (15 queries no D1); cache HIT no CDN cai pra
+// ~30ms; cache MISS (browser revalidando contra CDN) ~50ms — imperceptivel.
 //
 // EXCEÇÃO: quando o leitor está logado via Facebook, o HTML inclui o nome/
 // avatar dele (ReaderAuthBar) e o form esconde os campos name/email. Pra não
 // vazar identidade pelo cache compartilhado, marcamos uncacheable nesse caso.
-// Detecta presença do cookie sem validar HMAC (rápido, só pra cache key).
 const hasReaderCookie = (Astro.request.headers.get("cookie") || "").includes("reader_session=");
 Astro.response.headers.set(
 	"Cache-Control",
 	hasReaderCookie
 		? "private, no-store"
-		: "public, s-maxage=60, stale-while-revalidate=86400",
+		: "public, max-age=0, must-revalidate, s-maxage=60",
 );
 
 // Get featured image URL for OG fallback
