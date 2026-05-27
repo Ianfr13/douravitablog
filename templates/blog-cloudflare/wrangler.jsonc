@@ -36,6 +36,7 @@
 	"vars": {
 		"TURNSTILE_SITE_KEY": "0x4AAAAAADWzbE_A_uae235T",
 		"FACEBOOK_APP_ID": "896190730078320",
+		"FACEBOOK_CONFIG_ID": "972733642183584",
 	},
 	// Worker Loader for plugin sandboxing
 	"worker_loaders": [

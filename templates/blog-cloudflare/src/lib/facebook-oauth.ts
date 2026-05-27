@@ -25,16 +25,18 @@ export interface FacebookOAuthConfig {
 	appId: string;
 	appSecret: string;
 	redirectUri: string;
+	/** Config ID do FLfB (Facebook Login for Business). Quando presente, ativa
+	 *  o fluxo FLfB com permissoes definidas na Configuracao do app. Apps
+	 *  tipo Business so suportam OAuth via config_id; apps Consumer usam scope. */
+	configId?: string;
 }
 
 /** Monta a URL de inicio do flow OAuth.
  *
- * Sem `scope` explicito: o app Douravitawp eh tipo Business e nao tem
- * `public_profile` na lista de "supported permissions" (so tem permissoes
- * tipo pages_*, ads_*). Pedir public_profile dispara "Este app precisa pelo
- * menos de uma supported permission". Sem scope, FB faz auth basico e ainda
- * permite /me?fields=id,name (campos public_profile sao default mesmo sem
- * scope explicito quando o user autoriza).
+ * App Douravitawp eh tipo Business: nao tem `public_profile` como permissao
+ * disponivel. Pedir scope dispara "Este app precisa pelo menos de uma
+ * supported permission". Solucao: usar `config_id` (FLfB) — Facebook le
+ * permissoes da Configuracao no painel em vez de scope na URL.
  */
 export function buildAuthorizationUrl(config: FacebookOAuthConfig, state: string): string {
 	const url = new URL(AUTH_URL);
@@ -42,6 +44,9 @@ export function buildAuthorizationUrl(config: FacebookOAuthConfig, state: string
 	url.searchParams.set("redirect_uri", config.redirectUri);
 	url.searchParams.set("state", state);
 	url.searchParams.set("response_type", "code");
+	if (config.configId) {
+		url.searchParams.set("config_id", config.configId);
+	}
 	return url.toString();
 }
 

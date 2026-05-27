@@ -28,6 +28,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 	try {
 		const env = await getWorkerEnv();
 		const appId = env.FACEBOOK_APP_ID;
+		const configId = env.FACEBOOK_CONFIG_ID as string | undefined;
 		if (!appId) {
 			return new Response("Facebook Login nao configurado: FACEBOOK_APP_ID ausente", {
 				status: 500,
@@ -41,7 +42,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 
 		const origin = new URL(request.url).origin;
 		const redirectUri = `${origin}/blog/api/auth/facebook/callback`;
-		const authUrl = buildAuthorizationUrl({ appId, appSecret: "", redirectUri }, state);
+		const authUrl = buildAuthorizationUrl(
+			{ appId, appSecret: "", redirectUri, configId },
+			state,
+		);
 
 		// Manual Response em vez de Astro.redirect — mais previsivel pra
 		// URLs externas (facebook.com) em ambiente CF Workers.
