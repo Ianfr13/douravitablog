@@ -146,6 +146,39 @@ export function readerSessionClearCookieHeader(): string {
 	].join("; ");
 }
 
+/**
+ * Cookie companheira "marker" — flag NAO-HttpOnly que indica que o usuario
+ * tem sessao. JavaScript do client pode ler esse via document.cookie
+ * (o reader_session principal eh HttpOnly por seguranca). Usado pelo
+ * safety net JS pra detectar "cookie existe mas SSR renderizou anonimo"
+ * (HTML cacheado pre-login) e forcar fetch fresh.
+ *
+ * NAO contem dados sensiveis — soh um "1" flag.
+ */
+const MARKER_COOKIE_NAME = "reader_logged";
+
+export function readerSessionMarkerSetHeader(maxAgeSeconds = TTL_SECONDS): string {
+	return [
+		`${MARKER_COOKIE_NAME}=1`,
+		"Path=/",
+		`Max-Age=${maxAgeSeconds}`,
+		"Secure",
+		"SameSite=Lax",
+	].join("; ");
+}
+
+export function readerSessionMarkerClearHeader(): string {
+	return [
+		`${MARKER_COOKIE_NAME}=`,
+		"Path=/",
+		"Max-Age=0",
+		"Secure",
+		"SameSite=Lax",
+	].join("; ");
+}
+
+export const READER_SESSION_MARKER_COOKIE_NAME = MARKER_COOKIE_NAME;
+
 /** Le o cookie `reader_session` do Cookie header. */
 export function getReaderSessionCookie(cookieHeader: string | null | undefined): string | undefined {
 	if (!cookieHeader) return undefined;

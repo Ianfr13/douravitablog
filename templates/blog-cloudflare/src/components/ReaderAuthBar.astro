@@ -52,9 +52,12 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 				url.searchParams.delete("_dvr");
 				history.replaceState(null, "", url.pathname + url.search + url.hash);
 			}
-			var hasCookie = document.cookie.indexOf("reader_session=") !== -1;
+			// reader_session principal eh HttpOnly (invisible pro JS via
+			// document.cookie). Checamos o cookie companheira reader_logged=1
+			// (setada juntinho no callback) que NAO eh HttpOnly.
+			var hasMarker = document.cookie.indexOf("reader_logged=1") !== -1;
 			var isLogged = !!document.querySelector(".reader-auth-bar--logged");
-			if (hasCookie && !isLogged && !hasDvr) {
+			if (hasMarker && !isLogged && !hasDvr) {
 				var fresh = new URL(window.location.href);
 				fresh.searchParams.set("_dvr", Date.now().toString());
 				window.location.replace(fresh.toString());

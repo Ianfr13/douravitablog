@@ -6,7 +6,10 @@
  */
 
 import type { APIRoute } from "astro";
-import { readerSessionClearCookieHeader } from "../../../lib/reader-session";
+import {
+	readerSessionClearCookieHeader,
+	readerSessionMarkerClearHeader,
+} from "../../../lib/reader-session";
 
 export const prerender = false;
 
@@ -18,14 +21,13 @@ function safeReturnTo(raw: string | null): string {
 
 const handler: APIRoute = async ({ url }) => {
 	const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
-	return new Response(null, {
-		status: 302,
-		headers: {
-			Location: returnTo,
-			"Set-Cookie": readerSessionClearCookieHeader(),
-			"Cache-Control": "no-store",
-		},
+	const headers = new Headers({
+		Location: returnTo,
+		"Cache-Control": "no-store",
 	});
+	headers.append("Set-Cookie", readerSessionClearCookieHeader());
+	headers.append("Set-Cookie", readerSessionMarkerClearHeader());
+	return new Response(null, { status: 302, headers });
 };
 
 export const GET = handler;

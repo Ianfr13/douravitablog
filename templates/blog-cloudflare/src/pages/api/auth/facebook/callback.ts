@@ -18,6 +18,7 @@ import {
 } from "../../../../lib/facebook-oauth";
 import {
 	encodeReaderSession,
+	readerSessionMarkerSetHeader,
 	readerSessionSetCookieHeader,
 } from "../../../../lib/reader-session";
 import { getWorkerEnv } from "../../../../lib/worker-env";
@@ -129,6 +130,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
 		return htmlRedirect(returnTo, [
 			readerSessionSetCookieHeader(cookieValue),
+			readerSessionMarkerSetHeader(),
 			stateCookieClearHeader(),
 		]);
 	} catch (err) {
