@@ -285,8 +285,30 @@ const SNIPPET_GT_RE = />/g;
 const SNIPPET_QUOT_RE = /"/g;
 const SNIPPET_APOS_RE = /'/g;
 
+// Quando o conteúdo indexado é PortableText (array de blocks armazenado como
+// JSON string na coluna), o snippet() do FTS5 pega 32 tokens em volta do match
+// no JSON cru — vem com lixo como {"_type":"block","_key":"...","style":"normal",...}.
+// Removemos esses artefatos pra o snippet ficar legível. Como o FTS já indexou
+// no formato cru, isso é um clean-up pós-fato (a alternativa correta seria
+// reindexar com extractPlainText, mas requer migração de schema).
+//
+// Os regexes operam DEPOIS do HTML escape, então procuramos a forma escapada
+// das chaves JSON (&quot; em vez de "). Mantém <mark>...</mark> intactos.
+//
+// Estratégia: remover pares chave:valor de keys estruturais; preservar VALORES
+// da key "text" (que é onde está o conteúdo real do PT); remover braces JSON
+// remanescentes; colapsar whitespace.
+const PT_STRUCT_KV_RE = /&quot;(_type|_key|style|listItem|level|marks|markDefs|asset|alt|caption|src|href|blank|_ref|children)&quot;\s*:\s*[^,}\]]*[,}\]]?/g;
+const PT_TEXT_KEY_PREFIX_RE = /&quot;text&quot;\s*:\s*&quot;/g;
+const PT_BRACES_RE = /[\[\]{}]/g;
+const PT_STRAY_QUOT_RE = /&quot;/g;
+const PT_DANGLING_PUNCT_RE = /\s*[,:;]+\s*/g;
+const PT_MULTI_SPACE_RE = /\s{2,}/g;
+const PT_LEADING_TRAILING_PUNCT_RE = /^[\s,.:;\-]+|[\s,.:;\-]+$/g;
+
 /**
- * Make an FTS5 snippet safe to render with `set:html` / `innerHTML`.
+ * Make an FTS5 snippet safe to render with `set:html` / `innerHTML` AND
+ * legível quando o conteúdo indexado é PortableText JSON cru.
  *
  * SQLite's `snippet()` function splices literal `<mark>` and `</mark>`
  * markers around matched terms but does not escape the surrounding
@@ -294,15 +316,15 @@ const SNIPPET_APOS_RE = /'/g;
  * `'` would render as broken markup, and a `<script>` literal in a
  * title (or any other indexed field) would execute when displayed.
  *
- * The fix: HTML-escape the whole string, which turns the markers into
- * `&lt;mark&gt;` / `&lt;/mark&gt;`. Then restore those two patterns to
- * their original tag form. The result is "the indexed text with all
- * HTML metacharacters escaped, plus a small set of literal `<mark>`
- * highlight tags around matched terms" — which matches the API's
- * documented contract.
+ * Step 1: HTML-escape the whole string, which turns the markers into
+ *   `&lt;mark&gt;` / `&lt;/mark&gt;`. Then restore those two patterns to
+ *   their original tag form.
+ * Step 2: Remove PortableText structural noise (`"_type":"block"` etc).
+ *   Esses artefatos vazam quando a coluna FTS indexa o JSON cru do PT em
+ *   vez de plain text extraído. Limpamos o ruído mantendo o texto real.
  */
 function sanitizeSnippet(snippet: string): string {
-	return snippet
+	const escaped = snippet
 		.replace(SNIPPET_AMP_RE, "&amp;")
 		.replace(SNIPPET_LT_RE, "&lt;")
 		.replace(SNIPPET_GT_RE, "&gt;")
@@ -310,6 +332,22 @@ function sanitizeSnippet(snippet: string): string {
 		.replace(SNIPPET_APOS_RE, "&#39;")
 		.replaceAll("&lt;mark&gt;", "<mark>")
 		.replaceAll("&lt;/mark&gt;", "</mark>");
+
+	// Heurística: só roda o cleanup se o snippet parece ter JSON do PT
+	// (chaves estruturais). Evita custo regex em snippets limpos.
+	if (!escaped.includes("&quot;_type&quot;") && !escaped.includes("&quot;_key&quot;")) {
+		return escaped;
+	}
+
+	return escaped
+		.replace(PT_STRUCT_KV_RE, " ")
+		.replace(PT_BRACES_RE, " ")
+		.replace(PT_TEXT_KEY_PREFIX_RE, " ")
+		.replace(PT_STRAY_QUOT_RE, " ")
+		.replace(PT_DANGLING_PUNCT_RE, " ")
+		.replace(PT_MULTI_SPACE_RE, " ")
+		.replace(PT_LEADING_TRAILING_PUNCT_RE, "")
+		.trim();
 }
 
 /**
