@@ -105,8 +105,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 		try {
 			accessToken = await exchangeCodeForToken({ appId, appSecret, redirectUri }, code);
 		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
 			console.error("[fb-callback] token_exchange_failed:", err);
-			return errorRedirect(returnTo, "token_exchange_failed");
+			// Surface FB error msg no URL pra diagnostico (limpar depois).
+			return errorRedirect(returnTo, `token_exchange_failed:${msg.slice(0, 300)}`);
 		}
 
 		let profile: Awaited<ReturnType<typeof fetchProfile>>;
