@@ -162,6 +162,29 @@ const BLOG_PREFIX_PATHS = [
 	"api",
 ];
 
+// Subdominio antigo do blog (blog.douravita.com.br) → apex /blog. O blog
+// migrou pra douravita.com.br/blog, mas o subdominio antigo ainda resolve
+// nesse mesmo worker e servia conteudo duplicado (ruim pra SEO: Google
+// indexa as duas URLs). 301 permanente consolida tudo no apex.
+//
+// No subdominio antigo o blog morava no ROOT (/, /posts/X, /category/X),
+// entao prepend /blog em tudo que ainda nao tem. So GET/HEAD pra nao
+// quebrar POST (forms de comentario postam no apex de qualquer forma).
+const LEGACY_BLOG_HOST = "blog.douravita.com.br";
+
+function redirectLegacyBlogSubdomain(request: Request): Response | null {
+	if (request.method !== "GET" && request.method !== "HEAD") return null;
+	const url = new URL(request.url);
+	if (url.hostname !== LEGACY_BLOG_HOST) return null;
+	url.hostname = "douravita.com.br";
+	const p = url.pathname;
+	const hasBlogPrefix = p === "/blog" || p.startsWith("/blog/");
+	if (!hasBlogPrefix) {
+		url.pathname = p === "/" ? "/blog" : `/blog${p}`;
+	}
+	return Response.redirect(url.toString(), 301);
+}
+
 function redirectLegacyPublicPath(request: Request): Response | null {
 	if (request.method !== "GET" && request.method !== "HEAD") return null;
 	const url = new URL(request.url);
@@ -257,6 +280,12 @@ export default {
 		env: unknown,
 		ctx: ExecutionContext,
 	): Promise<Response> {
+		// Subdominio antigo (blog.douravita.com.br) → 301 pro apex /blog.
+		// Roda ANTES de tudo pra consolidar SEO e nao servir conteudo
+		// duplicado no subdominio legado.
+		const subdomainRedirect = redirectLegacyBlogSubdomain(request);
+		if (subdomainRedirect) return subdomainRedirect;
+
 		// Static assets do public/ (imagens, favicon, etc) vao pra ASSETS
 		// binding direto — sem isso, o handler do Astro engole o request
 		// e devolve a home (catch-all do SSR).
