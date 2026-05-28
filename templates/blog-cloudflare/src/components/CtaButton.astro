@@ -1,0 +1,134 @@
+---
+/**
+ * Botão CTA de compra no fim do artigo de venda (cluster Conversão).
+ *
+ * Registrado em pages/posts/[slug].astro como custom type do <PortableText>
+ * (`components.type.ctaButton`). O bloco PortableText correspondente é emitido
+ * pelo pipeline editorial (md_to_portable.py) a partir do marker
+ * `<!-- CTA_CREATINA -->` que o writer insere no template_conversao.md.
+ *
+ * Dispara um evento GA4 (`cta_creatina_click`) no clique — o gtag global é
+ * carregado no Base.astro (Measurement ID G-9BF05HSEEL).
+ *
+ * Shape esperado do value:
+ *   { _type: "ctaButton", label: "Comprar Creatina Douravita", href: "https://douravita.com.br/" }
+ */
+interface Node {
+	_type: "ctaButton";
+	_key: string;
+	label: string;
+	href: string;
+}
+interface Props {
+	node: Node;
+}
+// astro-portabletext passa a prop como `node` (não `value`) pra custom types.
+const { node } = Astro.props;
+const { label, href } = node;
+---
+
+<div class="cta-creatina-wrap">
+	<a
+		href={href}
+		class="cta-creatina-button"
+		target="_blank"
+		rel="noopener noreferrer"
+		data-cta="creatina"
+		data-cta-href={href}
+		data-cta-label={label}
+	>
+		<span class="cta-creatina-label">{label}</span>
+		<span class="cta-creatina-arrow" aria-hidden="true">→</span>
+	</a>
+	<span class="cta-creatina-sub">Loja oficial Douravita · compra segura</span>
+</div>
+
+<script>
+	// Evento GA4 de clique no botão de compra. gtag é global (Base.astro).
+	document.querySelectorAll(".cta-creatina-button").forEach((el) => {
+		el.addEventListener("click", () => {
+			const btn = el as HTMLElement;
+			const g = (window as any).gtag;
+			if (typeof g === "function") {
+				g("event", "cta_creatina_click", {
+					link_url: btn.dataset.ctaHref || "",
+					link_text: btn.dataset.ctaLabel || "",
+					location: "article_cta_button",
+				});
+			}
+		});
+	});
+</script>
+
+<style>
+	.cta-creatina-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--spacing-2);
+		margin: var(--spacing-8) 0;
+		text-align: center;
+	}
+
+	.cta-creatina-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--spacing-2);
+		background: var(--color-accent);
+		color: var(--color-on-accent, #fff);
+		font-weight: 700;
+		font-size: var(--font-size-lg, 1.125rem);
+		line-height: 1.2;
+		padding: var(--spacing-4) var(--spacing-8);
+		border-radius: var(--radius);
+		text-decoration: none;
+		box-shadow: 0 2px 8px var(--color-accent-ring, rgba(0, 0, 0, 0.12));
+		transition:
+			background var(--transition-fast),
+			transform var(--transition-fast);
+	}
+
+	.cta-creatina-button:hover,
+	.cta-creatina-button:focus-visible {
+		background: var(--color-accent-hover, var(--color-accent));
+		transform: translateY(-1px);
+		outline: none;
+	}
+
+	.cta-creatina-button:focus-visible {
+		outline: 3px solid var(--color-accent-ring, var(--color-accent));
+		outline-offset: 2px;
+	}
+
+	.cta-creatina-arrow {
+		font-size: 1.1em;
+		transition: transform var(--transition-fast);
+	}
+
+	.cta-creatina-button:hover .cta-creatina-arrow {
+		transform: translateX(3px);
+	}
+
+	.cta-creatina-sub {
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
+	}
+
+	@media (max-width: 640px) {
+		.cta-creatina-button {
+			width: 100%;
+			padding: var(--spacing-4) var(--spacing-5);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cta-creatina-button,
+		.cta-creatina-arrow {
+			transition: none;
+		}
+		.cta-creatina-button:hover {
+			transform: none;
+		}
+	}
+</style>

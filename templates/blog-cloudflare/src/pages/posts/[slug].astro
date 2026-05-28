@@ -15,7 +15,8 @@ import {
 } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import PostCard from "../../components/PostCard.astro";
-import LeiaTambem from "../../components/LeiaTambem.astro";
+import LeiaTambem from "../../components/LeiaTambem.astro";
+import CtaButton from "../../components/CtaButton.astro";
 import CommentFormPT from "../../components/CommentFormPT.astro";
 import CommentsListPT from "../../components/CommentsListPT.astro";
 import ReaderAuthBar from "../../components/ReaderAuthBar.astro";
@@ -27,7 +28,8 @@ import { resolveBlogSiteIdentity } from "../../utils/site-identity";
 // no <PortableText> abaixo — astro-portabletext merge com defaults EmDash.
 const portableTextComponents = {
 	type: {
-		leiaTambem: LeiaTambem,
+		leiaTambem: LeiaTambem,
+		ctaButton: CtaButton,
 	},
 };
 
