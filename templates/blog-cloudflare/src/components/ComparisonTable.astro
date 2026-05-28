@@ -1,0 +1,358 @@
+---
+/**
+ * Tabela comparativa no corpo do artigo. Substitui o achatamento em bullets
+ * "cell — cell — cell" que o pipeline fazia (md_to_portable.py) por uma tabela
+ * editorial de verdade: <table> semântica no desktop, cards empilhados legíveis
+ * no mobile (sem scroll horizontal).
+ *
+ * Registrado em pages/posts/[slug].astro como custom type do <PortableText>
+ * (`components.type.comparisonTable`). O bloco PortableText correspondente é
+ * emitido pelo pipeline editorial (md_to_portable.py) a partir de uma tabela
+ * markdown `| a | b |` no .md do artigo.
+ *
+ * Shape esperado do node:
+ *   { _type: "comparisonTable", _key, header: string[], rows: string[][] }
+ *   - header: linha de cabeçalho (pode ser [] se a tabela não tiver header)
+ *   - rows: linhas de dados; rows[i][0] é o critério (vira rowheader)
+ *   - células aceitam **negrito** e [texto](href) inline (parse local seguro)
+ *
+ * Realce DouraVita: se algum header contém "douravita", aquela coluna recebe
+ * um tint NEUTRO de superfície (não saturado) + peso maior no cabeçalho. É o
+ * ângulo "comparativo honesto": destacar sutil, sem cara de propaganda DTC
+ * (a saturação no site é reservada aos 12 pilares, ver DESIGN.md).
+ *
+ * astro-portabletext passa a prop como `node` (não `value`) pra custom types.
+ */
+interface Node {
+	_type: "comparisonTable";
+	_key: string;
+	header?: string[];
+	rows?: string[][];
+}
+interface Props {
+	node: Node;
+}
+
+type Segment =
+	| { t: "text"; text: string }
+	| { t: "bold"; text: string }
+	| { t: "link"; text: string; href: string };
+
+// Parser inline mínimo: **negrito** e [texto](href). Conteúdo vem do nosso
+// pipeline (não é input de usuário), e o Astro escapa {text}/{href} por padrão,
+// então não há injeção. Colchetes soltos como `[não declara]` (sem `(...)`) não
+// casam o regex de link e ficam literais — comportamento desejado.
+function parseCell(raw: string): Segment[] {
+	const segments: Segment[] = [];
+	const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
+	let last = 0;
+	let m: RegExpExecArray | null;
+	while ((m = re.exec(raw)) !== null) {
+		if (m.index > last) segments.push({ t: "text", text: raw.slice(last, m.index) });
+		if (m[1] !== undefined) {
+			segments.push({ t: "bold", text: m[1] });
+		} else {
+			segments.push({ t: "link", text: m[2], href: m[3] });
+		}
+		last = re.lastIndex;
+	}
+	if (last < raw.length) segments.push({ t: "text", text: raw.slice(last) });
+	return segments;
+}
+
+const { node } = Astro.props;
+const header = (node.header ?? []).map((h) => (h ?? "").trim());
+const rows = (node.rows ?? []).map((r) => r.map((c) => (c ?? "").trim()));
+const hasHeader = header.some((h) => h.length > 0);
+
+const colCount = Math.max(
+	header.length,
+	...rows.map((r) => r.length),
+	0,
+);
+// Coluna do produto DouraVita (realce neutro). -1 = nenhuma.
+const brandCol = header.findIndex((h) => /douravita/i.test(h));
+// Tabela chave→valor (2 colunas): no mobile não repete o rótulo da coluna de
+// valor (o critério já é o título do bloco).
+const isKeyValue = colCount <= 2;
+---
+
+{
+	colCount > 0 && (
+		<div class:list={["ct-wrap", { "ct-keyvalue": isKeyValue, "ct-wide": colCount >= 4 }]}>
+			<table class="ct" role="table">
+				{hasHeader && (
+					<thead>
+						<tr role="row">
+							{header.map((cell, ci) => (
+								<th
+									scope="col"
+									role="columnheader"
+									class:list={["ct-th", { "ct-brand": ci === brandCol, "ct-criteria": ci === 0 }]}
+								>
+									{parseCell(cell).map((s) =>
+										s.t === "bold" ? (
+											<strong>{s.text}</strong>
+										) : s.t === "link" ? (
+											<a href={s.href} class="ct-link">{s.text}</a>
+										) : (
+											<Fragment>{s.text}</Fragment>
+										),
+									)}
+								</th>
+							))}
+						</tr>
+					</thead>
+				)}
+				<tbody>
+					{rows.map((row) => (
+						<tr role="row">
+							{Array.from({ length: colCount }).map((_, ci) => {
+								const cell = row[ci] ?? "";
+								const segs = parseCell(cell);
+								const content = segs.map((s) =>
+									s.t === "bold" ? (
+										<strong>{s.text}</strong>
+									) : s.t === "link" ? (
+										<a href={s.href} class="ct-link">{s.text}</a>
+									) : (
+										<Fragment>{s.text}</Fragment>
+									),
+								);
+								const labelText = header[ci] ?? "";
+								if (ci === 0) {
+									return (
+										<th scope="row" role="rowheader" class="ct-rowhead">
+											{content}
+										</th>
+									);
+								}
+								return (
+									<td
+										role="cell"
+										class:list={["ct-td", { "ct-brand": ci === brandCol }]}
+									>
+										{!isKeyValue && labelText && (
+											<span class="ct-celllabel" aria-hidden="true">{labelText}</span>
+										)}
+										<span class="ct-cellvalue">{content}</span>
+									</td>
+								);
+							})}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	)
+}
+
+<style>
+	.ct-wrap {
+		margin: 2.25em 0;
+		/* overflow auto: clipa os cantos arredondados E dá scroll como rede de
+		 * segurança em tabelas extremamente largas no desktop/tablet. No mobile
+		 * a tabela empilha (não precisa scroll). */
+		overflow-x: auto;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.ct {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--font-size-base);
+		line-height: var(--leading-normal);
+		color: var(--color-text);
+	}
+
+	/* Cabeçalho: serif institucional, fundo levemente tintado, peso 600. */
+	.ct-th {
+		font-family: var(--font-serif);
+		font-weight: 600;
+		text-align: left;
+		vertical-align: bottom;
+		padding: var(--spacing-3) var(--spacing-4);
+		background: var(--color-bg-subtle);
+		color: var(--color-text);
+		border-bottom: 2px solid var(--color-border);
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-snug);
+	}
+
+	/* Critério (primeira coluna): rótulo de linha, ancorado. */
+	.ct-rowhead {
+		font-weight: 600;
+		text-align: left;
+		vertical-align: top;
+		padding: var(--spacing-3) var(--spacing-4);
+		background: var(--color-bg-subtle);
+		color: var(--color-text);
+		border-bottom: 1px solid var(--color-border-subtle);
+		/* Coluna estreita o suficiente pra não roubar espaço das opções. */
+		width: 1%;
+		white-space: nowrap;
+	}
+
+	.ct-td {
+		padding: var(--spacing-3) var(--spacing-4);
+		vertical-align: top;
+		color: var(--color-text-secondary);
+		border-bottom: 1px solid var(--color-border-subtle);
+	}
+
+	.ct tbody tr:last-child .ct-rowhead,
+	.ct tbody tr:last-child .ct-td {
+		border-bottom: none;
+	}
+
+	/* Realce DouraVita: tint NEUTRO de superfície + header 700. Sem saturação
+	 * (regra do silêncio cromático: cor saturada só nos 12 pilares). */
+	.ct-brand {
+		background: var(--color-surface);
+	}
+	th.ct-brand {
+		font-weight: 700;
+	}
+
+	.ct-link {
+		color: var(--color-accent);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+		font-weight: 600;
+	}
+	.ct-link:hover {
+		text-decoration-thickness: 2px;
+	}
+
+	/* Tabelas largas (>=4 colunas) NO DESKTOP: fixa o layout pra caber na coluna
+	 * de leitura (680px) sem scroll horizontal. Tipo um pouco menor, padding mais
+	 * justo, critério quebra linha e palavras longas (ex: registro ANVISA) quebram
+	 * em vez de estourar. Restrito a min-width:641px pra NÃO vazar pro mobile
+	 * (senão a maior especificidade de `.ct-wide ...` venceria as regras de card). */
+	@media (min-width: 641px) {
+		.ct-wide .ct {
+			table-layout: fixed;
+		}
+		.ct-wide .ct-criteria {
+			width: 20%;
+		}
+		.ct-wide .ct-th {
+			font-size: var(--font-size-xs);
+			padding: var(--spacing-3);
+		}
+		.ct-wide .ct-rowhead,
+		.ct-wide .ct-td {
+			font-size: var(--font-size-sm);
+			padding: var(--spacing-3);
+		}
+		.ct-wide .ct-rowhead {
+			white-space: normal;
+			width: 20%;
+		}
+		.ct-wide .ct-th,
+		.ct-wide .ct-rowhead,
+		.ct-wide .ct-td {
+			overflow-wrap: anywhere;
+		}
+	}
+
+	/* Rótulo da coluna repetido em cada célula no mobile (escondido no desktop). */
+	.ct-celllabel {
+		display: none;
+	}
+
+	/* === Mobile: empilha cada linha como bloco legível, sem scroll horizontal === */
+	@media (max-width: 640px) {
+		.ct-wrap {
+			border: none;
+			border-radius: 0;
+			overflow-x: visible;
+		}
+
+		.ct,
+		.ct tbody,
+		.ct tbody tr,
+		.ct-rowhead,
+		.ct-td {
+			display: block;
+			width: auto;
+		}
+
+		/* Cabeçalho some visualmente, fica pra leitor de tela. */
+		.ct thead {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0 0 0 0);
+			white-space: nowrap;
+			border: 0;
+		}
+
+		.ct tbody tr {
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-lg);
+			margin-bottom: var(--spacing-4);
+			overflow: hidden;
+		}
+		.ct tbody tr:last-child {
+			margin-bottom: 0;
+		}
+
+		/* Critério vira título do bloco. */
+		.ct-rowhead {
+			white-space: normal;
+			font-family: var(--font-serif);
+			font-size: var(--font-size-lg);
+			padding: var(--spacing-3) var(--spacing-4);
+			border-bottom: 1px solid var(--color-border);
+		}
+		.ct tbody tr:last-child .ct-rowhead {
+			border-bottom: 1px solid var(--color-border);
+		}
+
+		/* Cada valor: rótulo da coluna + valor, em duas zonas. */
+		.ct-td {
+			display: flex;
+			gap: var(--spacing-3);
+			align-items: baseline;
+			padding: var(--spacing-3) var(--spacing-4);
+			border-bottom: 1px solid var(--color-border-subtle);
+		}
+		.ct tbody tr .ct-td:last-child {
+			border-bottom: none;
+		}
+
+		.ct-celllabel {
+			display: block;
+			flex: 0 0 38%;
+			font-weight: 600;
+			color: var(--color-text);
+			font-size: var(--font-size-sm);
+			line-height: var(--leading-snug);
+		}
+
+		.ct-cellvalue {
+			flex: 1 1 auto;
+			min-width: 0;
+			font-size: var(--font-size-base);
+			overflow-wrap: anywhere;
+		}
+
+		/* Realce DouraVita no mobile fica no rótulo da célula (o bg some pra não
+		 * pintar bloco inteiro de forma desigual). */
+		.ct-brand {
+			background: var(--color-surface);
+		}
+
+		/* Chave→valor: só o valor, sem rótulo redundante. */
+		.ct-keyvalue .ct-td {
+			display: block;
+		}
+	}
+</style>
