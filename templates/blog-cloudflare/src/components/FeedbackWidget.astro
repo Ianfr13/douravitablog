@@ -91,7 +91,10 @@ const { contentId, yes = 0, no = 0, total = 0, percent = 0 } = Astro.props;
 				const helpful = btn.dataset.feedbackVote === "1" ? 1 : 0;
 				buttons.forEach((b) => (b.disabled = true));
 				try {
-					const res = await fetch("/api/feedback/submit", {
+					// Prefixo /blog: o worker.ts strippa pra /api/feedback/submit
+					// internamente. Sem o prefixo o CF devolve 405 (mesmo motivo
+					// do /blog/api/comments/submit).
+					const res = await fetch("/blog/api/feedback/submit", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({ contentId, helpful }),
