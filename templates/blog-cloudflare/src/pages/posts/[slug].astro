@@ -925,6 +925,23 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 		margin-bottom: 0.5em;
 	}
 
+	/* Imagens inline: constrange tamanho (estilo tuasaude — compactas,
+	 * centradas). Coluna de conteudo tem 680px; as imagens geradas por IA
+	 * sao quase quadradas, entao sem cap ficam enormes. Capamos figure em
+	 * 500px de largura + img em 440px de altura pra nao dominarem a tela. */
+	.article-content :global(figure.emdash-image) {
+		margin: 2em auto;
+		max-width: 500px;
+		text-align: center;
+	}
+
+	.article-content :global(figure.emdash-image img) {
+		max-height: 440px;
+		width: auto;
+		margin: 0 auto;
+		border-radius: var(--radius-lg);
+	}
+
 	.article-content :global(img) {
 		margin: 2em 0;
 		border-radius: var(--radius-lg);
