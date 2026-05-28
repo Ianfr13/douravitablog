@@ -253,7 +253,11 @@ const sarcQuestions = [
 const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 ---
 
-<Base title={siteTitle} description={siteTagline}>
+<Base
+	title={siteTitle}
+	description={siteTagline}
+	canonical={`${Astro.url.origin}/blog`}
+>
 	<h1 class="home-page-heading">{siteTitle}</h1>
 
 	{

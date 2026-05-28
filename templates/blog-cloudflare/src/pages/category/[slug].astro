@@ -50,7 +50,11 @@ const filteredPosts = posts.map((post) => ({
 }));
 ---
 
-<Base title={`Artigos em ${term.label}`} description={`Todos os artigos em ${term.label}`}>
+<Base
+	title={`Artigos em ${term.label}`}
+	description={`Todos os artigos em ${term.label}`}
+	canonical={`${Astro.url.origin}/blog/category/${term.slug}`}
+>
 	<section class="archive-section">
 		<header class="archive-header">
 			<span class="archive-label">Categoria</span>

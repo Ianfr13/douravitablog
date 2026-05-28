@@ -27,6 +27,7 @@ Astro.response.headers.set(
 <Base
 	title={page.data.title}
 	content={{ collection: "pages", id: page.data.id, slug }}
+	canonical={`${Astro.url.origin}/blog/pages/${slug}`}
 >
 	<article class="page-article">
 		<header class="page-header">

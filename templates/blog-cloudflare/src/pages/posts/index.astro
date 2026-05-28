@@ -41,7 +41,11 @@ const formatDate = (date: Date) =>
 	});
 ---
 
-<Base title="Todos os artigos" description="Veja todos os artigos do blog">
+<Base
+	title="Todos os artigos"
+	description="Veja todos os artigos do blog"
+	canonical={`${Astro.url.origin}/blog/posts`}
+>
 	<div class="posts-page">
 		<header class="page-header">
 			<h1 class="page-title">Todos os artigos</h1>
