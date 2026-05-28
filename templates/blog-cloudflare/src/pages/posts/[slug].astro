@@ -15,21 +15,24 @@ import {
 } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import PostCard from "../../components/PostCard.astro";
-import LeiaTambem from "../../components/LeiaTambem.astro";
+import LeiaTambem from "../../components/LeiaTambem.astro";
 import CtaButton from "../../components/CtaButton.astro";
 import ComparisonTable from "../../components/ComparisonTable.astro";
 import CommentFormPT from "../../components/CommentFormPT.astro";
 import CommentsListPT from "../../components/CommentsListPT.astro";
 import ReaderAuthBar from "../../components/ReaderAuthBar.astro";
+import FeedbackWidget from "../../components/FeedbackWidget.astro";
+import TrustBadge from "../../components/TrustBadge.astro";
 import { getReadingTime } from "../../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../../utils/site-identity";
+import { getFeedbackCounts } from "../../lib/feedback";
 
 // Custom PortableText component pra blocos `_type: 'leiaTambem'` emitidos
 // pelo pipeline (md_to_portable.py). Registra via prop `components.type`
 // no <PortableText> abaixo — astro-portabletext merge com defaults EmDash.
 const portableTextComponents = {
 	type: {
-		leiaTambem: LeiaTambem,
+		leiaTambem: LeiaTambem,
 		ctaButton: CtaButton,
 		comparisonTable: ComparisonTable,
 	},
@@ -142,12 +145,45 @@ const otherPostsWithTags = otherPosts.map((p) => ({
 	bylines: p.data.bylines ?? [],
 }));
 
-const publishDate =
-	post.data.publishedAt?.toLocaleDateString("pt-BR", {
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	}) ?? null;
+const dateFmt: Intl.DateTimeFormatOptions = {
+	year: "numeric",
+	month: "long",
+	day: "numeric",
+};
+const publishDate = post.data.publishedAt?.toLocaleDateString("pt-BR", dateFmt) ?? null;
+
+// Data de atualização: só mostra "Atualizado em" se updatedAt for um dia
+// diferente do publishedAt (evita "Publicado e Atualizado na mesma data").
+const publishedDay = post.data.publishedAt?.toDateString();
+const updatedDay = post.data.updatedAt?.toDateString();
+const updatedDate =
+	post.data.updatedAt && updatedDay !== publishedDay
+		? post.data.updatedAt.toLocaleDateString("pt-BR", dateFmt)
+		: null;
+
+// Avaliação "Este conteúdo foi útil?" — agregado SSR (defensivo: zeros se a
+// tabela post_feedback ainda não existe).
+const feedback = await getFeedbackCounts(post.data.id);
+
+// Breadcrumbs: Início › Categoria › Título. Renderiza visual + JSON-LD
+// (BreadcrumbList) pro Google mostrar a trilha no resultado de busca.
+const breadcrumbItems = [
+	{ name: "Início", url: `${Astro.url.origin}/blog` },
+	...(category
+		? [{ name: category.label, url: `${Astro.url.origin}/blog/category/${category.slug}` }]
+		: []),
+	{ name: post.data.title, url: `${Astro.url.origin}/blog/posts/${slug}` },
+];
+const breadcrumbSchema = {
+	"@context": "https://schema.org",
+	"@type": "BreadcrumbList",
+	itemListElement: breadcrumbItems.map((item, i) => ({
+		"@type": "ListItem",
+		position: i + 1,
+		name: item.name,
+		item: item.url,
+	})),
+};
 
 // URL + texto pra share intents (WhatsApp, Facebook, copiar link).
 // Usa canonical do SEO pra evitar share de URLs com query string ou variantes.
@@ -171,6 +207,7 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 	shareData={{ url: pageUrl, title: post.data.title }}
 >
 	<article class="article">
+		<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 		{/* Three-column layout */}
 		<div class="article-grid">
 			{/* Left gutter: Meta information */}
@@ -211,6 +248,14 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 							<div class="meta-block">
 								<span class="meta-label">Publicado em</span>
 								<time class="meta-value">{publishDate}</time>
+							</div>
+						)
+					}
+					{
+						updatedDate && (
+							<div class="meta-block">
+								<span class="meta-label">Atualizado em</span>
+								<time class="meta-value">{updatedDate}</time>
 							</div>
 						)
 					}
@@ -295,6 +340,22 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 
 			{/* Main content */}
 			<div class="article-main">
+				<nav class="breadcrumbs" aria-label="Trilha de navegação">
+					<ol class="breadcrumbs-list">
+						{breadcrumbItems.map((item, i) => (
+							<li class="breadcrumbs-item">
+								{i < breadcrumbItems.length - 1 ? (
+									<>
+										<a href={item.url}>{item.name}</a>
+										<span class="breadcrumbs-sep" aria-hidden="true">›</span>
+									</>
+								) : (
+									<span aria-current="page">{item.name}</span>
+								)}
+							</li>
+						))}
+					</ol>
+				</nav>
 				<header class="article-header">
 					<div class="article-meta">
 						{
@@ -321,6 +382,14 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 							)
 						}
 						<span>{readingTime} min de leitura</span>
+						{
+							updatedDate && (
+								<>
+									<span class="meta-dot" />
+									<span class="article-meta-updated">Atualizado em {updatedDate}</span>
+								</>
+							)
+						}
 					</div>
 					{category && (
 						<a
@@ -336,11 +405,22 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 							<p class="article-excerpt" {...post.edit.excerpt}>{post.data.excerpt}</p>
 						)
 					}
+					<TrustBadge variant="inline" />
 				</header>
 
 				<div class="article-content">
 					<PortableText value={post.data.content} components={portableTextComponents} />
 				</div>
+
+				<TrustBadge variant="block" />
+
+				<FeedbackWidget
+					contentId={post.data.id}
+					yes={feedback.yes}
+					no={feedback.no}
+					total={feedback.total}
+					percent={feedback.percent}
+				/>
 
 				<div class="article-comments">
 					<h2 class="comments-section-title">Comentários</h2>
@@ -512,8 +592,36 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 			headings.forEach((heading) => observer.observe(heading));
 		}
 
+		// Estiliza a seção "Fontes consultadas" como bloco de Bibliografia.
+		// O pipeline emite `## Fontes consultadas` + parágrafo + lista de links;
+		// o PortableText renderiza como h2/p/ul normais. Aqui marcamos o heading
+		// e os elementos seguintes (até o próximo h2) com classes pra CSS estilizar.
+		function styleReferences() {
+			const content = document.querySelector(".article-content");
+			if (!content) return;
+			const norm = (s: string) =>
+				(s || "")
+					.normalize("NFD")
+					.replace(/[̀-ͯ]/g, "")
+					.toLowerCase()
+					.trim();
+			const targets = ["fontes consultadas", "bibliografia", "referencias", "referencias bibliograficas"];
+			const headings = Array.from(content.querySelectorAll("h2"));
+			for (const h2 of headings) {
+				if (!targets.includes(norm(h2.textContent || ""))) continue;
+				h2.classList.add("references-heading");
+				let el = h2.nextElementSibling;
+				while (el && !/^H[1-3]$/.test(el.tagName)) {
+					el.classList.add("references-item");
+					el = el.nextElementSibling;
+				}
+				break;
+			}
+		}
+
 		hoistInlineAnchors();
 		buildToc();
+		styleReferences();
 
 		// Botão "Copiar link" do bloco de compartilhamento. Usa Clipboard API e
 		// dá feedback visual+texto por 2s. Fallback pra prompt() em browsers
@@ -846,6 +954,58 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 		background: var(--color-border);
 	}
 
+	/* Breadcrumbs */
+	.breadcrumbs {
+		margin-bottom: var(--spacing-4);
+	}
+
+	.breadcrumbs-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--spacing-1);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.breadcrumbs-item {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-1);
+		min-width: 0;
+	}
+
+	.breadcrumbs-item a {
+		color: var(--color-muted);
+		text-decoration: none;
+		transition: color var(--transition-fast);
+	}
+
+	.breadcrumbs-item a:hover {
+		color: var(--color-accent);
+		text-decoration: underline;
+	}
+
+	.breadcrumbs-item [aria-current="page"] {
+		color: var(--color-text-secondary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 40ch;
+	}
+
+	.breadcrumbs-sep {
+		color: var(--color-border);
+	}
+
+	.article-meta-updated {
+		color: var(--color-text-secondary);
+		font-style: italic;
+	}
+
 	.article-title {
 		font-size: clamp(2rem, 5vw, var(--font-size-5xl));
 		font-weight: 700;
@@ -964,6 +1124,48 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 
 	.article-content :global(a:hover) {
 		text-decoration-thickness: 2px;
+	}
+
+	/* Bibliografia / Referências — seção "Fontes consultadas" estilizada via
+	 * classes adicionadas por styleReferences() no script abaixo. */
+	.article-content :global(h2.references-heading) {
+		font-size: var(--font-size-xl);
+		padding-top: var(--spacing-6);
+		margin-top: var(--spacing-12);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.article-content :global(h2.references-heading)::before {
+		content: "";
+		display: inline-block;
+		width: 1.1em;
+		height: 1.1em;
+		margin-right: var(--spacing-2);
+		vertical-align: -0.15em;
+		background-color: var(--color-muted);
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20'/%3E%3C/svg%3E") center / contain no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20'/%3E%3C/svg%3E") center / contain no-repeat;
+	}
+
+	.article-content :global(.references-item) {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+	}
+
+	.article-content :global(ul.references-item) {
+		list-style: none;
+		padding-left: 0;
+		border-left: 2px solid var(--color-border-subtle);
+		padding-left: var(--spacing-4);
+	}
+
+	.article-content :global(ul.references-item li) {
+		margin-bottom: var(--spacing-2);
+		line-height: var(--leading-snug);
+	}
+
+	.article-content :global(.references-item a) {
+		word-break: break-word;
 	}
 
 	/* Right column: TOC + Sidebar */

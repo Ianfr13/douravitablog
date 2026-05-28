@@ -1,0 +1,101 @@
+---
+/**
+ * Selo de confiança auto-atribuído — padrão tuasaude.com (mas honesto).
+ *
+ * NÃO alega revisão médica por profissional registrado (a Douravita usa
+ * curadoria editorial + fact-check automático contra fontes oficiais, não
+ * tem médico com CRM revisando cada artigo). O texto reflete o que de fato
+ * acontece no pipeline: checagem contra fontes científicas/oficiais.
+ */
+interface Props {
+	/** "inline" (badge compacto na meta) ou "block" (faixa completa). */
+	variant?: "inline" | "block";
+}
+const { variant = "inline" } = Astro.props;
+---
+
+{
+	variant === "inline" ? (
+		<div class="trust-badge trust-badge--inline" title="Conteúdo verificado contra fontes científicas e oficiais">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+				<path d="m9 12 2 2 4-4" />
+			</svg>
+			<span>Baseado em evidência científica · Curadoria Douravita</span>
+		</div>
+	) : (
+		<aside class="trust-badge trust-badge--block" aria-label="Selo de confiança Douravita">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+				<path d="m9 12 2 2 4-4" />
+			</svg>
+			<div class="trust-badge-text">
+				<strong>Conteúdo de confiança</strong>
+				<span>
+					Este artigo passou pela Curadoria Douravita e teve suas afirmações
+					verificadas contra fontes científicas e oficiais (PubMed, sociedades
+					médicas, órgãos de saúde). Não substitui consulta médica.
+				</span>
+			</div>
+		</aside>
+	)
+}
+
+<style>
+	.trust-badge {
+		color: var(--color-accent);
+	}
+
+	/* Inline: chip compacto pra área de meta do artigo */
+	.trust-badge--inline {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		line-height: var(--leading-snug);
+	}
+
+	.trust-badge--inline svg {
+		width: 1.1em;
+		height: 1.1em;
+		flex-shrink: 0;
+	}
+
+	/* Block: faixa completa pro fim do artigo */
+	.trust-badge--block {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--spacing-3);
+		margin: var(--spacing-8) 0;
+		padding: var(--spacing-4) var(--spacing-5);
+		border: 1px solid var(--color-accent-ring, var(--color-border));
+		border-left: 3px solid var(--color-accent);
+		border-radius: 0 var(--radius) var(--radius) 0;
+		background: var(--color-bg-subtle);
+	}
+
+	.trust-badge--block svg {
+		width: 1.5em;
+		height: 1.5em;
+		flex-shrink: 0;
+		margin-top: 0.1em;
+	}
+
+	.trust-badge-text {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-1);
+	}
+
+	.trust-badge-text strong {
+		font-size: var(--font-size-sm);
+		color: var(--color-text);
+	}
+
+	.trust-badge-text span {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		line-height: var(--leading-relaxed);
+	}
+</style>

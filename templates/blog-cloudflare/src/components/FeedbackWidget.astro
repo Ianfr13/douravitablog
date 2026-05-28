@@ -1,0 +1,196 @@
+---
+/**
+ * Widget "Este conteúdo foi útil?" — padrão tuasaude.com.
+ * Sim/Não + agregado "X% acharam útil (N avaliações)".
+ *
+ * O agregado inicial vem SSR (getFeedbackCounts em [slug].astro). O voto
+ * POSTa em /api/feedback/submit, que devolve o novo agregado. localStorage
+ * lembra que esse navegador já votou (some os botões, mostra agradecimento).
+ */
+interface Props {
+	contentId: string;
+	yes?: number;
+	no?: number;
+	total?: number;
+	percent?: number;
+}
+const { contentId, yes = 0, no = 0, total = 0, percent = 0 } = Astro.props;
+---
+
+<section
+	class="feedback-widget"
+	data-feedback
+	data-content-id={contentId}
+	data-total={total}
+	data-yes={yes}
+	data-no={no}
+>
+	<div class="feedback-ask">
+		<p class="feedback-question">Este conteúdo foi útil?</p>
+		<div class="feedback-buttons">
+			<button type="button" class="feedback-btn" data-feedback-vote="1">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+				Sim
+			</button>
+			<button type="button" class="feedback-btn" data-feedback-vote="0">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg>
+				Não
+			</button>
+		</div>
+	</div>
+	<p class="feedback-result" data-feedback-result hidden></p>
+	<p class="feedback-stats" data-feedback-stats hidden={total === 0}>
+		<strong data-feedback-percent>{percent}%</strong> acharam útil
+		(<span data-feedback-count>{total}</span> {total === 1 ? "avaliação" : "avaliações"})
+	</p>
+</section>
+
+<script>
+	function initFeedback() {
+		const root = document.querySelector<HTMLElement>("[data-feedback]");
+		if (!root) return;
+		const contentId = root.dataset.contentId || "";
+		if (!contentId) return;
+
+		const ask = root.querySelector<HTMLElement>(".feedback-ask");
+		const result = root.querySelector<HTMLElement>("[data-feedback-result]");
+		const stats = root.querySelector<HTMLElement>("[data-feedback-stats]");
+		const percentEl = root.querySelector<HTMLElement>("[data-feedback-percent]");
+		const countEl = root.querySelector<HTMLElement>("[data-feedback-count]");
+		const buttons = root.querySelectorAll<HTMLButtonElement>("[data-feedback-vote]");
+
+		const storageKey = `dv-feedback-${contentId}`;
+
+		function renderStats(percent: number, total: number) {
+			if (!stats || !percentEl || !countEl) return;
+			percentEl.textContent = `${percent}%`;
+			countEl.textContent = String(total);
+			const noun = total === 1 ? "avaliação" : "avaliações";
+			const sib = countEl.nextSibling;
+			if (sib && sib.nodeType === Node.TEXT_NODE) {
+				sib.textContent = ` ${noun})`;
+			}
+			stats.hidden = total === 0;
+		}
+
+		function showThanks() {
+			if (ask) ask.hidden = true;
+			if (result) {
+				result.textContent = "Obrigado pelo seu feedback!";
+				result.hidden = false;
+			}
+		}
+
+		// Já votou neste navegador? Esconde os botões.
+		if (localStorage.getItem(storageKey)) {
+			showThanks();
+		}
+
+		buttons.forEach((btn) => {
+			btn.addEventListener("click", async () => {
+				const helpful = btn.dataset.feedbackVote === "1" ? 1 : 0;
+				buttons.forEach((b) => (b.disabled = true));
+				try {
+					const res = await fetch("/api/feedback/submit", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ contentId, helpful }),
+					});
+					if (res.ok) {
+						const data = (await res.json()) as {
+							percent?: number;
+							total?: number;
+						};
+						localStorage.setItem(storageKey, String(helpful));
+						showThanks();
+						if (typeof data.percent === "number" && typeof data.total === "number") {
+							renderStats(data.percent, data.total);
+						}
+					} else {
+						buttons.forEach((b) => (b.disabled = false));
+					}
+				} catch {
+					buttons.forEach((b) => (b.disabled = false));
+				}
+			});
+		});
+	}
+
+	initFeedback();
+</script>
+
+<style>
+	.feedback-widget {
+		margin: var(--spacing-12) 0 var(--spacing-8);
+		padding: var(--spacing-6);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg-subtle);
+		text-align: center;
+	}
+
+	.feedback-question {
+		font-size: var(--font-size-lg);
+		font-weight: 600;
+		color: var(--color-text);
+		margin: 0 0 var(--spacing-4);
+	}
+
+	.feedback-buttons {
+		display: flex;
+		gap: var(--spacing-3);
+		justify-content: center;
+	}
+
+	.feedback-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-2) var(--spacing-6);
+		font-family: inherit;
+		font-size: var(--font-size-base);
+		font-weight: 500;
+		color: var(--color-text);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		cursor: pointer;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast),
+			background var(--transition-fast);
+	}
+
+	.feedback-btn svg {
+		width: 1.1em;
+		height: 1.1em;
+	}
+
+	.feedback-btn:hover:not(:disabled) {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+	}
+
+	.feedback-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+
+	.feedback-result {
+		font-size: var(--font-size-base);
+		font-weight: 600;
+		color: var(--color-accent);
+		margin: 0;
+	}
+
+	.feedback-stats {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		margin: var(--spacing-3) 0 0;
+	}
+
+	.feedback-stats strong {
+		color: var(--color-text);
+	}
+</style>
