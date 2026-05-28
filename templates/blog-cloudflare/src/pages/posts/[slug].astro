@@ -925,20 +925,18 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 		margin-bottom: 0.5em;
 	}
 
-	/* Imagens inline: constrange tamanho (estilo tuasaude — compactas,
-	 * centradas). Coluna de conteudo tem 680px; as imagens geradas por IA
-	 * sao quase quadradas, entao sem cap ficam enormes. Capamos figure em
-	 * 500px de largura + img em 440px de altura pra nao dominarem a tela. */
+	/* Imagens inline: largura alinhada com o texto (coluna de conteudo =
+	 * 680px). As imagens geradas sao 16:9 (1408x768), entao a altura fica
+	 * em ~372px — banner landscape, sem dominar a tela nem ficar pequena. */
 	.article-content :global(figure.emdash-image) {
-		margin: 2em auto;
-		max-width: 500px;
-		text-align: center;
+		margin: 2em 0;
+		max-width: 100%;
 	}
 
 	.article-content :global(figure.emdash-image img) {
-		max-height: 440px;
-		width: auto;
-		margin: 0 auto;
+		width: 100%;
+		height: auto;
+		margin: 0;
 		border-radius: var(--radius-lg);
 	}
 
