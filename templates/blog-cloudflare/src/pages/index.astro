@@ -308,8 +308,10 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 											{post.data.title ?? "Sem título"}
 										</h3>
 									</a>
-									{post.data.excerpt && (
-										<p class="card-large-excerpt">{post.data.excerpt}</p>
+									{(post.data.excerpt ?? post.data.description) && (
+										<p class="card-large-excerpt">
+											{post.data.excerpt ?? post.data.description}
+										</p>
 									)}
 								</div>
 							</article>
@@ -345,6 +347,11 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 											{post.data.title ?? "Sem título"}
 										</h3>
 									</a>
+									{(post.data.excerpt ?? post.data.description) && (
+										<p class="card-small-excerpt">
+											{post.data.excerpt ?? post.data.description}
+										</p>
+									)}
 								</div>
 							</article>
 						))}
@@ -838,6 +845,17 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
 		transition: color var(--transition-fast);
+	}
+
+	.card-small-excerpt {
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-snug);
+		color: var(--color-text-secondary);
+		margin: 0;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 
 	/* ===== 2. Quiz ===== */
