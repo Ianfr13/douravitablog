@@ -138,6 +138,17 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 			})();
 		</script>
+		<script is:inline>
+			// A11y 55+ Fase 3: aplica font-size do cookie ANTES do paint
+			// (sem FOUC). Cookie `font-size=sm|md|lg|xl`; default md.
+			// Componente FontSizeWidget.astro cuida da UI + escrita.
+			(function () {
+				var m = document.cookie.match(/(?:^|;\s*)font-size=([^;]+)/);
+				var v = m ? decodeURIComponent(m[1]) : "md";
+				if (v !== "sm" && v !== "md" && v !== "lg" && v !== "xl") v = "md";
+				document.documentElement.setAttribute("data-font-size", v);
+			})();
+		</script>
 	</head>
 	<body>
 		<EmDashBodyStart page={pageCtx} />

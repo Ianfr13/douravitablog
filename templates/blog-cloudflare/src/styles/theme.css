@@ -229,3 +229,22 @@ body {
 	margin-inline: auto;
 	padding-inline: var(--spacing-2);
 }
+
+/* ============================================================
+ * A11y 55+ — Fase 3 (2026-05-30): tamanho da fonte controlavel
+ * pelo leitor. Cookie `font-size=sm|md|lg|xl` lido em pre-paint
+ * inline-script no Base.astro <head> aplica data-font-size em <html>.
+ * Default sem cookie = md (20px) = comportamento atual.
+ * Componente FontSizeWidget.astro renderiza o botao flutuante. =====*/
+:root[data-font-size="sm"] .article-content {
+	font-size: 1.125rem; /* 18px */
+}
+:root[data-font-size="md"] .article-content {
+	font-size: 1.25rem;  /* 20px (default) */
+}
+:root[data-font-size="lg"] .article-content {
+	font-size: 1.375rem; /* 22px */
+}
+:root[data-font-size="xl"] .article-content {
+	font-size: 1.5rem;   /* 24px */
+}

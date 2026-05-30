@@ -1,0 +1,259 @@
+---
+/**
+ * Botao flutuante "Aa" no canto inferior direito do post pra leitor
+ * controlar tamanho do texto. 4 niveis: A (18px) / Aa (20px - default)
+ * / Aa+ (22px) / Aa++ (24px). Aplica-se a `.article-content` via CSS
+ * scoped por `:root[data-font-size=X]` (regras em theme.css Fase 3).
+ *
+ * Persistencia: cookie `font-size`, max-age 1 ano, SameSite=Lax.
+ * Pre-paint (sem FOUC): script inline em Base.astro <head> le o cookie
+ * e aplica data-font-size em <html> antes do primeiro paint. Esse
+ * componente cuida apenas da UI + cliques + escrita do cookie.
+ *
+ * Fase 3 do plano a11y (~/.claude/plans/synthetic-imagining-storm.md).
+ */
+---
+
+<div class="font-size-widget" data-font-size-widget>
+	<button
+		type="button"
+		class="font-size-trigger"
+		aria-label="Tamanho do texto"
+		aria-expanded="false"
+		aria-controls="font-size-popover"
+		data-font-size-trigger
+	>
+		<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<polyline points="4 7 4 4 20 4 20 7"></polyline>
+			<line x1="9" y1="20" x2="15" y2="20"></line>
+			<line x1="12" y1="4" x2="12" y2="20"></line>
+		</svg>
+		<span class="sr-only">Tamanho do texto</span>
+	</button>
+	<div
+		class="font-size-popover"
+		id="font-size-popover"
+		role="dialog"
+		aria-label="Escolher tamanho do texto"
+		hidden
+	>
+		<span class="font-size-popover-title">Tamanho do texto</span>
+		<div class="font-size-buttons" role="group" aria-label="Opcoes de tamanho">
+			<button type="button" class="font-size-btn" data-size="sm" aria-pressed="false">A</button>
+			<button type="button" class="font-size-btn" data-size="md" aria-pressed="false">Aa</button>
+			<button type="button" class="font-size-btn font-size-btn--lg" data-size="lg" aria-pressed="false">Aa+</button>
+			<button type="button" class="font-size-btn font-size-btn--xl" data-size="xl" aria-pressed="false">Aa++</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	(function () {
+		const widget = document.querySelector<HTMLElement>("[data-font-size-widget]");
+		if (!widget) return;
+		const trigger = widget.querySelector<HTMLButtonElement>("[data-font-size-trigger]");
+		const popover = widget.querySelector<HTMLElement>(".font-size-popover");
+		const btns = widget.querySelectorAll<HTMLButtonElement>("[data-size]");
+		if (!trigger || !popover) return;
+
+		const COOKIE_RE = /(?:^|;\s*)font-size=([^;]+)/;
+		const VALID = new Set(["sm", "md", "lg", "xl"]);
+
+		function readCookie(): string {
+			const m = document.cookie.match(COOKIE_RE);
+			const v = m ? decodeURIComponent(m[1]) : "md";
+			return VALID.has(v) ? v : "md";
+		}
+
+		function setCookie(value: string) {
+			const secure = location.protocol === "https:" ? "; Secure" : "";
+			document.cookie = `font-size=${value}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+		}
+
+		function applySize(value: string) {
+			document.documentElement.setAttribute("data-font-size", value);
+			btns.forEach((b) => {
+				const active = b.dataset.size === value;
+				b.setAttribute("aria-pressed", active ? "true" : "false");
+				b.classList.toggle("is-active", active);
+			});
+		}
+
+		function openPopover() {
+			popover.hidden = false;
+			trigger.setAttribute("aria-expanded", "true");
+			// foca o botao ativo pra navegacao por teclado
+			const active = popover.querySelector<HTMLButtonElement>(".font-size-btn.is-active") ||
+				popover.querySelector<HTMLButtonElement>(".font-size-btn");
+			active?.focus();
+		}
+		function closePopover(refocus = true) {
+			popover.hidden = true;
+			trigger.setAttribute("aria-expanded", "false");
+			if (refocus) trigger.focus();
+		}
+
+		// Inicial: garante que UI casa com o que o pre-paint aplicou em <html>
+		applySize(document.documentElement.getAttribute("data-font-size") || readCookie());
+
+		trigger.addEventListener("click", () => {
+			if (popover.hidden) openPopover();
+			else closePopover();
+		});
+
+		btns.forEach((b) => {
+			b.addEventListener("click", () => {
+				const v = b.dataset.size || "md";
+				setCookie(v);
+				applySize(v);
+			});
+		});
+
+		// ESC fecha; clique fora fecha; tab pra fora fecha
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape" && !popover.hidden) closePopover();
+		});
+		document.addEventListener("click", (e) => {
+			if (popover.hidden) return;
+			const t = e.target;
+			if (!(t instanceof Node)) return;
+			if (!widget.contains(t)) closePopover(false);
+		});
+	})();
+</script>
+
+<style>
+	.font-size-widget {
+		position: fixed;
+		bottom: var(--spacing-5);
+		right: var(--spacing-5);
+		z-index: 90;
+	}
+
+	.font-size-trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		min-width: 48px;
+		min-height: 48px;
+		padding: 0;
+		background: var(--color-bg);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: 50%;
+		cursor: pointer;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+		transition: background var(--transition-fast), transform var(--transition-fast);
+	}
+
+	.font-size-trigger:hover,
+	.font-size-trigger:focus-visible {
+		background: var(--color-surface);
+		transform: translateY(-1px);
+	}
+
+	.font-size-trigger svg {
+		width: 22px;
+		height: 22px;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.font-size-popover {
+		position: absolute;
+		bottom: calc(100% + var(--spacing-3));
+		right: 0;
+		min-width: 220px;
+		padding: var(--spacing-4);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-3);
+	}
+
+	.font-size-popover[hidden] {
+		display: none;
+	}
+
+	.font-size-popover-title {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-muted);
+	}
+
+	.font-size-buttons {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: var(--spacing-2);
+	}
+
+	.font-size-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
+		padding: var(--spacing-2) var(--spacing-3);
+		background: var(--color-surface);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		cursor: pointer;
+		transition: background var(--transition-fast), border-color var(--transition-fast);
+		font-size: 0.95rem;
+	}
+	.font-size-btn--lg { font-size: 1.05rem; }
+	.font-size-btn--xl { font-size: 1.15rem; }
+
+	.font-size-btn:hover,
+	.font-size-btn:focus-visible {
+		background: var(--color-bg);
+		border-color: var(--color-accent);
+		outline: none;
+	}
+
+	.font-size-btn.is-active {
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border-color: var(--color-accent);
+	}
+
+	/* Mobile: encosta um pouco menos no canto e nao sobrepoe action-bars
+	 * que podem vir do EmDash. */
+	@media (max-width: 640px) {
+		.font-size-widget {
+			bottom: var(--spacing-4);
+			right: var(--spacing-4);
+		}
+		.font-size-trigger {
+			width: 44px;
+			height: 44px;
+		}
+		.font-size-trigger svg {
+			width: 20px;
+			height: 20px;
+		}
+		.font-size-popover {
+			min-width: 200px;
+		}
+	}
+</style>

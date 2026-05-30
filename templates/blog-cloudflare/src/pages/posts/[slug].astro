@@ -19,6 +19,7 @@ import LeiaTambem from "../../components/LeiaTambem.astro";
 import CtaButton from "../../components/CtaButton.astro";
 import ComparisonTable from "../../components/ComparisonTable.astro";
 import ImageWithCaption from "../../components/ImageWithCaption.astro";
+import FontSizeWidget from "../../components/FontSizeWidget.astro";
 import CommentFormPT from "../../components/CommentFormPT.astro";
 import CommentsListPT from "../../components/CommentsListPT.astro";
 import ReaderAuthBar from "../../components/ReaderAuthBar.astro";
@@ -698,6 +699,10 @@ const faqSchema = faqItems.length >= 2
 			});
 		});
 	</script>
+
+	{/* Fase 3 a11y: widget flutuante de tamanho do texto. Mount aqui
+	    fica fora do flow, fixed bottom-right — visivel durante leitura. */}
+	<FontSizeWidget />
 </Base>
 
 <style>
