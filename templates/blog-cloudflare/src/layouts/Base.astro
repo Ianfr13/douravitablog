@@ -914,15 +914,20 @@ const isLoggedIn = !!Astro.locals.user;
 
 			:global(.site-search-input) {
 				width: var(--search-input-width);
-				padding: var(--spacing-2) var(--spacing-3);
+				padding: var(--spacing-2) var(--spacing-3) var(--spacing-2) 2.25rem;
 				font-family: var(--font-sans);
 				font-size: var(--font-size-sm);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius);
-				background: var(--color-bg);
+				border: 1px solid transparent;
+				border-radius: 999px;
+				background-color: var(--color-surface);
+				background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><path d='m20 20-3.5-3.5'/></svg>");
+				background-repeat: no-repeat;
+				background-position: 0.75rem center;
+				background-size: 1rem 1rem;
 				color: var(--color-text);
 				transition:
 					border-color var(--transition-fast),
+					background-color var(--transition-fast),
 					box-shadow var(--transition-fast);
 			}
 
@@ -930,10 +935,16 @@ const isLoggedIn = !!Astro.locals.user;
 				color: var(--color-muted);
 			}
 
+			:global(.site-search-input):hover {
+				border-color: var(--color-border);
+				background-color: var(--color-bg-subtle);
+			}
+
 			:global(.site-search-input):focus,
 			:global(.site-search-input):focus-visible {
 				outline: none;
 				border-color: var(--color-accent) !important;
+				background-color: var(--color-bg);
 				box-shadow: 0 0 0 3px var(--color-accent-ring);
 			}
 
