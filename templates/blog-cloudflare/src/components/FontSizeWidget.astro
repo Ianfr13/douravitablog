@@ -44,6 +44,16 @@
 			<button type="button" class="font-size-btn font-size-btn--lg" data-size="lg" aria-pressed="false">Aa+</button>
 			<button type="button" class="font-size-btn font-size-btn--xl" data-size="xl" aria-pressed="false">Aa++</button>
 		</div>
+
+		<div class="popover-divider" aria-hidden="true"></div>
+
+		<label class="focus-mode-toggle">
+			<input type="checkbox" data-focus-toggle aria-describedby="focus-mode-hint" />
+			<span class="focus-mode-toggle-text">
+				<strong>Modo leitura</strong>
+				<small id="focus-mode-hint">Esconde menu, sidebar e comentarios</small>
+			</span>
+		</label>
 	</div>
 </div>
 
@@ -109,15 +119,34 @@
 			});
 		});
 
-		// ESC fecha; clique fora fecha; tab pra fora fecha
+		// ESC fecha popover; segundo ESC sai do modo leitura se ativo
 		document.addEventListener("keydown", (e) => {
-			if (e.key === "Escape" && !popover.hidden) closePopover();
+			if (e.key !== "Escape") return;
+			if (!popover.hidden) { closePopover(); return; }
+			if (document.body.getAttribute("data-focus-mode") === "on") {
+				setFocus(false);
+			}
 		});
 		document.addEventListener("click", (e) => {
 			if (popover.hidden) return;
 			const t = e.target;
 			if (!(t instanceof Node)) return;
 			if (!widget.contains(t)) closePopover(false);
+		});
+
+		// Fase 4 — Focus Mode toggle. NAO persiste entre paginas (intencional:
+		// usuario pode esquecer ligado e estranhar o layout no proximo post).
+		const focusToggle = widget.querySelector<HTMLInputElement>("[data-focus-toggle]");
+		function setFocus(on: boolean) {
+			document.body.setAttribute("data-focus-mode", on ? "on" : "off");
+			if (focusToggle) focusToggle.checked = on;
+		}
+		// Inicializa OFF a cada page load
+		document.body.setAttribute("data-focus-mode", "off");
+		focusToggle?.addEventListener("change", () => {
+			setFocus(!!focusToggle.checked);
+			// Fecha popover depois de ativar pra mostrar o efeito
+			if (focusToggle.checked) closePopover(false);
 		});
 	})();
 </script>
@@ -235,6 +264,54 @@
 		background: var(--color-accent);
 		color: var(--color-on-accent);
 		border-color: var(--color-accent);
+	}
+
+	.popover-divider {
+		height: 1px;
+		background: var(--color-border-subtle);
+		margin: var(--spacing-1) 0;
+	}
+
+	.focus-mode-toggle {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--spacing-3);
+		padding: var(--spacing-2);
+		cursor: pointer;
+		border-radius: var(--radius);
+		min-height: 44px;
+		transition: background var(--transition-fast);
+	}
+
+	.focus-mode-toggle:hover {
+		background: var(--color-surface);
+	}
+
+	.focus-mode-toggle input[type="checkbox"] {
+		flex-shrink: 0;
+		width: 22px;
+		height: 22px;
+		margin-top: 2px;
+		accent-color: var(--color-accent);
+		cursor: pointer;
+	}
+
+	.focus-mode-toggle-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		line-height: var(--leading-snug);
+	}
+
+	.focus-mode-toggle-text strong {
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.focus-mode-toggle-text small {
+		font-size: var(--font-size-xs);
+		color: var(--color-muted);
 	}
 
 	/* Mobile: encosta um pouco menos no canto e nao sobrepoe action-bars

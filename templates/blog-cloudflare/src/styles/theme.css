@@ -248,3 +248,43 @@ body {
 :root[data-font-size="xl"] .article-content {
 	font-size: 1.5rem;   /* 24px */
 }
+
+/* ============================================================
+ * A11y 55+ — Fase 4 (2026-05-30): Modo Leitura
+ * Toggle no popover do FontSizeWidget seta body[data-focus-mode="on"].
+ * Esconde tudo que distrai (header, asides, comments, footer) e
+ * deixa o leitor com so a barra de progresso, o corpo do texto e o
+ * widget pra desligar. NAO persiste entre paginas — reseta a cada
+ * /posts/* novo (intencional). ESC desliga. ============ */
+body[data-focus-mode="on"] .site-header,
+body[data-focus-mode="on"] .site-footer,
+body[data-focus-mode="on"] .article-meta-col,
+body[data-focus-mode="on"] .article-sidebar,
+body[data-focus-mode="on"] .article-comments,
+body[data-focus-mode="on"] .feedback-widget,
+body[data-focus-mode="on"] .trust-badge--block,
+body[data-focus-mode="on"] .mobile-menu-toggle {
+	display: none !important;
+}
+
+/* Quando os asides somem, deixa o conteudo centralizado e calmo. */
+body[data-focus-mode="on"] {
+	background: var(--color-bg-subtle);
+}
+
+body[data-focus-mode="on"] .article-grid {
+	display: block !important;
+}
+
+body[data-focus-mode="on"] .article-main {
+	max-width: 760px;
+	margin-inline: auto;
+}
+
+/* No mobile, header sticky transforma escondendo bonito (sem !important
+ * porque a regra display:none acima ja basta — mantemos animacao zero
+ * caso a regra acima nao case com alguma variante futura do header). */
+body[data-focus-mode="on"] header,
+body[data-focus-mode="on"] footer {
+	display: none !important;
+}
