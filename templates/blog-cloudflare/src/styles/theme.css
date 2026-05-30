@@ -288,3 +288,13 @@ body[data-focus-mode="on"] header,
 body[data-focus-mode="on"] footer {
 	display: none !important;
 }
+
+/* ============================================================
+ * A11y 55+ — Fase 6 (2026-05-30): Bionic Reading (experimental)
+ * Toggle no popover envolve as primeiras N letras de cada palavra
+ * (.article-content) em <b class="bionic-bold">. Default OFF, opt-in
+ * puro. Evidencia mista — util pra alguns leitores com dislexia/ADHD,
+ * sem beneficio comprovado pra baixa visao pura. ============ */
+.bionic-bold {
+	font-weight: 700;
+}

@@ -47,11 +47,19 @@
 
 		<div class="popover-divider" aria-hidden="true"></div>
 
-		<label class="focus-mode-toggle">
+		<label class="popover-toggle">
 			<input type="checkbox" data-focus-toggle aria-describedby="focus-mode-hint" />
-			<span class="focus-mode-toggle-text">
+			<span class="popover-toggle-text">
 				<strong>Modo leitura</strong>
 				<small id="focus-mode-hint">Esconde menu, sidebar e comentarios</small>
+			</span>
+		</label>
+
+		<label class="popover-toggle">
+			<input type="checkbox" data-bionic-toggle aria-describedby="bionic-hint" />
+			<span class="popover-toggle-text">
+				<strong>Leitura assistida</strong>
+				<small id="bionic-hint">Negrito no inicio das palavras (experimental)</small>
 			</span>
 		</label>
 	</div>
@@ -148,6 +156,76 @@
 			// Fecha popover depois de ativar pra mostrar o efeito
 			if (focusToggle.checked) closePopover(false);
 		});
+
+		// Fase 6 — Bionic Reading toggle (experimental, opt-in). Cookie
+		// `bionic=on|off`. Algoritmo: para cada text-node em .article-content,
+		// envolve ceil(word.length*0.4) (cap 4) chars iniciais de cada palavra
+		// >=3 chars em <b class="bionic-bold">. Pula <a>, <code>, <pre> pra
+		// preservar links/formatacao. Off: restaura innerHTML original.
+		const bionicToggle = widget.querySelector<HTMLInputElement>("[data-bionic-toggle]");
+		const BIONIC_RE = /(?:^|;\s*)bionic=([^;]+)/;
+		const BIONIC_SKIP = new Set(["A", "CODE", "PRE", "SCRIPT", "STYLE", "BUTTON", "INPUT", "TEXTAREA", "SELECT"]);
+		let originalArticleHTML: string | null = null;
+
+		function readBionicCookie(): boolean {
+			const m = document.cookie.match(BIONIC_RE);
+			return !!m && decodeURIComponent(m[1]) === "on";
+		}
+		function setBionicCookie(on: boolean) {
+			const secure = location.protocol === "https:" ? "; Secure" : "";
+			document.cookie = `bionic=${on ? "on" : "off"}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+		}
+
+		function bionicWrap(word: string): string {
+			if (word.length < 3) return word;
+			const n = Math.min(4, Math.ceil(word.length * 0.4));
+			return `<b class="bionic-bold">${word.slice(0, n)}</b>${word.slice(n)}`;
+		}
+
+		function applyBionicToNode(node: Node) {
+			if (node.nodeType === Node.TEXT_NODE) {
+				const text = node.nodeValue || "";
+				if (!text.trim()) return;
+				// Quebra em palavras + nao-palavras (espacos, pontuacao), envolve
+				// soh as palavras alfabeticas >=3 chars.
+				const html = text.replace(/[A-Za-zÀ-ÿ]{3,}/g, (w) => bionicWrap(w));
+				if (html === text) return;
+				const span = document.createElement("span");
+				span.innerHTML = html;
+				node.parentNode?.replaceChild(span, node);
+				return;
+			}
+			if (node.nodeType !== Node.ELEMENT_NODE) return;
+			const el = node as HTMLElement;
+			if (BIONIC_SKIP.has(el.tagName)) return;
+			// Itera children em array (replaceChild muda nodeList ao vivo)
+			Array.from(el.childNodes).forEach(applyBionicToNode);
+		}
+
+		function turnBionicOn() {
+			const article = document.querySelector<HTMLElement>(".article-content");
+			if (!article) return;
+			if (originalArticleHTML === null) originalArticleHTML = article.innerHTML;
+			applyBionicToNode(article);
+		}
+		function turnBionicOff() {
+			const article = document.querySelector<HTMLElement>(".article-content");
+			if (!article || originalArticleHTML === null) return;
+			article.innerHTML = originalArticleHTML;
+		}
+
+		// Inicializa do cookie
+		if (bionicToggle) {
+			const on = readBionicCookie();
+			bionicToggle.checked = on;
+			if (on) turnBionicOn();
+			bionicToggle.addEventListener("change", () => {
+				const v = !!bionicToggle.checked;
+				setBionicCookie(v);
+				if (v) turnBionicOn();
+				else turnBionicOff();
+			});
+		}
 	})();
 </script>
 
@@ -272,7 +350,7 @@
 		margin: var(--spacing-1) 0;
 	}
 
-	.focus-mode-toggle {
+	.popover-toggle {
 		display: flex;
 		align-items: flex-start;
 		gap: var(--spacing-3);
@@ -283,11 +361,11 @@
 		transition: background var(--transition-fast);
 	}
 
-	.focus-mode-toggle:hover {
+	.popover-toggle:hover {
 		background: var(--color-surface);
 	}
 
-	.focus-mode-toggle input[type="checkbox"] {
+	.popover-toggle input[type="checkbox"] {
 		flex-shrink: 0;
 		width: 22px;
 		height: 22px;
@@ -296,20 +374,20 @@
 		cursor: pointer;
 	}
 
-	.focus-mode-toggle-text {
+	.popover-toggle-text {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
 		line-height: var(--leading-snug);
 	}
 
-	.focus-mode-toggle-text strong {
+	.popover-toggle-text strong {
 		font-size: var(--font-size-sm);
 		font-weight: 600;
 		color: var(--color-text);
 	}
 
-	.focus-mode-toggle-text small {
+	.popover-toggle-text small {
 		font-size: var(--font-size-xs);
 		color: var(--color-muted);
 	}
