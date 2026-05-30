@@ -3,7 +3,6 @@ import {
 	getEmDashCollection,
 	getTermsForEntries,
 	getSiteSettings,
-	search,
 } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
@@ -81,163 +80,6 @@ function withCategory(post: typeof allPosts[0]) {
 const trendingLargeWithCat = trendingLarge.map(withCategory);
 const trendingSmallWithCat = trendingSmall.map(withCategory);
 const mostReadWithCat = mostRead.map(withCategory);
-
-// Section 4 — Recomendações de palavras-chave por categoria.
-// Candidatos vêm de src/pilares.py (subtópicos das 12 pillars). Cada
-// candidato é validado em build-time via search() do EmDash (FTS):
-// só sobrevive se existir AO MENOS 1 artigo que dá match. Quando um
-// novo artigo é publicado contendo a keyword, ela aparece sozinha na
-// próxima revalidação do edge cache (60s).
-//
-// Limite: 8 keywords por categoria (top-8 dos que sobreviveram).
-const KEYWORDS_PER_CATEGORY_MAX = 8;
-
-const keywordCandidatesByCategory: {
-	slug: string;
-	label: string;
-	candidates: string[];
-}[] = [
-	{
-		slug: "suplementacao",
-		label: "Suplementação",
-		candidates: [
-			"creatina",
-			"whey protein",
-			"vitamina D",
-			"vitamina B12",
-			"ômega 3",
-			"colágeno",
-			"magnésio",
-			"glutamina",
-			"melatonina",
-			"multivitamínico",
-			"probiótico",
-		],
-	},
-	{
-		slug: "movimento",
-		label: "Movimento",
-		candidates: [
-			"musculação",
-			"caminhada",
-			"yoga",
-			"pilates",
-			"alongamento",
-			"equilíbrio",
-			"prevenção de quedas",
-			"exercícios em casa",
-			"hidroginástica",
-			"fisioterapia",
-			"força muscular",
-		],
-	},
-	{
-		slug: "saude-mental",
-		label: "Saúde Mental",
-		candidates: [
-			"memória",
-			"sono",
-			"ansiedade",
-			"depressão",
-			"demência",
-			"Alzheimer",
-			"neuroplasticidade",
-			"isolamento social",
-			"luto",
-			"bem-estar emocional",
-		],
-	},
-	{
-		slug: "doencas-cronicas",
-		label: "Doenças Crônicas",
-		candidates: [
-			"diabetes",
-			"hipertensão",
-			"osteoporose",
-			"artrose",
-			"artrite",
-			"colesterol",
-			"AVC",
-			"refluxo",
-			"DPOC",
-			"fibromialgia",
-			"gota",
-		],
-	},
-	{
-		slug: "vida-plena",
-		label: "Vida Plena",
-		candidates: [
-			"solidão",
-			"viagem",
-			"finanças",
-			"netos",
-			"voluntariado",
-			"sexo na maturidade",
-			"relacionamento",
-			"novo amor",
-			"voltar a estudar",
-			"propósito",
-		],
-	},
-	{
-		slug: "cuidador",
-		label: "Cuidador",
-		candidates: [
-			"cuidar do pai",
-			"cuidar da mãe",
-			"polifarmácia",
-			"casa segura",
-			"sinais de alerta",
-			"plano de cuidado",
-			"ILPI",
-			"lei do idoso",
-			"asilo",
-		],
-	},
-	{
-		slug: "noticias",
-		label: "Notícias",
-		candidates: [
-			"alerta Anvisa",
-			"novo estudo",
-			"recall",
-			"novo medicamento",
-			"Outubro Rosa",
-			"Novembro Azul",
-			"mudança SUS",
-		],
-	},
-];
-
-// Build-time: pra cada candidato, FTS check. Mantém só os que têm artigo.
-// Promise.all paraleliza — 12 cats × ~10 kws = ~120 queries em paralelo no D1.
-// Edge cache de 60s amortiza isso (1x por minuto no caso pior).
-const keywordsByCategory = (
-	await Promise.all(
-		keywordCandidatesByCategory.map(async (cat) => {
-			const checked = await Promise.all(
-				cat.candidates.map(async (kw) => {
-					try {
-						const { items } = await search(kw, {
-							collections: ["posts"],
-							limit: 1,
-						});
-						return items.length > 0 ? kw : null;
-					} catch {
-						return null;
-					}
-				}),
-			);
-			const valid = checked.filter((k): k is string => k !== null);
-			return {
-				slug: cat.slug,
-				label: cat.label,
-				keywords: valid.slice(0, KEYWORDS_PER_CATEGORY_MAX),
-			};
-		}),
-	)
-).filter((c) => c.keywords.length > 0);
 
 // Quiz de sarcopenia: 6 perguntas sim/não. JS calcula score no client.
 // Critérios baseados em SARC-F (validado) + fatores de risco comuns 55+.
@@ -541,32 +383,6 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 						</div>
 					</section>
 				)}
-
-				{/* ====== 4. PALAVRAS-CHAVE POR CATEGORIA ====== */}
-				<section class="section keywords">
-					<header class="section-header">
-						<h2 class="section-title">Explore por assunto</h2>
-					</header>
-					<div class="keywords-grid">
-						{keywordsByCategory.map((cat) => (
-							<div class="kw-block">
-								<a href={`/blog/category/${cat.slug}`} class="kw-cat-title">
-									{cat.label.toUpperCase()} <span class="kw-arrow">→</span>
-								</a>
-								<div class="kw-pills">
-									{cat.keywords.map((kw) => (
-										<a
-											href={`/blog/search?q=${encodeURIComponent(kw)}`}
-											class="kw-pill"
-										>
-											{kw}
-										</a>
-									))}
-								</div>
-							</div>
-						))}
-					</div>
-				</section>
 
 				{/* ====== 4.5 FRASE INSPIRADORA ====== */}
 				<section class="inspirational-quote" aria-label="Mensagem">
@@ -1115,63 +931,6 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		transition: color var(--transition-fast);
 	}
 
-	/* ===== 4. Palavras-chave ===== */
-	.keywords-grid {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: var(--spacing-6);
-	}
-
-	.kw-block {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-3);
-	}
-
-	.kw-cat-title {
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		letter-spacing: var(--tracking-wide);
-		color: var(--color-text);
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-2);
-	}
-
-	.kw-arrow {
-		color: var(--color-muted);
-		font-weight: 400;
-		transition: transform var(--transition-fast);
-	}
-
-	.kw-cat-title:hover .kw-arrow {
-		transform: translateX(3px);
-		color: var(--color-accent);
-	}
-
-	.kw-pills {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-2);
-	}
-
-	.kw-pill {
-		display: inline-block;
-		padding: var(--spacing-2) var(--spacing-4);
-		font-size: var(--font-size-sm);
-		font-weight: 500;
-		color: var(--color-on-accent);
-		background: var(--color-accent);
-		border-radius: 999px;
-		text-decoration: none;
-		transition: background var(--transition-fast);
-	}
-
-	.kw-pill:hover {
-		background: var(--color-accent-hover);
-	}
-
 	/* ===== 5. Conteúdos recentes ===== */
 	.recent-list {
 		list-style: none;
@@ -1522,22 +1281,13 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 			font-size: var(--font-size-lg);
 		}
 
-		.keywords-grid {
-			grid-template-columns: 1fr 1fr;
-		}
-
 		.section-title {
 			font-size: var(--font-size-3xl);
 		}
 	}
 
-	/* Desktop: keywords em 3 colunas, mais respiro */
+	/* Desktop: mais respiro entre seções */
 	@media (min-width: 1000px) {
-		.keywords-grid {
-			grid-template-columns: repeat(3, 1fr);
-			gap: var(--spacing-8) var(--spacing-10);
-		}
-
 		.section {
 			margin-bottom: var(--spacing-20);
 		}
