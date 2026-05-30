@@ -23,6 +23,7 @@ import CommentsListPT from "../../components/CommentsListPT.astro";
 import ReaderAuthBar from "../../components/ReaderAuthBar.astro";
 import FeedbackWidget from "../../components/FeedbackWidget.astro";
 import TrustBadge from "../../components/TrustBadge.astro";
+import ReadingProgress from "../../components/ReadingProgress.astro";
 import { getReadingTime } from "../../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../../utils/site-identity";
 import { getFeedbackCounts } from "../../lib/feedback";
@@ -261,6 +262,7 @@ const faqSchema = faqItems.length >= 2
 	content={{ collection: "posts", id: post.data.id, slug }}
 	shareData={{ url: pageUrl, title: post.data.title }}
 >
+	<ReadingProgress target=".article" />
 	<article class="article">
 		<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 		{faqSchema && (

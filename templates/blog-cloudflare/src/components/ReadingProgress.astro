@@ -1,0 +1,96 @@
+---
+/**
+ * Barra fina fixada no topo da viewport que cresce conforme o leitor desce o
+ * artigo. Usada nos posts pra dar feedback de progresso (estilo Medium/Tua Saúde).
+ *
+ * Props:
+ *   target: selector CSS do elemento medido (default `.article`). O progresso é
+ *           calculado entre o topo do target e seu fim — antes do target, barra
+ *           fica em 0; após o fim, barra fica em 100%.
+ */
+interface Props {
+	target?: string;
+}
+
+const { target = ".article" } = Astro.props;
+---
+
+<div class="reading-progress" role="progressbar" aria-label="Progresso de leitura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-reading-progress data-target={target}>
+	<div class="reading-progress-bar"></div>
+</div>
+
+<style>
+	.reading-progress {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: transparent;
+		z-index: 1000;
+		pointer-events: none;
+	}
+
+	.reading-progress-bar {
+		height: 100%;
+		width: 0%;
+		background: var(--color-accent, #2196f3);
+		transition: width 60ms linear;
+		will-change: width;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.reading-progress-bar {
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	(function () {
+		const root = document.querySelector<HTMLElement>("[data-reading-progress]");
+		if (!root) return;
+		const bar = root.querySelector<HTMLElement>(".reading-progress-bar");
+		if (!bar) return;
+
+		const targetSel = root.dataset.target || ".article";
+		const target = document.querySelector<HTMLElement>(targetSel);
+		if (!target) {
+			root.remove();
+			return;
+		}
+
+		let ticking = false;
+
+		const update = () => {
+			ticking = false;
+			const rect = target.getBoundingClientRect();
+			const viewportH = window.innerHeight;
+			// Distancia que falta percorrer: do topo do target ate o fim do target sair da viewport.
+			// quando rect.top == 0 e rect.bottom == viewportH+rect.height -> inicio
+			// quando rect.bottom == viewportH -> fim
+			const total = rect.height - viewportH;
+			let progress = 0;
+			if (total > 0) {
+				progress = Math.min(1, Math.max(0, -rect.top / total));
+			} else {
+				// Artigo cabe inteiro na viewport — considera lido quando esta visivel
+				progress = rect.top <= 0 ? 1 : 0;
+			}
+			const pct = Math.round(progress * 1000) / 10; // 1 casa
+			bar.style.width = pct + "%";
+			root.setAttribute("aria-valuenow", String(Math.round(pct)));
+		};
+
+		const onScrollOrResize = () => {
+			if (!ticking) {
+				window.requestAnimationFrame(update);
+				ticking = true;
+			}
+		};
+
+		window.addEventListener("scroll", onScrollOrResize, { passive: true });
+		window.addEventListener("resize", onScrollOrResize);
+		update();
+	})();
+</script>
