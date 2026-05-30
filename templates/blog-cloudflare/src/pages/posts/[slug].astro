@@ -250,14 +250,14 @@ const faqSchema = faqItems.length >= 2
 	title={seo.title}
 	fullTitle={shortFullTitle}
 	pageTitle={seo.ogTitle}
-	description={seo.description}
+	description={(typeof post.data.description === "string" && post.data.description.trim()) || seo.description}
 	image={seo.ogImage}
 	canonical={seo.canonical}
 	robots={seo.robots}
 	type="article"
 	publishedTime={post.data.publishedAt?.toISOString() ?? null}
 	modifiedTime={post.data.updatedAt.toISOString()}
-	author="DouraVita"
+	author={(typeof post.data.author_name === "string" && post.data.author_name.trim()) || "DouraVita"}
 	content={{ collection: "posts", id: post.data.id, slug }}
 	shareData={{ url: pageUrl, title: post.data.title }}
 >
