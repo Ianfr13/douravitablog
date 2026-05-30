@@ -211,7 +211,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 				</section>
 
 				{/* ====== 2. QUIZ INTERATIVO: SARCOPENIA ====== */}
-				<section class="section quiz-section">
+				<section id="quiz-sarcopenia" class="section quiz-section">
 					<div class="quiz-card" data-quiz>
 						<header class="quiz-header">
 							<span class="quiz-eyebrow">Conteúdo interativo</span>
@@ -338,6 +338,40 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 							</div>
 						</article>
 					</a>
+				</section>
+
+								{/* ====== 2.7 FERRAMENTAS (categoria, conteudo interativo) ====== */}
+				<section class="section tools-section">
+					<div class="tools-card">
+						<header class="tools-header">
+							<span class="tools-eyebrow">Ferramentas</span>
+							<h2 class="tools-title">Teste-se, calcule, avalie</h2>
+							<p class="tools-subtitle">
+								Autoavaliações rápidas, calculadoras e checklists pensados pra
+								quem tem 55+. Comece pela primeira disponível.
+							</p>
+						</header>
+						<a href="#quiz-sarcopenia" class="tools-item">
+							<span class="tools-item-icon" aria-hidden="true">
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<rect x="3" y="4" width="18" height="16" rx="2"></rect>
+									<path d="M9 9h6"></path>
+									<path d="M9 13h6"></path>
+									<path d="M9 17h3"></path>
+								</svg>
+							</span>
+							<span class="tools-item-body">
+								<span class="tools-item-eyebrow">Disponível agora</span>
+								<span class="tools-item-title">Quiz: Você está em risco de sarcopenia?</span>
+								<span class="tools-item-meta">6 perguntas · ~1 min</span>
+							</span>
+							<svg class="tools-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<line x1="12" y1="19" x2="12" y2="5"></line>
+								<polyline points="5 12 12 5 19 12"></polyline>
+							</svg>
+						</a>
+						<p class="tools-soon">Mais ferramentas chegando em breve.</p>
+					</div>
 				</section>
 
 				{/* ====== 3. MAIS LIDOS ====== */}
@@ -1211,6 +1245,136 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 			flex-shrink: 0;
 			align-self: flex-start;
 		}
+	}
+
+		/* ===== Ferramentas (categoria de conteudo interativo) ===== */
+	.tools-card {
+		background: var(--color-bg-subtle, var(--color-surface));
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-6) var(--spacing-5);
+		border-left: 4px solid var(--color-accent);
+	}
+
+	.tools-header {
+		margin-bottom: var(--spacing-5);
+	}
+
+	.tools-eyebrow {
+		display: inline-block;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wider);
+		color: var(--color-accent);
+		margin-bottom: var(--spacing-2);
+	}
+
+	.tools-title {
+		font-size: clamp(1.5rem, 4vw, 2rem);
+		font-weight: 700;
+		line-height: var(--leading-tight);
+		letter-spacing: var(--tracking-tight);
+		color: var(--color-text);
+	}
+
+	.tools-subtitle {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text);
+		margin-top: var(--spacing-3);
+	}
+
+	/* Card interno clicavel da ferramenta */
+	.tools-item {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-4);
+		padding: var(--spacing-4) var(--spacing-5);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+		border-radius: var(--radius-md);
+		text-decoration: none;
+		color: inherit;
+		transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+	}
+
+	.tools-item:hover,
+	.tools-item:focus-visible {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+		border-color: var(--color-accent);
+		outline: none;
+	}
+
+	.tools-item-icon {
+		flex-shrink: 0;
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-md);
+		background: rgba(0, 0, 0, 0.04);
+		color: var(--color-accent);
+	}
+
+	.tools-item-icon svg {
+		width: 22px;
+		height: 22px;
+	}
+
+	.tools-item-body {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.tools-item-eyebrow {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wider);
+		color: var(--color-accent);
+	}
+
+	.tools-item-title {
+		font-size: var(--font-size-base);
+		font-weight: 700;
+		line-height: var(--leading-snug);
+		color: var(--color-text);
+	}
+
+	.tools-item-meta {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-muted, var(--color-text));
+		opacity: 0.75;
+	}
+
+	.tools-item-arrow {
+		flex-shrink: 0;
+		width: 18px;
+		height: 18px;
+		color: var(--color-text-muted, var(--color-text));
+		opacity: 0.6;
+		transition: transform var(--transition-fast), opacity var(--transition-fast), color var(--transition-fast);
+	}
+
+	.tools-item:hover .tools-item-arrow,
+	.tools-item:focus-visible .tools-item-arrow {
+		transform: translateY(-3px);
+		opacity: 1;
+		color: var(--color-accent);
+	}
+
+	.tools-soon {
+		margin-top: var(--spacing-4);
+		font-size: var(--font-size-sm);
+		font-style: italic;
+		color: var(--color-text-muted, var(--color-text));
+		opacity: 0.75;
+		text-align: center;
 	}
 
 	/* ===== Frase inspiradora (antes de 'Conteudos mais recentes') ===== */
