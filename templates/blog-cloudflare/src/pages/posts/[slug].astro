@@ -191,10 +191,64 @@ const pageUrl = seo.canonical || `${Astro.url.origin}/blog/posts/${slug}`;
 const shareText = `${post.data.title} — DouraVita`;
 const waShareHref = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${pageUrl}`)}`;
 const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+
+// SEO title curto pro <title> da tag — siteTitle full ("Blog DouraVita -
+// Vitalidade Ativa para Quem Sempre Cuidou dos Outros") + título do post
+// dava 116-135 chars; Google corta em ~60. Usa "Blog DouraVita" como suffix
+// curto, mantém a copy longa apenas em og:site_name (via Base layout).
+const shortFullTitle = `${post.data.title} | Blog DouraVita`;
+
+// FAQPage schema: detecta pares pergunta/resposta no corpo do post pra emitir
+// rich result no SERP. Regra: H2 ou H3 cujo texto termina com "?" + blocos
+// "normal" seguintes (até o próximo heading) viram a resposta. Threshold ≥2
+// pares pra evitar false-positive (1 só não é "FAQ" canônico). Em posts sem
+// Q&A claro, retorna [] e nada é emitido.
+type FaqItem = { question: string; answer: string };
+function buildFaqItems(content: unknown[]): FaqItem[] {
+	const out: FaqItem[] = [];
+	let current: FaqItem | null = null;
+	for (const block of content ?? []) {
+		if (!block || typeof block !== "object") continue;
+		const b = block as Record<string, unknown>;
+		const style = typeof b.style === "string" ? b.style : "";
+		const children = Array.isArray(b.children) ? b.children : [];
+		const text = children
+			.map((c) => (c && typeof c === "object" && typeof (c as Record<string, unknown>).text === "string"
+				? (c as Record<string, unknown>).text as string
+				: ""))
+			.join("")
+			.trim();
+		const isHeading = style === "h2" || style === "h3";
+		if (isHeading) {
+			// Fecha o item anterior se já tem resposta acumulada
+			if (current && current.answer.trim().length > 30) out.push(current);
+			current = text.endsWith("?") ? { question: text, answer: "" } : null;
+			continue;
+		}
+		if (current && style === "normal" && text) {
+			current.answer = (current.answer ? current.answer + " " : "") + text;
+		}
+	}
+	if (current && current.answer.trim().length > 30) out.push(current);
+	return out;
+}
+const faqItems = buildFaqItems((post.data.content as unknown[]) ?? []);
+const faqSchema = faqItems.length >= 2
+	? {
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		mainEntity: faqItems.map((it) => ({
+			"@type": "Question",
+			name: it.question,
+			acceptedAnswer: { "@type": "Answer", text: it.answer.slice(0, 800) },
+		})),
+	}
+	: null;
 ---
 
 <Base
 	title={seo.title}
+	fullTitle={shortFullTitle}
 	pageTitle={seo.ogTitle}
 	description={seo.description}
 	image={seo.ogImage}
@@ -203,11 +257,15 @@ const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURICom
 	type="article"
 	publishedTime={post.data.publishedAt?.toISOString() ?? null}
 	modifiedTime={post.data.updatedAt.toISOString()}
+	author="DouraVita"
 	content={{ collection: "posts", id: post.data.id, slug }}
 	shareData={{ url: pageUrl, title: post.data.title }}
 >
 	<article class="article">
 		<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+		{faqSchema && (
+			<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+		)}
 		{/* Three-column layout */}
 		<div class="article-grid">
 			{/* Left gutter: Meta information */}

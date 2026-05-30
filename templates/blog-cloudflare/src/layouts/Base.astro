@@ -40,6 +40,11 @@ interface Props {
 	content?: { collection: string; id: string; slug?: string | null };
 	/** Quando setado (ex: post pages), renderiza bloco Compartilhar no menu mobile */
 	shareData?: { url: string; title: string } | null;
+	/** Quando setado, sobrescreve o <title> final (bypass do auto-suffix
+	 * com siteTitle). Use em post pages para evitar title de 130+ chars:
+	 * passe `${post.title} | Blog DouraVita` aqui. Affecta tambem og:title
+	 * (via pageCtx.title) e a tag <title> renderizada. */
+	fullTitle?: string | null;
 }
 
 const {
@@ -55,6 +60,7 @@ const {
 	author,
 	content,
 	shareData,
+	fullTitle: fullTitleOverride,
 } = Astro.props;
 
 // Constroi share intents pro bloco mobile (so usado se shareData estiver setado).
@@ -66,7 +72,8 @@ const shareFbHref = shareData
 	: null;
 const { siteTitle, siteTagline, siteLogo } = resolveBlogSiteIdentity(await getSiteSettings());
 // If title already includes site title (from getSeoMeta), use as-is
-const fullTitle = title.includes(siteTitle) ? title : `${title} — ${siteTitle}`;
+const _computedFullTitle = title.includes(siteTitle) ? title : `${title} — ${siteTitle}`;
+const fullTitle = fullTitleOverride ?? _computedFullTitle;
 
 // Fetch primary menu defined in seed
 const menu = await getMenu("primary");
