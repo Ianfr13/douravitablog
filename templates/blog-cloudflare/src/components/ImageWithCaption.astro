@@ -1,0 +1,46 @@
+---
+/**
+ * Custom PortableText component pra blocos `_type: "image"` em posts.
+ *
+ * Por que existe: o renderizador default do EmDash emite só `<figure>` +
+ * `<img>` (sem caption). Pra leitor 55+, contexto visual abaixo da imagem
+ * ajuda a entender por que ela está ali. Fase 2 do plano a11y
+ * (~/.claude/plans/synthetic-imagining-storm.md).
+ *
+ * Estratégia de caption (em ordem):
+ *  1. `node.caption` se preenchido (Fase 7 do plano vai injetar isso no
+ *     pipeline)
+ *  2. `node.alt` como fallback quando >0 chars (alt já é descritivo nos
+ *     posts gerados pelo writer Opus)
+ *  3. Sem figcaption (apenas <img>) — não inventar texto
+ *
+ * Shape do node (vem do md_to_portable.py / EmDash):
+ *   { _type: "image", _key, asset: { _ref, url }, alt }
+ */
+interface ImageNode {
+	_type: "image";
+	_key?: string;
+	asset?: { _ref?: string; url?: string };
+	alt?: string;
+	caption?: string;
+}
+
+interface Props {
+	node: ImageNode;
+}
+
+const { node } = Astro.props;
+const src = node.asset?.url;
+const alt = (node.alt ?? "").trim();
+const caption = (node.caption ?? "").trim() || alt;
+const hasCaption = caption.length > 0;
+---
+
+{
+	src && (
+		<figure class="emdash-image">
+			<img src={src} alt={alt} loading="lazy" decoding="async" />
+			{hasCaption && <figcaption>{caption}</figcaption>}
+		</figure>
+	)
+}

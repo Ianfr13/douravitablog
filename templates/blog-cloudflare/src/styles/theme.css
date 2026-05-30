@@ -211,3 +211,21 @@ body {
 	text-rendering: optimizeLegibility;
 	font-feature-settings: "kern" 1, "liga" 1;
 }
+
+/* ============================================================
+ * A11y 55+ — Fase 2 (2026-05-30): figcaption nas imagens
+ * Componente ImageWithCaption.astro emite <figcaption>{alt}</figcaption>
+ * abaixo da imagem quando alt existir. Caption italico, discreto,
+ * cor secundaria — sem competir com o corpo do texto. ============ */
+.emdash-image figcaption,
+.article-content figure.emdash-image figcaption {
+	font-size: var(--font-size-sm);
+	color: var(--color-text-secondary);
+	font-style: italic;
+	line-height: var(--leading-snug);
+	text-align: center;
+	margin-top: 0.6em;
+	max-width: 65ch;
+	margin-inline: auto;
+	padding-inline: var(--spacing-2);
+}
