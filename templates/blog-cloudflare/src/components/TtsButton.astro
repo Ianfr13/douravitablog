@@ -1,0 +1,339 @@
+---
+/**
+ * Botao "Ouvir este artigo" usando Web Speech API nativa do browser
+ * (window.speechSynthesis). Zero custo, zero requisicao de rede — voz
+ * vem do SO/browser do usuario.
+ *
+ * Estrategia:
+ *  1. Idle: mostra so o botao "Ouvir artigo" + icone speaker
+ *  2. Speaking: troca pra controles (pausa/parar/velocidade) + status
+ *     "Lendo..." live region
+ *  3. Paused: botao volta a "Continuar"
+ *
+ * Extracao de texto: clona .article-content, remove sumario/blockquotes/
+ * tables/figures/leiaTambem/CTAs, e enfila por sentenca. Fila uma de
+ * cada vez via 'end' event pra evitar bugs de queue grande em alguns
+ * browsers (Chromium 200+ items truncated bug).
+ *
+ * Voz: prefere `pt-BR`, fallback `pt-PT`, fallback default. Algumas
+ * vozes pt-BR sao melhores (Microsoft Maria-pt-BR no Edge; Siri-pt-BR
+ * no iOS). Documentado em commit/plano.
+ *
+ * Fase 5 do plano a11y (~/.claude/plans/synthetic-imagining-storm.md).
+ */
+---
+
+<div class="tts-widget" data-tts>
+	<button
+		type="button"
+		class="tts-trigger"
+		data-tts-toggle
+		aria-label="Ouvir este artigo em voz alta"
+	>
+		<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-tts-icon-play>
+			<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+			<path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+			<path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+		</svg>
+		<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-tts-icon-pause hidden>
+			<rect x="6" y="4" width="4" height="16"></rect>
+			<rect x="14" y="4" width="4" height="16"></rect>
+		</svg>
+		<span class="tts-label" data-tts-label>Ouvir artigo</span>
+	</button>
+
+	<div class="tts-controls" hidden data-tts-controls>
+		<button type="button" class="tts-mini-btn" data-tts-stop aria-label="Parar leitura">
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+				<rect x="6" y="6" width="12" height="12"></rect>
+			</svg>
+		</button>
+		<label class="tts-rate-wrap">
+			<span class="sr-only">Velocidade da leitura</span>
+			<select class="tts-rate" data-tts-rate>
+				<option value="0.85">Devagar</option>
+				<option value="1" selected>Normal</option>
+				<option value="1.15">Mais rapido</option>
+			</select>
+		</label>
+		<span class="tts-status" aria-live="polite" data-tts-status></span>
+	</div>
+</div>
+
+<script>
+	(function () {
+		const widget = document.querySelector<HTMLElement>("[data-tts]");
+		if (!widget) return;
+		if (typeof window.speechSynthesis === "undefined") {
+			widget.style.display = "none"; // browser sem suporte (raro)
+			return;
+		}
+
+		const toggleBtn = widget.querySelector<HTMLButtonElement>("[data-tts-toggle]");
+		const stopBtn = widget.querySelector<HTMLButtonElement>("[data-tts-stop]");
+		const rateSel = widget.querySelector<HTMLSelectElement>("[data-tts-rate]");
+		const controls = widget.querySelector<HTMLElement>("[data-tts-controls]");
+		const label = widget.querySelector<HTMLElement>("[data-tts-label]");
+		const status = widget.querySelector<HTMLElement>("[data-tts-status]");
+		const iconPlay = widget.querySelector<HTMLElement>("[data-tts-icon-play]");
+		const iconPause = widget.querySelector<HTMLElement>("[data-tts-icon-pause]");
+		if (!toggleBtn || !stopBtn || !rateSel || !controls || !label || !status || !iconPlay || !iconPause) return;
+
+		type State = "idle" | "playing" | "paused";
+		let state: State = "idle";
+		let sentences: string[] = [];
+		let cursor = 0;
+		let voice: SpeechSynthesisVoice | null = null;
+		let rate = 1;
+
+		function pickVoice() {
+			const all = window.speechSynthesis.getVoices();
+			if (!all.length) return null;
+			return all.find(v => v.lang.toLowerCase().startsWith("pt-br")) ||
+				all.find(v => v.lang.toLowerCase().startsWith("pt")) ||
+				all[0];
+		}
+
+		// Voices podem carregar async — tenta agora e tambem no evento
+		voice = pickVoice();
+		window.speechSynthesis.addEventListener("voiceschanged", () => {
+			if (!voice) voice = pickVoice();
+		});
+
+		function extractSentences(): string[] {
+			const article = document.querySelector<HTMLElement>(".article-content");
+			if (!article) return [];
+			const clone = article.cloneNode(true) as HTMLElement;
+			// Remove o que nao deve ser lido em voz alta
+			clone.querySelectorAll(
+				".toc, .bibliography, .leia-tambem-box, .cta-button, table, figure, blockquote, code, pre, .comparison-table"
+			).forEach((el) => el.remove());
+			const text = (clone.textContent || "").replace(/\s+/g, " ").trim();
+			// Quebra em sentencas; cap 250 chars/sentenca pra utterances curtas
+			// (alguns browsers cortam utterance >300 chars).
+			const raw = text.split(/(?<=[.!?…])\s+(?=[A-ZÀ-Ý])/g);
+			const out: string[] = [];
+			for (const s of raw) {
+				const trimmed = s.trim();
+				if (!trimmed) continue;
+				if (trimmed.length <= 250) { out.push(trimmed); continue; }
+				// Quebra sentenca longa em pedacos por virgula/ponto-virgula
+				const parts = trimmed.split(/[,;]\s+/);
+				let buf = "";
+				for (const p of parts) {
+					if ((buf + " " + p).length > 250 && buf) { out.push(buf); buf = p; }
+					else buf = buf ? buf + ", " + p : p;
+				}
+				if (buf) out.push(buf);
+			}
+			return out;
+		}
+
+		function setUI(s: State) {
+			state = s;
+			if (s === "idle") {
+				controls.hidden = true;
+				label.textContent = "Ouvir artigo";
+				iconPlay.hidden = false;
+				iconPause.hidden = true;
+				status.textContent = "";
+			} else if (s === "playing") {
+				controls.hidden = false;
+				label.textContent = "Pausar";
+				iconPlay.hidden = true;
+				iconPause.hidden = false;
+				status.textContent = "Lendo...";
+			} else { // paused
+				controls.hidden = false;
+				label.textContent = "Continuar";
+				iconPlay.hidden = false;
+				iconPause.hidden = true;
+				status.textContent = "Pausado";
+			}
+		}
+
+		function speakNext() {
+			if (cursor >= sentences.length) {
+				setUI("idle");
+				cursor = 0; sentences = [];
+				return;
+			}
+			const u = new SpeechSynthesisUtterance(sentences[cursor]);
+			u.lang = "pt-BR";
+			if (voice) u.voice = voice;
+			u.rate = rate;
+			u.pitch = 1;
+			u.onend = () => { cursor++; if (state === "playing") speakNext(); };
+			u.onerror = () => { setUI("idle"); cursor = 0; sentences = []; };
+			window.speechSynthesis.speak(u);
+		}
+
+		function start() {
+			sentences = extractSentences();
+			if (!sentences.length) {
+				status.textContent = "Sem texto para ler.";
+				return;
+			}
+			cursor = 0;
+			rate = parseFloat(rateSel.value) || 1;
+			setUI("playing");
+			speakNext();
+		}
+
+		toggleBtn.addEventListener("click", () => {
+			if (state === "idle") { start(); return; }
+			if (state === "playing") {
+				window.speechSynthesis.pause();
+				setUI("paused");
+				return;
+			}
+			if (state === "paused") {
+				window.speechSynthesis.resume();
+				setUI("playing");
+			}
+		});
+
+		stopBtn.addEventListener("click", () => {
+			window.speechSynthesis.cancel();
+			setUI("idle");
+			cursor = 0; sentences = [];
+		});
+
+		rateSel.addEventListener("change", () => {
+			const newRate = parseFloat(rateSel.value) || 1;
+			rate = newRate;
+			if (state === "playing" || state === "paused") {
+				// Cancela e recomeca do cursor atual com nova velocidade
+				window.speechSynthesis.cancel();
+				setUI("playing");
+				speakNext();
+			}
+		});
+
+		// Cleanup ao sair da pagina
+		window.addEventListener("beforeunload", () => {
+			try { window.speechSynthesis.cancel(); } catch {}
+		});
+	})();
+</script>
+
+<style>
+	.tts-widget {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--spacing-3);
+		margin: var(--spacing-6) 0 var(--spacing-4);
+		padding: var(--spacing-3) var(--spacing-4);
+		background: var(--color-bg-subtle);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+	}
+
+	.tts-trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-2) var(--spacing-4);
+		min-height: 44px;
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border: none;
+		border-radius: 999px;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+
+	.tts-trigger:hover,
+	.tts-trigger:focus-visible {
+		background: var(--color-accent-hover);
+		outline: none;
+	}
+
+	.tts-trigger svg {
+		flex-shrink: 0;
+	}
+
+	.tts-controls {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-3);
+		flex-wrap: wrap;
+	}
+
+	.tts-controls[hidden] {
+		display: none;
+	}
+
+	.tts-mini-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
+		padding: 0;
+		background: var(--color-bg);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: 50%;
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+
+	.tts-mini-btn:hover,
+	.tts-mini-btn:focus-visible {
+		background: var(--color-surface);
+		outline: none;
+	}
+
+	.tts-rate-wrap {
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.tts-rate {
+		min-height: 44px;
+		padding: 0 var(--spacing-3);
+		background: var(--color-bg);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		cursor: pointer;
+	}
+
+	.tts-status {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		font-style: italic;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	@media (max-width: 640px) {
+		.tts-widget {
+			padding: var(--spacing-2) var(--spacing-3);
+			gap: var(--spacing-2);
+		}
+		.tts-trigger {
+			padding: var(--spacing-2) var(--spacing-3);
+		}
+		.tts-controls {
+			gap: var(--spacing-2);
+		}
+	}
+</style>

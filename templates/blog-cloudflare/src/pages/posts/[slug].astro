@@ -20,6 +20,7 @@ import CtaButton from "../../components/CtaButton.astro";
 import ComparisonTable from "../../components/ComparisonTable.astro";
 import ImageWithCaption from "../../components/ImageWithCaption.astro";
 import FontSizeWidget from "../../components/FontSizeWidget.astro";
+import TtsButton from "../../components/TtsButton.astro";
 import CommentFormPT from "../../components/CommentFormPT.astro";
 import CommentsListPT from "../../components/CommentsListPT.astro";
 import ReaderAuthBar from "../../components/ReaderAuthBar.astro";
@@ -460,6 +461,10 @@ const faqSchema = faqItems.length >= 2
 					}
 					<TrustBadge variant="inline" />
 				</header>
+
+				{/* Fase 5 a11y: botao "Ouvir este artigo" (Web Speech API nativa).
+				    Aparece antes do corpo do texto pra ser descoberto cedo. */}
+				<TtsButton />
 
 				<div class="article-content">
 					<PortableText value={post.data.content} components={portableTextComponents} />
