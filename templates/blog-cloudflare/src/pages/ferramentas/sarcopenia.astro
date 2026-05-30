@@ -1,0 +1,363 @@
+---
+import Base from "../../layouts/Base.astro";
+
+// Quiz de sarcopenia: 6 perguntas sim/não. JS calcula score no client.
+// Critérios baseados em SARC-F (validado) + fatores de risco comuns 55+.
+const sarcQuestions = [
+	"Tenho 65 anos ou mais",
+	"Sinto fraqueza ou dor nas pernas ao subir escadas",
+	"Perdi mais de 3 kg sem querer nos últimos 6 meses",
+	"Fico mais de 6 horas por dia sentado(a) ou parado(a)",
+	"NÃO faço exercícios de força (musculação) pelo menos 2 vezes por semana",
+	"Tenho dificuldade em abrir potes ou garrafas que abria fácil antes",
+];
+
+const title = "Quiz: Você está em risco de sarcopenia?";
+const description = "Faça o teste rápido baseado no SARC-F: 6 perguntas pra descobrir seu risco de perda de massa e força muscular depois dos 55.";
+
+// Edge cache curto, SWR longo — conteúdo da página é estático (só JS roda no client).
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+---
+
+<Base
+	title={title}
+	description={description}
+	canonical={`${Astro.url.origin}/blog/ferramentas/sarcopenia`}
+>
+	<div class="tool-page">
+		<nav class="tool-breadcrumb" aria-label="Navegação estrutural">
+			<a href="/blog">Blog</a>
+			<span aria-hidden="true">›</span>
+			<span>Ferramentas</span>
+			<span aria-hidden="true">›</span>
+			<span aria-current="page">Sarcopenia</span>
+		</nav>
+
+		<section class="section quiz-section">
+			<div class="quiz-card" data-quiz>
+				<header class="quiz-header">
+					<span class="quiz-eyebrow">Conteúdo interativo</span>
+					<h1 class="quiz-title">Você está em risco de sarcopenia?</h1>
+					<p class="quiz-subtitle">
+						Sarcopenia é a perda de massa e força muscular ligada ao
+						envelhecimento. Responda 6 perguntas rápidas e descubra seu
+						nível de risco.
+					</p>
+				</header>
+
+				<form class="quiz-form" data-quiz-form>
+					{sarcQuestions.map((q, i) => (
+						<fieldset class="quiz-question">
+							<legend class="quiz-q-text">
+								<span class="quiz-q-num">{i + 1}.</span> {q}
+							</legend>
+							<div class="quiz-q-options">
+								<label class="quiz-option">
+									<input type="radio" name={`q${i}`} value="1" />
+									<span>Sim</span>
+								</label>
+								<label class="quiz-option">
+									<input type="radio" name={`q${i}`} value="0" />
+									<span>Não</span>
+								</label>
+							</div>
+						</fieldset>
+					))}
+
+					<button type="submit" class="quiz-submit">
+						Ver meu resultado
+					</button>
+				</form>
+
+				<div class="quiz-result" data-quiz-result hidden>
+					<h2 class="quiz-result-title" data-result-title>Seu resultado</h2>
+					<p class="quiz-result-text" data-result-text></p>
+					<button class="quiz-reset" type="button" data-quiz-reset>
+						Refazer o teste
+					</button>
+				</div>
+			</div>
+		</section>
+
+		<aside class="tool-disclaimer">
+			<p>
+				Este teste é uma triagem rápida baseada no questionário SARC-F (Cruz-Jentoft et al.).
+				Não substitui avaliação médica. Em caso de dúvida, procure um geriatra ou nutricionista.
+			</p>
+		</aside>
+	</div>
+</Base>
+
+<script>
+	// Quiz de sarcopenia — score 0-6.
+	// Faixas baseadas em SARC-F: 4+ indica risco significativo.
+	const quiz = document.querySelector("[data-quiz]") as HTMLElement | null;
+	if (quiz) {
+		const form = quiz.querySelector(
+			"[data-quiz-form]",
+		) as HTMLFormElement | null;
+		const result = quiz.querySelector(
+			"[data-quiz-result]",
+		) as HTMLElement | null;
+		const titleEl = quiz.querySelector(
+			"[data-result-title]",
+		) as HTMLElement | null;
+		const textEl = quiz.querySelector(
+			"[data-result-text]",
+		) as HTMLElement | null;
+		const resetBtn = quiz.querySelector(
+			"[data-quiz-reset]",
+		) as HTMLButtonElement | null;
+
+		form?.addEventListener("submit", (e) => {
+			e.preventDefault();
+			const fd = new FormData(form);
+			let score = 0;
+			let answered = 0;
+			for (const [, v] of fd.entries()) {
+				answered++;
+				score += parseInt(v as string, 10) || 0;
+			}
+			if (answered < 6) {
+				alert("Responda todas as perguntas para ver o resultado.");
+				return;
+			}
+			let title = "";
+			let text = "";
+			if (score <= 1) {
+				title = "Risco baixo";
+				text =
+					"Seus hábitos atuais protegem a massa muscular. Continue priorizando proteína, força e movimento regular.";
+			} else if (score <= 3) {
+				title = "Risco moderado";
+				text =
+					"Já existem sinais que vale a pena agir. Considere musculação 2-3x/semana, 1,2 g de proteína por kg/dia e exposição solar diária.";
+			} else {
+				title = "Risco alto";
+				text =
+					"Vários fatores aparecem no seu perfil. Procure um geriatra ou nutricionista — sarcopenia tem tratamento eficaz quando identificada cedo.";
+			}
+			if (titleEl) titleEl.textContent = `${title} — ${score}/6`;
+			if (textEl) textEl.textContent = text;
+			form.hidden = true;
+			if (result) result.hidden = false;
+		});
+
+		resetBtn?.addEventListener("click", () => {
+			form?.reset();
+			if (form) form.hidden = false;
+			if (result) result.hidden = true;
+		});
+	}
+</script>
+
+<style>
+	.tool-page {
+		max-width: 720px;
+		margin: 0 auto;
+		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+	}
+
+	.tool-breadcrumb {
+		margin-bottom: var(--spacing-6);
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary, var(--color-text));
+		display: flex;
+		gap: var(--spacing-2);
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.tool-breadcrumb a {
+		color: inherit;
+		text-decoration: none;
+	}
+	.tool-breadcrumb a:hover {
+		color: var(--color-accent);
+	}
+	.tool-breadcrumb [aria-current="page"] {
+		color: var(--color-text);
+		font-weight: 600;
+	}
+
+	.tool-disclaimer {
+		margin-top: var(--spacing-8);
+		padding: var(--spacing-4) var(--spacing-5);
+		border-left: 3px solid var(--color-border);
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary, var(--color-text));
+		line-height: var(--leading-relaxed);
+	}
+
+	/* ===== Quiz (copiado de index.astro 2026-05-30) ===== */
+	.quiz-card {
+		/* color-mix com text escurece em light, clareia em dark - contraste
+		 * suficiente pra ler em qualquer brilho de tela. */
+		background: color-mix(in srgb, var(--color-bg) 84%, var(--color-text) 16%);
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-6) var(--spacing-5);
+		border: 1px solid var(--color-border);
+	}
+
+	.quiz-header {
+		margin-bottom: var(--spacing-5);
+	}
+
+	.quiz-eyebrow {
+		display: inline-block;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wider);
+		color: var(--color-accent);
+		margin-bottom: var(--spacing-2);
+	}
+
+	.quiz-title {
+		font-size: var(--font-size-2xl);
+		font-weight: 700;
+		line-height: var(--leading-tight);
+		letter-spacing: var(--tracking-tight);
+		margin-bottom: var(--spacing-2);
+	}
+
+	.quiz-subtitle {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+	}
+
+	.quiz-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-4);
+	}
+
+	.quiz-question {
+		border: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+	}
+
+	.quiz-q-text {
+		font-size: var(--font-size-base);
+		font-weight: 500;
+		line-height: var(--leading-snug);
+		color: var(--color-text);
+	}
+
+	.quiz-q-num {
+		color: var(--color-accent);
+		font-weight: 700;
+		margin-right: var(--spacing-1);
+	}
+
+	.quiz-q-options {
+		display: flex;
+		gap: var(--spacing-3);
+	}
+
+	.quiz-option {
+		flex: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-bg);
+		cursor: pointer;
+		font-size: var(--font-size-base);
+		font-weight: 500;
+		transition: all var(--transition-fast);
+	}
+
+	.quiz-option:hover {
+		border-color: var(--color-accent);
+	}
+
+	.quiz-option input {
+		appearance: none;
+		width: 16px;
+		height: 16px;
+		border: 2px solid var(--color-border);
+		border-radius: 50%;
+		margin: 0;
+		flex-shrink: 0;
+	}
+
+	.quiz-option input:checked {
+		border-color: var(--color-accent);
+		background: radial-gradient(
+			circle,
+			var(--color-accent) 40%,
+			transparent 45%
+		);
+	}
+
+	.quiz-option:has(input:checked) {
+		border-color: var(--color-accent);
+		background: var(--color-accent-ring, var(--color-surface));
+	}
+
+	.quiz-submit {
+		margin-top: var(--spacing-2);
+		padding: var(--spacing-3) var(--spacing-6);
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border: none;
+		border-radius: 999px;
+		font-size: var(--font-size-base);
+		font-weight: 600;
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+
+	.quiz-submit:hover {
+		background: var(--color-accent-hover);
+	}
+
+	.quiz-result {
+		padding: var(--spacing-4);
+		background: var(--color-bg);
+		border-radius: var(--radius);
+		border-left: 4px solid var(--color-accent);
+	}
+
+	.quiz-result-title {
+		font-size: var(--font-size-xl);
+		font-weight: 700;
+		margin-bottom: var(--spacing-2);
+	}
+
+	.quiz-result-text {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.quiz-reset {
+		padding: var(--spacing-2) var(--spacing-4);
+		background: transparent;
+		color: var(--color-accent);
+		border: 1px solid var(--color-accent);
+		border-radius: 999px;
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.quiz-reset:hover {
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+	}
+</style>
