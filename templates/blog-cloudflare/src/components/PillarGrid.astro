@@ -24,11 +24,17 @@ const pillarsToShow = featuredOnly ? FEATURED_PILLARS : PILLARS;
 const shouldShowAllLink = showAllLink ?? featuredOnly;
 ---
 
-<section class="pillar-grid-section" aria-labelledby="pillar-grid-heading">
-	<header class="pillar-grid-header">
-		<h2 id="pillar-grid-heading" class="pillar-grid-heading">{heading}</h2>
-		{tagline && <p class="pillar-grid-tagline">{tagline}</p>}
-	</header>
+<section
+	class="pillar-grid-section"
+	aria-labelledby={heading ? "pillar-grid-heading" : undefined}
+	aria-label={heading ? undefined : "Categorias do blog"}
+>
+	{heading && (
+		<header class="pillar-grid-header">
+			<h2 id="pillar-grid-heading" class="pillar-grid-heading">{heading}</h2>
+			{tagline && <p class="pillar-grid-tagline">{tagline}</p>}
+		</header>
+	)}
 
 	<ul class={`pillar-grid columns-${columns}`}>
 		{
