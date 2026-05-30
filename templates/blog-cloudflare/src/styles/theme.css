@@ -145,3 +145,69 @@ body {
 		scroll-behavior: auto !important;
 	}
 }
+
+/* ============================================================
+ * A11y 55+ — Fase 1 (2026-05-30)
+ * Underlinks em corpo de texto + tap targets 44+px + rendering
+ * hints. Plano em ~/.claude/plans/synthetic-imagining-storm.md
+ * ============================================================ */
+
+/* Links em corpo de texto sublinhados. As regras antigas casavam
+ * `.post-content`/`.post-body` mas o DOM real do post usa
+ * `.article-content` (PortableText em [slug].astro:461) — link no
+ * corpo de artigo NUNCA sublinhou antes. Inclui tambem `.home-intro`
+ * (intro nova da home /blog) e disclaimer. Mantemos botoes/pills/
+ * cards/CTAs sem sublinhado (sao blocos visuais, nao texto). */
+.article-content a,
+.home-intro a,
+.home-intro-text a,
+.post-content a:not(.no-decoration),
+.post-body a {
+	color: var(--color-accent);
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+
+.article-content a:hover,
+.article-content a:focus-visible,
+.home-intro a:hover,
+.home-intro-text a:hover,
+.post-content a:hover,
+.post-body a:hover {
+	text-decoration-thickness: 2px;
+}
+
+/* Tap targets >=44x44px (WCAG 2.5.5 AAA mobile). Vence as scoped
+ * rules de Base.astro/index.astro via !important — a11y floor
+ * non-negotiable pra mao tremula 55+. */
+.theme-btn {
+	min-width: 44px !important;
+	min-height: 44px !important;
+}
+
+.social-btn {
+	min-width: 44px !important;
+	min-height: 44px !important;
+	width: 44px !important;
+	height: 44px !important;
+}
+
+/* Pills/badges: hit area generosa, sem encostar uma na outra. */
+.kw-pill,
+.badge {
+	min-height: 36px;
+	display: inline-flex;
+	align-items: center;
+}
+
+.kw-pills {
+	gap: var(--spacing-3) !important;
+}
+
+/* Rendering hints pra olho cansado: kerning + ligaduras automaticos
+ * e text-rendering otimizado. Sem custo perceptivel de performance. */
+body {
+	text-rendering: optimizeLegibility;
+	font-feature-settings: "kern" 1, "liga" 1;
+}

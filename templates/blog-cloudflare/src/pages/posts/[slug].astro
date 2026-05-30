@@ -1030,14 +1030,20 @@ const faqSchema = faqItems.length >= 2
 		color: var(--color-text-secondary);
 	}
 
-	/* Article content typography */
+	/* Article content typography
+	 * Measure 70ch (~870px a 20px) e hyphens off pra ragged-right
+	 * que o olho 55+ rastreia melhor. Plano fase 1 a11y 2026-05-30. */
 	.article-content {
 		font-size: var(--font-size-lg);
 		line-height: var(--leading-relaxed);
+		max-width: 70ch;
+		margin-inline: auto;
 	}
 
 	.article-content :global(p) {
 		margin-bottom: 1.5em;
+		hyphens: none;
+		overflow-wrap: break-word;
 	}
 
 	.article-content :global(h2) {
