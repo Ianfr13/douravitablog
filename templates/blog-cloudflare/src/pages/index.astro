@@ -291,30 +291,48 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 							<span class="tools-eyebrow">Ferramentas</span>
 							<h2 class="tools-title">Teste-se, calcule, avalie</h2>
 							<p class="tools-subtitle">
-								Autoavaliações rápidas, calculadoras e checklists pensados pra
-								quem tem 55+. Comece pela primeira disponível.
+								Quiz e calculadoras gratuitas pensadas pra quem tem 55+.
+								Escolha a que faz sentido pra você.
 							</p>
 						</header>
+					<div class="tools-grid">
 						<a href="/blog/ferramentas/sarcopenia" class="tools-item">
-							<span class="tools-item-icon" aria-hidden="true">
-								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<rect x="3" y="4" width="18" height="16" rx="2"></rect>
-									<path d="M9 9h6"></path>
-									<path d="M9 13h6"></path>
-									<path d="M9 17h3"></path>
-								</svg>
-							</span>
+							<span class="tools-item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 9h6"></path><path d="M9 13h6"></path><path d="M9 17h3"></path></svg></span>
 							<span class="tools-item-body">
-								<span class="tools-item-eyebrow">Disponível agora</span>
-								<span class="tools-item-title">Quiz: Você está em risco de sarcopenia?</span>
-								<span class="tools-item-meta">6 perguntas · ~1 min</span>
+								<span class="tools-item-eyebrow">Quiz</span>
+								<span class="tools-item-title">Você está em risco de sarcopenia?</span>
+								<span class="tools-item-meta">6 perguntas · 1 min</span>
 							</span>
-							<svg class="tools-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-								<line x1="12" y1="19" x2="12" y2="5"></line>
-								<polyline points="5 12 12 5 19 12"></polyline>
-							</svg>
+							<svg class="tools-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
 						</a>
-						<p class="tools-soon">Mais ferramentas chegando em breve.</p>
+						<a href="/blog/ferramentas/imc-55" class="tools-item">
+							<span class="tools-item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="10" y2="10"></line><line x1="14" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="10" y2="14"></line><line x1="14" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="10" y2="18"></line><line x1="14" y1="18" x2="16" y2="18"></line></svg></span>
+							<span class="tools-item-body">
+								<span class="tools-item-eyebrow">Calculadora</span>
+								<span class="tools-item-title">IMC ajustado para 55+</span>
+								<span class="tools-item-meta">Idade, peso, altura · 10 segundos</span>
+							</span>
+							<svg class="tools-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+						</a>
+						<a href="/blog/ferramentas/proteina-diaria" class="tools-item">
+							<span class="tools-item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="10" y2="10"></line><line x1="14" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="10" y2="14"></line><line x1="14" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="10" y2="18"></line><line x1="14" y1="18" x2="16" y2="18"></line></svg></span>
+							<span class="tools-item-body">
+								<span class="tools-item-eyebrow">Calculadora</span>
+								<span class="tools-item-title">Proteína diária para 55+</span>
+								<span class="tools-item-meta">Peso + nível de atividade · 10 segundos</span>
+							</span>
+							<svg class="tools-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+						</a>
+						<a href="/blog/ferramentas/idade-biologica" class="tools-item">
+							<span class="tools-item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="10" y2="10"></line><line x1="14" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="10" y2="14"></line><line x1="14" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="10" y2="18"></line><line x1="14" y1="18" x2="16" y2="18"></line></svg></span>
+							<span class="tools-item-body">
+								<span class="tools-item-eyebrow">Calculadora</span>
+								<span class="tools-item-title">Idade biológica vs cronológica</span>
+								<span class="tools-item-meta">10 hábitos · 2 min</span>
+							</span>
+							<svg class="tools-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+						</a>
+					</div>
 					</div>
 				</section>
 
@@ -995,6 +1013,18 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		line-height: var(--leading-relaxed);
 		color: var(--color-text);
 		margin-top: var(--spacing-3);
+	}
+
+	.tools-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-3);
+	}
+
+	@media (min-width: 700px) {
+		.tools-grid {
+			grid-template-columns: 1fr 1fr;
+		}
 	}
 
 	/* Card interno clicavel da ferramenta */

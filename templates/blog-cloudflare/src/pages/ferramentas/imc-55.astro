@@ -1,0 +1,231 @@
+---
+import Base from "../../layouts/Base.astro";
+import "../../styles/tools.css";
+
+const title = "Calculadora de IMC ajustado para 55+";
+const description =
+	"Calcule seu IMC com a faixa saudável adaptada para adultos 55+. Depois dos 65, a referência clássica de 18.5–24.9 não vale — o ideal é entre 22 e 27.";
+
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+---
+
+<Base
+	title={title}
+	description={description}
+	canonical={`${Astro.url.origin}/blog/ferramentas/imc-55`}
+>
+	<div class="tool-page">
+		<nav class="tool-breadcrumb" aria-label="Navegação estrutural">
+			<a href="/blog">Blog</a>
+			<span aria-hidden="true">›</span>
+			<span>Ferramentas</span>
+			<span aria-hidden="true">›</span>
+			<span aria-current="page">IMC 55+</span>
+		</nav>
+
+		<div class="tool-card" data-calc>
+			<header class="tool-header">
+				<span class="tool-eyebrow">Calculadora</span>
+				<h1 class="tool-title">IMC ajustado para 55+</h1>
+				<p class="tool-subtitle">
+					Depois dos 65, a faixa saudável de IMC é maior do que a do
+					adulto jovem (22–27, e não 18.5–24.9). Um pouco de reserva
+					de peso protege contra fragilidade.
+				</p>
+			</header>
+
+			<form class="tool-form" data-form>
+				<div class="tool-field">
+					<label class="tool-label" for="imc-idade">Idade (anos)</label>
+					<input
+						class="tool-input"
+						type="number"
+						id="imc-idade"
+						name="idade"
+						min="40"
+						max="110"
+						inputmode="numeric"
+						required
+					/>
+				</div>
+				<div class="tool-field-row">
+					<div class="tool-field">
+						<label class="tool-label" for="imc-peso">Peso (kg)</label>
+						<input
+							class="tool-input"
+							type="number"
+							id="imc-peso"
+							name="peso"
+							min="30"
+							max="220"
+							step="0.1"
+							inputmode="decimal"
+							required
+						/>
+					</div>
+					<div class="tool-field">
+						<label class="tool-label" for="imc-altura">Altura (cm)</label>
+						<input
+							class="tool-input"
+							type="number"
+							id="imc-altura"
+							name="altura"
+							min="120"
+							max="220"
+							inputmode="numeric"
+							required
+						/>
+					</div>
+				</div>
+				<button type="submit" class="tool-submit">Calcular meu IMC</button>
+			</form>
+
+			<div class="tool-result" data-result hidden>
+				<h2 class="tool-result-title" data-result-title></h2>
+				<p class="tool-result-text" data-result-text></p>
+				<p class="tool-result-detail" data-result-detail></p>
+				<button class="tool-reset" type="button" data-reset>
+					Refazer
+				</button>
+			</div>
+		</div>
+
+		<aside class="tool-disclaimer">
+			<p>
+				Esta calculadora é educativa. A faixa saudável para 65+ (22–27)
+				está alinhada com a literatura científica (Winter et al. 2014,
+				BMJ/Lancet meta-análises), mas não substitui avaliação médica.
+				Para um diagnóstico individual, procure um nutricionista ou
+				geriatra.
+			</p>
+		</aside>
+	</div>
+</Base>
+
+<script>
+	const root = document.querySelector("[data-calc]") as HTMLElement | null;
+	if (root) {
+		const form = root.querySelector("[data-form]") as HTMLFormElement | null;
+		const result = root.querySelector("[data-result]") as HTMLElement | null;
+		const titleEl = root.querySelector(
+			"[data-result-title]",
+		) as HTMLElement | null;
+		const textEl = root.querySelector(
+			"[data-result-text]",
+		) as HTMLElement | null;
+		const detailEl = root.querySelector(
+			"[data-result-detail]",
+		) as HTMLElement | null;
+		const reset = root.querySelector(
+			"[data-reset]",
+		) as HTMLButtonElement | null;
+
+		form?.addEventListener("submit", (e) => {
+			e.preventDefault();
+			const fd = new FormData(form);
+			const idade = parseFloat(fd.get("idade") as string);
+			const peso = parseFloat(fd.get("peso") as string);
+			const altura = parseFloat(fd.get("altura") as string);
+			if (!idade || !peso || !altura) {
+				alert("Preencha idade, peso e altura.");
+				return;
+			}
+			const m = altura / 100;
+			const imc = peso / (m * m);
+			const imcStr = imc.toFixed(1).replace(".", ",");
+
+			let title = "";
+			let text = "";
+			let detail = "";
+
+			if (idade >= 65) {
+				// Faixas ajustadas pra 65+ (literatura: 22-27 protetor)
+				if (imc < 22) {
+					title = `IMC ${imcStr} — Abaixo do recomendado`;
+					text =
+						"Para 65+, IMC abaixo de 22 está associado a maior risco de fragilidade, sarcopenia e mortalidade. Não tente emagrecer — priorize proteína (1,0–1,2 g/kg/dia) e treino de força.";
+				} else if (imc < 27) {
+					title = `IMC ${imcStr} — Faixa ideal`;
+					text =
+						"Excelente: você está na faixa protetiva para 65+. Uma reserva de peso ajuda em caso de doença ou cirurgia.";
+				} else if (imc < 30) {
+					title = `IMC ${imcStr} — Sobrepeso leve`;
+					text =
+						"Sobrepeso leve, mas em 65+ isso geralmente traz mais proteção do que risco — desde que a composição corporal (massa muscular) esteja boa.";
+				} else if (imc < 35) {
+					title = `IMC ${imcStr} — Obesidade grau 1`;
+					text =
+						"Aumenta risco de doenças metabólicas e cardiovasculares mesmo em idosos. Vale conversar com um nutricionista, sem dietas radicais (preservar músculo é prioridade).";
+				} else {
+					title = `IMC ${imcStr} — Obesidade grau 2 ou 3`;
+					text =
+						"Obesidade significativa eleva risco cardiovascular e funcional. Procure acompanhamento médico estruturado.";
+				}
+				detail =
+					"Para 65+, a literatura recomenda a faixa 22–27 como ideal. A referência clássica de 18.5–24.9 é para adultos jovens — depois dos 65 a curva da mortalidade desloca pra cima.";
+			} else if (idade >= 55) {
+				// Faixa transicional 55-64: usa padrao adulto mas comenta
+				if (imc < 18.5) {
+					title = `IMC ${imcStr} — Abaixo do peso`;
+					text =
+						"Abaixo da faixa saudável. Vale conversar com um nutricionista, especialmente se a perda foi recente.";
+				} else if (imc < 25) {
+					title = `IMC ${imcStr} — Saudável`;
+					text = "Você está na faixa saudável para adultos.";
+				} else if (imc < 30) {
+					title = `IMC ${imcStr} — Sobrepeso`;
+					text =
+						"Sobrepeso. Atividade física regular + alimentação balanceada costumam resolver.";
+				} else if (imc < 35) {
+					title = `IMC ${imcStr} — Obesidade grau 1`;
+					text =
+						"Obesidade. Vale conversar com um profissional para um plano sustentável.";
+				} else {
+					title = `IMC ${imcStr} — Obesidade grau 2 ou 3`;
+					text =
+						"Obesidade significativa. Procure acompanhamento médico.";
+				}
+				detail =
+					"Conforme você se aproxima dos 65, vale reavaliar a meta: depois dessa idade, a faixa saudável é maior (22–27).";
+			} else {
+				// Padrao OMS pra adulto jovem
+				if (imc < 18.5) {
+					title = `IMC ${imcStr} — Abaixo do peso`;
+					text =
+						"Abaixo da faixa saudável. Avaliar causa com profissional, especialmente se a perda foi recente.";
+				} else if (imc < 25) {
+					title = `IMC ${imcStr} — Saudável`;
+					text = "Você está na faixa saudável para adultos.";
+				} else if (imc < 30) {
+					title = `IMC ${imcStr} — Sobrepeso`;
+					text =
+						"Sobrepeso. Atividade física regular + dieta balanceada costumam resolver.";
+				} else if (imc < 35) {
+					title = `IMC ${imcStr} — Obesidade grau 1`;
+					text =
+						"Obesidade. Vale conversar com um profissional para um plano sustentável.";
+				} else {
+					title = `IMC ${imcStr} — Obesidade grau 2 ou 3`;
+					text =
+						"Obesidade significativa. Procure acompanhamento médico.";
+				}
+				detail =
+					"Você está usando a faixa de referência da OMS para adulto jovem. Depois dos 65, essa faixa muda (o ideal passa a ser 22–27).";
+			}
+			if (titleEl) titleEl.textContent = title;
+			if (textEl) textEl.textContent = text;
+			if (detailEl) detailEl.textContent = detail;
+			form.hidden = true;
+			if (result) result.hidden = false;
+		});
+
+		reset?.addEventListener("click", () => {
+			form?.reset();
+			if (form) form.hidden = false;
+			if (result) result.hidden = true;
+		});
+	}
+</script>

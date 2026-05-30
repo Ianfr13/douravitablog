@@ -1,0 +1,367 @@
+---
+import Base from "../../layouts/Base.astro";
+import "../../styles/tools.css";
+
+const title = "Calculadora de idade biológica vs cronológica";
+const description =
+	"Descubra sua idade biológica estimada combinando 10 fatores de estilo de vida (sono, dieta, exercício, sociais, propósito). Resultado em segundos.";
+
+// 10 fatores de longevidade. Cada opcao tem um delta (+/- anos) que ajusta
+// a idade cronologica. Faixas baseadas em literatura de envelhecimento
+// saudavel (Blue Zones, Lifestyle Medicine, Bauer et al, Lopez-Otin hallmarks).
+type Option = { label: string; delta: number; tag: string };
+type Factor = { key: string; legend: string; options: Option[] };
+
+const factors: Factor[] = [
+	{
+		key: "fumo",
+		legend: "Tabagismo",
+		options: [
+			{ label: "Nunca fumei", delta: -2, tag: "nao fumar" },
+			{ label: "Parei há mais de 5 anos", delta: 0, tag: "ex-fumante (>5a)" },
+			{ label: "Parei há menos de 5 anos", delta: 2, tag: "ex-fumante recente" },
+			{ label: "Fumo atualmente", delta: 5, tag: "fumo ativo" },
+		],
+	},
+	{
+		key: "atividade",
+		legend: "Atividade física",
+		options: [
+			{ label: "Sedentário(a)", delta: 3, tag: "sedentarismo" },
+			{ label: "Caminhada ocasional", delta: 1, tag: "atividade leve" },
+			{
+				label: "Treino regular 3+ vezes por semana (força, cardio ou misto)",
+				delta: -3,
+				tag: "treino regular",
+			},
+			{
+				label: "Treino intenso 5+ vezes por semana / atleta sênior",
+				delta: -5,
+				tag: "atleta",
+			},
+		],
+	},
+	{
+		key: "sono",
+		legend: "Sono",
+		options: [
+			{ label: "Menos de 6h ou mais de 9h por noite", delta: 2, tag: "sono fora da faixa" },
+			{ label: "Entre 6 e 9h, mas qualidade ruim", delta: 1, tag: "sono ruim" },
+			{ label: "Entre 7 e 9h com qualidade boa", delta: -2, tag: "sono bom" },
+		],
+	},
+	{
+		key: "dieta",
+		legend: "Dieta",
+		options: [
+			{ label: "Ultraprocessados quase todo dia", delta: 3, tag: "ultraprocessados" },
+			{ label: "Mista, com alguns processados", delta: 0, tag: "dieta mista" },
+			{
+				label: "Mediterrânea ou predominantemente vegetal (azeite, peixe, vegetais, leguminosas)",
+				delta: -3,
+				tag: "dieta mediterrânea",
+			},
+		],
+	},
+	{
+		key: "peso",
+		legend: "Peso / IMC",
+		options: [
+			{
+				label: "Obesidade significativa (IMC 35+) ou muito abaixo (IMC <19)",
+				delta: 3,
+				tag: "IMC fora",
+			},
+			{ label: "Levemente acima ou abaixo da faixa saudável", delta: 1, tag: "IMC limítrofe" },
+			{
+				label: "Faixa saudável (22–27 para 55+)",
+				delta: -1,
+				tag: "IMC saudável",
+			},
+		],
+	},
+	{
+		key: "alcool",
+		legend: "Álcool",
+		options: [
+			{ label: "Mais de 2 doses por dia, quase todo dia", delta: 2, tag: "álcool diário" },
+			{ label: "1 a 2 doses por dia", delta: 0, tag: "álcool moderado" },
+			{ label: "Socialmente, raramente", delta: -1, tag: "álcool raro" },
+		],
+	},
+	{
+		key: "stress",
+		legend: "Stress",
+		options: [
+			{ label: "Crônico, alto, sem manejo", delta: 3, tag: "stress crônico" },
+			{ label: "Moderado, gerenciável", delta: 0, tag: "stress moderado" },
+			{
+				label: "Baixo, com técnicas de manejo (meditação, hobby, terapia)",
+				delta: -2,
+				tag: "stress baixo",
+			},
+		],
+	},
+	{
+		key: "social",
+		legend: "Conexões sociais",
+		options: [
+			{ label: "Vivo isolado(a)", delta: 3, tag: "isolamento" },
+			{ label: "Família e poucos amigos", delta: 0, tag: "rede pequena" },
+			{
+				label: "Vida social ativa (família, amigos, voluntariado, grupo religioso)",
+				delta: -3,
+				tag: "vida social ativa",
+			},
+		],
+	},
+	{
+		key: "exames",
+		legend: "Exames preventivos",
+		options: [
+			{ label: "Não faço há mais de 2 anos", delta: 2, tag: "sem check-up" },
+			{ label: "Faço de tempos em tempos", delta: 0, tag: "check-up irregular" },
+			{ label: "Faço check-up anual", delta: -1, tag: "check-up em dia" },
+		],
+	},
+	{
+		key: "proposito",
+		legend: "Senso de propósito",
+		options: [
+			{
+				label: '"Não vejo muito sentido nas coisas"',
+				delta: 3,
+				tag: "sem propósito",
+			},
+			{
+				label: '"Mais ou menos, alguns dias melhor que outros"',
+				delta: 1,
+				tag: "propósito intermitente",
+			},
+			{
+				label: '"Tenho metas e atividades que me dão sentido"',
+				delta: -3,
+				tag: "propósito claro",
+			},
+		],
+	},
+];
+
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+---
+
+<Base
+	title={title}
+	description={description}
+	canonical={`${Astro.url.origin}/blog/ferramentas/idade-biologica`}
+>
+	<div class="tool-page">
+		<nav class="tool-breadcrumb" aria-label="Navegação estrutural">
+			<a href="/blog">Blog</a>
+			<span aria-hidden="true">›</span>
+			<span>Ferramentas</span>
+			<span aria-hidden="true">›</span>
+			<span aria-current="page">Idade biológica</span>
+		</nav>
+
+		<div class="tool-card" data-calc>
+			<header class="tool-header">
+				<span class="tool-eyebrow">Calculadora</span>
+				<h1 class="tool-title">Sua idade biológica vs cronológica</h1>
+				<p class="tool-subtitle">
+					Sua idade no documento é uma. Como seu corpo está
+					envelhecendo é outra. Responda 10 perguntas rápidas sobre
+					hábitos e descubra sua idade biológica estimada.
+				</p>
+			</header>
+
+			<form class="tool-form" data-form>
+				<div class="tool-field">
+					<label class="tool-label" for="bio-idade">
+						Sua idade real (anos)
+					</label>
+					<input
+						class="tool-input"
+						type="number"
+						id="bio-idade"
+						name="idade"
+						min="40"
+						max="110"
+						inputmode="numeric"
+						required
+					/>
+				</div>
+
+				{factors.map((f) => (
+					<fieldset class="tool-fieldset" data-factor={f.key}>
+						<legend class="tool-fieldset-legend">{f.legend}</legend>
+						<div class="tool-radio-group">
+							{f.options.map((o, i) => (
+								<label class="tool-radio">
+									<input
+										type="radio"
+										name={f.key}
+										value={`${o.delta}|${o.tag}`}
+										required={i === 0}
+									/>
+									<span>{o.label}</span>
+								</label>
+							))}
+						</div>
+					</fieldset>
+				))}
+
+				<button type="submit" class="tool-submit">
+					Calcular minha idade biológica
+				</button>
+			</form>
+
+			<div class="tool-result" data-result hidden>
+				<h2 class="tool-result-title" data-result-title></h2>
+				<p class="tool-result-text" data-result-text></p>
+				<div class="tool-result-block" data-result-helping></div>
+				<div class="tool-result-block" data-result-hurting></div>
+				<button class="tool-reset" type="button" data-reset>
+					Refazer
+				</button>
+			</div>
+		</div>
+
+		<aside class="tool-disclaimer">
+			<p>
+				Esta é uma estimativa baseada em fatores de estilo de vida
+				associados a envelhecimento saudável na literatura científica
+				(Blue Zones, Lifestyle Medicine, hallmarks de Lopez-Otin et
+				al.). Não é um teste clínico nem substitui marcadores
+				biológicos reais (telômeros, idade epigenética DNAm). Use como
+				bússola, não como diagnóstico.
+			</p>
+		</aside>
+	</div>
+</Base>
+
+<script>
+	const root = document.querySelector("[data-calc]") as HTMLElement | null;
+	if (root) {
+		const form = root.querySelector("[data-form]") as HTMLFormElement | null;
+		const result = root.querySelector("[data-result]") as HTMLElement | null;
+		const titleEl = root.querySelector(
+			"[data-result-title]",
+		) as HTMLElement | null;
+		const textEl = root.querySelector(
+			"[data-result-text]",
+		) as HTMLElement | null;
+		const helpingEl = root.querySelector(
+			"[data-result-helping]",
+		) as HTMLElement | null;
+		const hurtingEl = root.querySelector(
+			"[data-result-hurting]",
+		) as HTMLElement | null;
+		const reset = root.querySelector(
+			"[data-reset]",
+		) as HTMLButtonElement | null;
+
+		form?.addEventListener("submit", (e) => {
+			e.preventDefault();
+			const fd = new FormData(form);
+			const idade = parseFloat(fd.get("idade") as string);
+			if (!idade) {
+				alert("Preencha sua idade.");
+				return;
+			}
+
+			let total = 0;
+			const helping: string[] = [];
+			const hurting: string[] = [];
+			let missingCount = 0;
+			const factorKeys = [
+				"fumo",
+				"atividade",
+				"sono",
+				"dieta",
+				"peso",
+				"alcool",
+				"stress",
+				"social",
+				"exames",
+				"proposito",
+			];
+			for (const key of factorKeys) {
+				const raw = fd.get(key);
+				if (!raw) {
+					missingCount++;
+					continue;
+				}
+				const [deltaStr, tag] = (raw as string).split("|");
+				const delta = parseFloat(deltaStr);
+				total += delta;
+				if (delta < 0) helping.push(`${tag} (${delta}a)`);
+				else if (delta > 0) hurting.push(`${tag} (+${delta}a)`);
+			}
+
+			if (missingCount > 0) {
+				alert(
+					`Responda todas as ${factorKeys.length} perguntas (faltam ${missingCount}).`,
+				);
+				return;
+			}
+
+			// Capping pra evitar resultados extremos
+			const capped = Math.max(-10, Math.min(15, total));
+			const bio = Math.round(idade + capped);
+			const diff = bio - idade;
+
+			let title = "";
+			let text = "";
+			if (diff <= -5) {
+				title = `Sua idade biológica estimada: ${bio} anos`;
+				text = `Seus hábitos sugerem que seu corpo está envelhecendo cerca de ${Math.abs(diff)} anos mais devagar que o calendário. Continue assim — vários fatores estão a seu favor.`;
+			} else if (diff < 0) {
+				title = `Sua idade biológica estimada: ${bio} anos`;
+				text = `Seus hábitos colocam você ${Math.abs(diff)} anos "mais jovem" que sua idade cronológica. Bom sinal — há margem pra otimizar ainda.`;
+			} else if (diff === 0) {
+				title = `Sua idade biológica estimada: ${bio} anos`;
+				text =
+					"Você está alinhado com o esperado pra sua idade. Pequenos ajustes nos hábitos podem te jogar pra faixa protetiva.";
+			} else if (diff <= 5) {
+				title = `Sua idade biológica estimada: ${bio} anos`;
+				text = `Seus hábitos sugerem ${diff} anos "a mais" que o calendário. Não é tarde — vários fatores aqui são reversíveis em meses.`;
+			} else {
+				title = `Sua idade biológica estimada: ${bio} anos`;
+				text = `Seus hábitos sugerem ${diff} anos "a mais" que o calendário. Há vários pontos de alavanca aqui — a notícia boa é que envelhecimento biológico responde a mudança de hábito em semanas a meses.`;
+			}
+
+			titleEl!.textContent = title;
+			textEl!.textContent = text;
+
+			if (helping.length) {
+				helpingEl!.innerHTML =
+					`<strong>A seu favor:</strong> ` + helping.slice(0, 4).join(", ") + ".";
+				helpingEl!.hidden = false;
+			} else {
+				helpingEl!.hidden = true;
+			}
+			if (hurting.length) {
+				hurtingEl!.innerHTML =
+					`<strong>Principais pontos a melhorar:</strong> ` +
+					hurting.slice(0, 4).join(", ") +
+					".";
+				hurtingEl!.hidden = false;
+			} else {
+				hurtingEl!.hidden = true;
+			}
+
+			form.hidden = true;
+			if (result) result.hidden = false;
+		});
+
+		reset?.addEventListener("click", () => {
+			form?.reset();
+			if (form) form.hidden = false;
+			if (result) result.hidden = true;
+		});
+	}
+</script>

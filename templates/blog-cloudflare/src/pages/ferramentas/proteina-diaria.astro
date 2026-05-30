@@ -1,0 +1,194 @@
+---
+import Base from "../../layouts/Base.astro";
+import "../../styles/tools.css";
+
+const title = "Calculadora de proteína diária para 55+";
+const description =
+	"Quanto de proteína você precisa por dia depois dos 55? Cálculo baseado no consenso PROT-AGE (Bauer et al.) com exemplos práticos de alimentos.";
+
+// Opcoes de situacao do usuario (multiplicador g/kg)
+const situacoes = [
+	{
+		key: "sedentario",
+		label: "Sedentário ou pouca atividade",
+		gPerKg: 1.0,
+	},
+	{
+		key: "ativo",
+		label: "Pratico atividade física regular (caminhada, hidroginástica, musculação 2-3x/sem)",
+		gPerKg: 1.2,
+	},
+	{
+		key: "sarcopenia",
+		label: "Tenho sarcopenia, fragilidade ou estou em recuperação",
+		gPerKg: 1.5,
+	},
+	{
+		key: "atleta",
+		label: "Treino intenso 4+ vezes por semana / atleta sênior",
+		gPerKg: 1.6,
+	},
+];
+
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+---
+
+<Base
+	title={title}
+	description={description}
+	canonical={`${Astro.url.origin}/blog/ferramentas/proteina-diaria`}
+>
+	<div class="tool-page">
+		<nav class="tool-breadcrumb" aria-label="Navegação estrutural">
+			<a href="/blog">Blog</a>
+			<span aria-hidden="true">›</span>
+			<span>Ferramentas</span>
+			<span aria-hidden="true">›</span>
+			<span aria-current="page">Proteína diária</span>
+		</nav>
+
+		<div class="tool-card" data-calc>
+			<header class="tool-header">
+				<span class="tool-eyebrow">Calculadora</span>
+				<h1 class="tool-title">Proteína diária para 55+</h1>
+				<p class="tool-subtitle">
+					Depois dos 55, a recomendação de proteína é maior do que a
+					do adulto jovem (mínimo 1,0 g/kg, podendo chegar a 1,5–1,6
+					g/kg quando há sarcopenia ou treino regular). Calcule sua
+					meta e veja em alimentos.
+				</p>
+			</header>
+
+			<form class="tool-form" data-form>
+				<div class="tool-field">
+					<label class="tool-label" for="prot-peso">Peso (kg)</label>
+					<input
+						class="tool-input"
+						type="number"
+						id="prot-peso"
+						name="peso"
+						min="30"
+						max="220"
+						step="0.1"
+						inputmode="decimal"
+						required
+					/>
+				</div>
+
+				<fieldset class="tool-fieldset">
+					<legend class="tool-fieldset-legend">Sua situação</legend>
+					<div class="tool-radio-group">
+						{situacoes.map((s, i) => (
+							<label class="tool-radio">
+								<input
+									type="radio"
+									name="situacao"
+									value={s.gPerKg}
+									required={i === 0}
+								/>
+								<span>{s.label}</span>
+							</label>
+						))}
+					</div>
+				</fieldset>
+
+				<button type="submit" class="tool-submit">
+					Calcular minha meta
+				</button>
+			</form>
+
+			<div class="tool-result" data-result hidden>
+				<h2 class="tool-result-title" data-result-title></h2>
+				<p class="tool-result-text" data-result-text></p>
+				<div class="tool-result-block" data-result-examples></div>
+				<button class="tool-reset" type="button" data-reset>
+					Refazer
+				</button>
+			</div>
+		</div>
+
+		<aside class="tool-disclaimer">
+			<p>
+				Valores baseados no consenso PROT-AGE (Bauer et al., 2013) e
+				ESPEN para idosos. Pessoas com doença renal crônica devem
+				consultar nefrologista antes de aumentar proteína. Não
+				substitui orientação individualizada de nutricionista.
+			</p>
+		</aside>
+	</div>
+</Base>
+
+<script>
+	const root = document.querySelector("[data-calc]") as HTMLElement | null;
+	if (root) {
+		const form = root.querySelector("[data-form]") as HTMLFormElement | null;
+		const result = root.querySelector("[data-result]") as HTMLElement | null;
+		const titleEl = root.querySelector(
+			"[data-result-title]",
+		) as HTMLElement | null;
+		const textEl = root.querySelector(
+			"[data-result-text]",
+		) as HTMLElement | null;
+		const examplesEl = root.querySelector(
+			"[data-result-examples]",
+		) as HTMLElement | null;
+		const reset = root.querySelector(
+			"[data-reset]",
+		) as HTMLButtonElement | null;
+
+		// Tabela de equivalentes (gramas de proteina por porcao comum)
+		const equivalentes = [
+			{ alimento: "ovo grande", g: 6 },
+			{ alimento: "filé de frango (100 g grelhado)", g: 30 },
+			{ alimento: "filé de tilápia (100 g)", g: 22 },
+			{ alimento: "scoop de whey (~30 g)", g: 24 },
+			{ alimento: "iogurte natural (170 g)", g: 15 },
+			{ alimento: "feijão cozido (1 concha, ~150 g)", g: 8 },
+		];
+
+		form?.addEventListener("submit", (e) => {
+			e.preventDefault();
+			const fd = new FormData(form);
+			const peso = parseFloat(fd.get("peso") as string);
+			const gPerKg = parseFloat(fd.get("situacao") as string);
+			if (!peso || !gPerKg) {
+				alert("Preencha peso e situação.");
+				return;
+			}
+
+			const totalG = peso * gPerKg;
+			const totalStr = totalG.toFixed(0);
+			const porRefeicao = Math.round(totalG / 4);
+
+			titleEl!.textContent = `${totalStr} g de proteína por dia`;
+			textEl!.textContent = `Para seus ${peso.toString().replace(".", ",")} kg na faixa de ${gPerKg.toString().replace(".", ",")} g/kg, distribuído em 4 refeições isso dá ~${porRefeicao} g por refeição (a regra prática é não passar de ~30 g por vez — o corpo absorve melhor distribuído).`;
+
+			// Calcula equivalencias em alimentos
+			const rows = equivalentes
+				.map((eq) => {
+					const qtd = totalG / eq.g;
+					if (qtd >= 1) {
+						return `<li><strong>${qtd.toFixed(1).replace(".", ",")}</strong> × ${eq.alimento}</li>`;
+					}
+					return null;
+				})
+				.filter(Boolean)
+				.slice(0, 5)
+				.join("");
+
+			examplesEl!.innerHTML = `<strong>Em alimentos, isso equivale a aproximadamente:</strong><ul style="margin: 8px 0 0 0; padding-left: 20px;">${rows}</ul>`;
+
+			form.hidden = true;
+			if (result) result.hidden = false;
+		});
+
+		reset?.addEventListener("click", () => {
+			form?.reset();
+			if (form) form.hidden = false;
+			if (result) result.hidden = true;
+		});
+	}
+</script>
