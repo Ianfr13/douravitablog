@@ -271,6 +271,16 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 			</section>
 		) : (
 			<div class="home-content">
+				{/* ====== 0. INTRO — quem somos (SEO + boas-vindas) ====== */}
+				<section class="home-intro" aria-label="Sobre o Blog DouraVita">
+					<p class="home-intro-text">
+						Bem-vindo ao <strong>Blog DouraVita</strong> — conteúdo de saúde
+						e bem-estar baseado em ciência para adultos 55+. Aqui no nosso
+						blog você encontra artigos sobre suplementação, movimento,
+						memória, longevidade e qualidade de vida.
+					</p>
+				</section>
+
 				{/* ====== 1. ASSUNTOS DO MOMENTO ====== */}
 				<section class="section trending">
 					<header class="section-header">
@@ -688,6 +698,33 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		max-width: var(--wide-width);
 		margin: 0 auto;
 		padding: var(--spacing-8) var(--spacing-4) var(--spacing-16);
+	}
+
+	/* Intro de boas-vindas no topo da home — reforça que isto é o BLOG
+	 * (sinal de SEO pra busca "blog douravita"). Visualmente discreta,
+	 * separa-se do hero "Assuntos do momento" via borda inferior fina. */
+	.home-intro {
+		margin-bottom: var(--spacing-10);
+		padding-bottom: var(--spacing-6);
+		border-bottom: 1px solid var(--color-border-subtle);
+	}
+
+	.home-intro-text {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+		max-width: 760px;
+	}
+
+	.home-intro-text strong {
+		color: var(--color-text);
+		font-weight: 700;
+	}
+
+	@media (min-width: 700px) {
+		.home-intro-text {
+			font-size: var(--font-size-lg);
+		}
 	}
 
 	.section {
