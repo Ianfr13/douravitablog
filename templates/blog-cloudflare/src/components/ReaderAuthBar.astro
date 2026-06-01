@@ -16,9 +16,18 @@ interface Props {
 	/** Path pra voltar apos login (default: URL atual). */
 	returnTo?: string;
 	class?: string;
+	/** Texto exibido quando anonimo. Default: pitch pra comentarios. */
+	pitch?: string;
+	/** Label exibido antes do nome quando logado. Default: "Comentando como". */
+	loggedLabel?: string;
 }
 
-const { returnTo: returnToProp, class: className } = Astro.props;
+const {
+	returnTo: returnToProp,
+	class: className,
+	pitch = "Entre com o Facebook pra comentar mais rapido (foto + nome do seu perfil).",
+	loggedLabel = "Comentando como",
+} = Astro.props;
 
 let session = null;
 try {
@@ -76,7 +85,7 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 					{session.name.slice(0, 1).toUpperCase()}
 				</span>
 				<div class="reader-auth-bar__meta">
-					<span class="reader-auth-bar__label">Comentando como</span>
+					<span class="reader-auth-bar__label">{loggedLabel}</span>
 					<span class="reader-auth-bar__name">{session.name}</span>
 				</div>
 			</div>
@@ -86,9 +95,7 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 		</Fragment>
 	) : (
 		<Fragment>
-			<p class="reader-auth-bar__pitch">
-				Entre com o Facebook pra comentar mais rapido (foto + nome do seu perfil).
-			</p>
+			<p class="reader-auth-bar__pitch">{pitch}</p>
 			<a href={loginHref} class="reader-auth-bar__login" rel="nofollow">
 				<svg
 					width="18"
