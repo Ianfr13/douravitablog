@@ -20,6 +20,7 @@ import CtaButton from "../../components/CtaButton.astro";
 import ComparisonTable from "../../components/ComparisonTable.astro";
 import ImageWithCaption from "../../components/ImageWithCaption.astro";
 import FontSizeWidget from "../../components/FontSizeWidget.astro";
+import ReadingPosition from "../../components/ReadingPosition.astro";
 import CommentFormPT from "../../components/CommentFormPT.astro";
 import CommentsListPT from "../../components/CommentsListPT.astro";
 import ReaderAuthBar from "../../components/ReaderAuthBar.astro";
@@ -460,6 +461,10 @@ const faqSchema = faqItems.length >= 2
 					}
 					<TrustBadge variant="inline" />
 				</header>
+
+				{/* Banner "Voce parou aqui — continuar?" (so aparece se ha
+				    posicao salva valida no localStorage). Fase 8 a11y. */}
+				<ReadingPosition />
 
 				<div class="article-content">
 					<PortableText value={post.data.content} components={portableTextComponents} />
