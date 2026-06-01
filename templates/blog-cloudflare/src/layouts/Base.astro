@@ -800,6 +800,24 @@ const isLoggedIn = !!Astro.locals.user;
 					}
 				}
 
+				/* Logo monocromatica: preta no modo claro, branca no modo escuro.
+				 * brightness(0) zera a cor (tudo vira preto), invert(1) no dark
+				 * inverte pra branco. Funciona com a PNG atual sem precisar de 2 arquivos. */
+				.site-header .site-logo-img,
+				.site-footer .footer-logo-img {
+					filter: brightness(0) saturate(100%);
+				}
+				@media (prefers-color-scheme: dark) {
+					:root:not(.light) .site-header .site-logo-img,
+					:root:not(.light) .site-footer .footer-logo-img {
+						filter: brightness(0) saturate(100%) invert(1);
+					}
+				}
+				:root.dark .site-header .site-logo-img,
+				:root.dark .site-footer .footer-logo-img {
+					filter: brightness(0) saturate(100%) invert(1);
+				}
+
 				h1,
 				h2,
 				h3,
