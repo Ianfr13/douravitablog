@@ -806,27 +806,30 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 
 				/* Theme-aware logo swap: light = texto preto, dark = texto branco,
-				 * triangulo azul + asterisco amarelo iguais nas duas. */
+				 * triangulo azul + asterisco amarelo iguais nas duas.
+				 * !important porque as regras scoped do Astro (.site-logo-img
+				 * [data-astro-cid-*] { display: block }) tem especificidade maior
+				 * e venceriam o display:none por cascata. */
 				.site-logo-img--dark,
 				.footer-logo-img--dark {
-					display: none;
+					display: none !important;
 				}
 				:root.dark .site-logo-img--light,
 				:root.dark .footer-logo-img--light {
-					display: none;
+					display: none !important;
 				}
 				:root.dark .site-logo-img--dark,
 				:root.dark .footer-logo-img--dark {
-					display: block;
+					display: block !important;
 				}
 				@media (prefers-color-scheme: dark) {
 					:root:not(.light) .site-logo-img--light,
 					:root:not(.light) .footer-logo-img--light {
-						display: none;
+						display: none !important;
 					}
 					:root:not(.light) .site-logo-img--dark,
 					:root:not(.light) .footer-logo-img--dark {
-						display: block;
+						display: block !important;
 					}
 				}
 
