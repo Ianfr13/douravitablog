@@ -6,7 +6,6 @@ import {
 } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import ReaderAuthBar from "../components/ReaderAuthBar.astro";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 import creatinaPoteImg from "../assets/creatina-pote.webp";
 import creatinaLaudoImg from "../assets/creatina-laudo.webp";
@@ -27,15 +26,9 @@ const { siteTitle, siteTagline } = resolveBlogSiteIdentity(settings);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
-// Quando o leitor esta logado via FB, o HTML inclui nome/avatar dele
-// (ReaderAuthBar). Pra nao vazar identidade pelo cache compartilhado,
-// marcamos uncacheable nesse caso. Mesmo padrao da [slug].astro.
-const hasReaderCookie = (Astro.request.headers.get("cookie") || "").includes("reader_session=");
 Astro.response.headers.set(
 	"Cache-Control",
-	hasReaderCookie
-		? "private, no-store"
-		: "public, s-maxage=60, stale-while-revalidate=86400",
+	"public, s-maxage=60, stale-while-revalidate=86400",
 );
 
 // Section 1 — Assuntos do momento: 2 large + 3 small (5 mais recentes)
@@ -118,15 +111,6 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 						blog você encontra artigos sobre suplementação, movimento,
 						memória, longevidade e qualidade de vida.
 					</p>
-				</section>
-
-				{/* ====== 0.5. CONECTAR FACEBOOK — sessao global do leitor ====== */}
-				<section class="home-auth" aria-label="Conectar com Facebook">
-					<ReaderAuthBar
-						class="home-auth__bar"
-						pitch=""
-						loggedLabel="Conectado como"
-					/>
 				</section>
 
 				{/* ====== 1. ASSUNTOS DO MOMENTO ====== */}
@@ -494,17 +478,6 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		.home-intro-text {
 			font-size: var(--font-size-lg);
 		}
-	}
-
-	.home-auth {
-		margin: calc(var(--spacing-10) * -1 + var(--spacing-2)) auto var(--spacing-10);
-		max-width: 760px;
-	}
-
-	.home-auth :global(.home-auth__bar) {
-		background: transparent;
-		border: none;
-		padding: 0;
 	}
 
 	.section {
