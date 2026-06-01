@@ -46,6 +46,8 @@ export function buildAuthorizationUrl(config: FacebookOAuthConfig, state: string
 	url.searchParams.set("response_type", "code");
 	if (config.configId) {
 		url.searchParams.set("config_id", config.configId);
+	} else {
+		url.searchParams.set("scope", "public_profile,email");
 	}
 	return url.toString();
 }
