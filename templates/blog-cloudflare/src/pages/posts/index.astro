@@ -1,5 +1,6 @@
 ---
 import { getEmDashCollection, getTermsForEntries } from "emdash";
+import { Image } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import { getReadingTime } from "../../utils/reading-time";
 
@@ -63,44 +64,51 @@ const formatDate = (date: Date) =>
 					{postsWithTags.map(({ post, tags, bylines }) => (
 						<article class="post-item">
 							<a href={`/blog/posts/${post.slug ?? post.id}`} class="post-link">
-								<div class="post-meta">
-									{bylines.length > 0 && (
-										<>
-											<div class="post-bylines">
-												{bylines.slice(0, 2).map((credit, index) => (
-													<>
-														{index > 0 && <span class="byline-sep">,</span>}
-														<span class="post-byline">
-															{credit.byline.avatarMediaId && (
-																<img
-																	src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-																	alt={credit.byline.displayName}
-																	class="post-byline-avatar"
-																/>
-															)}
-															<span class="post-byline-name">
-																{credit.byline.displayName}
-															</span>
-														</span>
-													</>
-												))}
-												{bylines.length > 2 && (
-													<span class="byline-more">+{bylines.length - 2}</span>
-												)}
-											</div>
-											<span class="meta-dot" />
-										</>
-									)}
-									{post.data.publishedAt && (
-										<time>{formatDate(post.data.publishedAt)}</time>
-									)}
-									{post.data.publishedAt && <span class="meta-dot" />}
-									<span>{getReadingTime(post.data.content)} min de leitura</span>
-								</div>
-								<h2 class="post-title">{post.data.title}</h2>
-								{post.data.excerpt && (
-									<p class="post-excerpt">{post.data.excerpt}</p>
+								{post.data.featured_image && (
+									<div class="post-thumb">
+										<Image image={post.data.featured_image} />
+									</div>
 								)}
+								<div class="post-body">
+									<div class="post-meta">
+										{bylines.length > 0 && (
+											<>
+												<div class="post-bylines">
+													{bylines.slice(0, 2).map((credit, index) => (
+														<>
+															{index > 0 && <span class="byline-sep">,</span>}
+															<span class="post-byline">
+																{credit.byline.avatarMediaId && (
+																	<img
+																		src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
+																		alt={credit.byline.displayName}
+																		class="post-byline-avatar"
+																	/>
+																)}
+																<span class="post-byline-name">
+																	{credit.byline.displayName}
+																</span>
+															</span>
+														</>
+													))}
+													{bylines.length > 2 && (
+														<span class="byline-more">+{bylines.length - 2}</span>
+													)}
+												</div>
+												<span class="meta-dot" />
+											</>
+										)}
+										{post.data.publishedAt && (
+											<time>{formatDate(post.data.publishedAt)}</time>
+										)}
+										{post.data.publishedAt && <span class="meta-dot" />}
+										<span>{getReadingTime(post.data.content)} min de leitura</span>
+									</div>
+									<h2 class="post-title">{post.data.title}</h2>
+									{post.data.excerpt && (
+										<p class="post-excerpt">{post.data.excerpt}</p>
+									)}
+								</div>
 							</a>
 							{tags.length > 0 && (
 								<div class="post-tags">
@@ -165,10 +173,41 @@ const formatDate = (date: Date) =>
 		border-bottom: none;
 	}
 
+	/* Layout 2-colunas: capa (160px) + texto. Quando o post nao tem
+	 * featured_image, cai pra 1-coluna automaticamente via :has(). */
 	.post-link {
-		display: block;
+		display: grid;
+		grid-template-columns: 160px 1fr;
+		gap: var(--spacing-5);
+		align-items: start;
 		text-decoration: none;
 		color: inherit;
+	}
+
+	.post-link:not(:has(.post-thumb)) {
+		grid-template-columns: 1fr;
+	}
+
+	.post-thumb {
+		aspect-ratio: 4 / 3;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+	}
+
+	.post-thumb :global(img) {
+		width: 100% !important;
+		height: 100% !important;
+		object-fit: cover !important;
+		transition: transform 0.3s ease;
+	}
+
+	.post-link:hover .post-thumb :global(img) {
+		transform: scale(1.04);
+	}
+
+	.post-body {
+		min-width: 0; /* permite text-overflow no titulo longo dentro do grid */
 	}
 
 	.post-meta {
@@ -278,6 +317,13 @@ const formatDate = (date: Date) =>
 
 		.post-title {
 			font-size: var(--font-size-xl);
+		}
+
+		/* Mobile: capa menor (100px) pra caber titulo confortavelmente
+		 * ao lado. Mantem aspect 4:3. */
+		.post-link {
+			grid-template-columns: 100px 1fr;
+			gap: var(--spacing-3);
 		}
 	}
 </style>
