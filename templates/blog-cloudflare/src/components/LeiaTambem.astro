@@ -1,90 +1,143 @@
----
-/**
- * Box "Leia também" inline pra internal linking contextual no corpo do artigo.
- * Padrão visual baseado em tuasaude.com: border-left destacado, "Leia também:"
- * em pequeno, título do artigo em bold, URL slug embaixo em pequeno.
- *
- * Esse componente é registrado em pages/posts/[slug].astro como custom type
- * do <PortableText> (`components.type.leiaTambem`). O bloco PortableText
- * correspondente é emitido pelo pipeline editorial (md_to_portable.py) a
- * partir do marker `<!-- LEIA_TAMBEM: slug -->` que o writer Opus insere
- * contextualmente.
- *
- * Shape esperado do value:
- *   { _type: "leiaTambem", slug: "x-y-z", title: "Título...", href: "/posts/x-y-z" }
- */
-interface Node {
-	_type: "leiaTambem";
-	_key: string;
-	slug: string;
-	title: string;
-	href: string;
-}
-interface Props {
-	node: Node;
-}
-// astro-portabletext passa a prop como `node` (não `value`) pra custom types
-// — ver packages/core/src/components/Image.astro do EmDash como referência.
-const { node } = Astro.props;
-const { title, href } = node;
-const displayUrl = `douravita.com.br${href}`;
----
-
-<a href={href} class="leia-tambem-box">
-	<span class="leia-tambem-label">Leia também:</span>
-	<strong class="leia-tambem-title">{title}</strong>
-	<span class="leia-tambem-url">{displayUrl}</span>
-</a>
-
-<style>
-	.leia-tambem-box {
-		display: block;
-		border-left: 4px solid var(--color-accent);
-		padding: var(--spacing-3) var(--spacing-4);
-		margin: var(--spacing-6) 0;
-		background: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg));
-		text-decoration: none;
-		color: inherit;
-		border-radius: 0 var(--radius) var(--radius) 0;
-		transition: background var(--transition-fast);
-	}
-
-	.leia-tambem-box:hover,
-	.leia-tambem-box:focus-visible {
-		background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
-		outline: none;
-	}
-
-	.leia-tambem-label {
-		display: inline;
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-sm);
-		margin-right: var(--spacing-1);
-	}
-
-	.leia-tambem-title {
-		color: var(--color-text);
-		font-weight: 600;
-		font-size: var(--font-size-base);
-		line-height: var(--leading-snug);
-	}
-
-	.leia-tambem-box:hover .leia-tambem-title {
-		color: var(--color-accent);
-	}
-
-	.leia-tambem-url {
-		display: block;
-		color: var(--color-accent);
-		font-size: var(--font-size-xs);
-		margin-top: var(--spacing-1);
-		word-break: break-all;
-	}
-
-	@media (max-width: 640px) {
-		.leia-tambem-box {
-			padding: var(--spacing-2) var(--spacing-3);
-			margin: var(--spacing-4) 0;
-		}
-	}
-</style>
+---
+/**
+ * Box "Leia também" inline pra internal linking contextual no corpo do artigo.
+ * Visual estilo tuasaude.com: capa do post-alvo à esquerda (quando disponível),
+ * label + título + URL à direita; border-left destacado.
+ *
+ * Esse componente é registrado em pages/posts/[slug].astro como custom type
+ * do <PortableText> (`components.type.leiaTambem`). O bloco PortableText
+ * correspondente é emitido pelo pipeline editorial (md_to_portable.py) a
+ * partir do marker `<!-- LEIA_TAMBEM: slug -->` que o writer Opus insere
+ * contextualmente.
+ *
+ * Shape esperado do value:
+ *   { _type: "leiaTambem", slug: "x-y-z", title: "Título...", href: "/posts/x-y-z" }
+ *
+ * A capa é buscada server-side via getEmDashEntry("posts", slug). Falha-soft:
+ * se o post não existir, renderiza só texto (layout antigo) sem quebrar.
+ */
+import { getEmDashEntry } from "emdash";
+import { Image } from "emdash/ui";
+
+interface Node {
+	_type: "leiaTambem";
+	_key: string;
+	slug: string;
+	title: string;
+	href: string;
+}
+interface Props {
+	node: Node;
+}
+// astro-portabletext passa a prop como `node` (não `value`) pra custom types
+// — ver packages/core/src/components/Image.astro do EmDash como referência.
+const { node } = Astro.props;
+const { slug, title, href } = node;
+const displayUrl = `douravita.com.br${href}`;
+
+let featuredImage: any = null;
+try {
+	const { entry: targetPost } = await getEmDashEntry("posts", slug);
+	featuredImage = targetPost?.data?.featured_image ?? null;
+} catch {
+	featuredImage = null;
+}
+const hasImage = !!featuredImage;
+---
+
+<a href={href} class:list={["leia-tambem-box", hasImage && "leia-tambem-box--with-image"]}>
+	{hasImage && (
+		<div class="leia-tambem-image">
+			<Image image={featuredImage} alt={title} />
+		</div>
+	)}
+	<div class="leia-tambem-text">
+		<span class="leia-tambem-label">Leia também:</span>
+		<strong class="leia-tambem-title">{title}</strong>
+		<span class="leia-tambem-url">{displayUrl}</span>
+	</div>
+</a>
+
+<style>
+	.leia-tambem-box {
+		display: block;
+		border-left: 4px solid var(--color-accent);
+		padding: var(--spacing-3) var(--spacing-4);
+		margin: var(--spacing-6) 0;
+		background: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg));
+		text-decoration: none;
+		color: inherit;
+		border-radius: 0 var(--radius) var(--radius) 0;
+		transition: background var(--transition-fast);
+	}
+
+	.leia-tambem-box--with-image {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-3);
+	}
+
+	.leia-tambem-image {
+		flex-shrink: 0;
+		width: 88px;
+		height: 88px;
+		overflow: hidden;
+		border-radius: var(--radius);
+		background: var(--color-bg-subtle);
+	}
+
+	.leia-tambem-image :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
+	.leia-tambem-text {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.leia-tambem-box:hover,
+	.leia-tambem-box:focus-visible {
+		background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+		outline: none;
+	}
+
+	.leia-tambem-label {
+		display: inline;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
+		margin-right: var(--spacing-1);
+	}
+
+	.leia-tambem-title {
+		color: var(--color-text);
+		font-weight: 600;
+		font-size: var(--font-size-base);
+		line-height: var(--leading-snug);
+	}
+
+	.leia-tambem-box:hover .leia-tambem-title {
+		color: var(--color-accent);
+	}
+
+	.leia-tambem-url {
+		display: block;
+		color: var(--color-accent);
+		font-size: var(--font-size-xs);
+		margin-top: var(--spacing-1);
+		word-break: break-all;
+	}
+
+	@media (max-width: 640px) {
+		.leia-tambem-box {
+			padding: var(--spacing-2) var(--spacing-3);
+			margin: var(--spacing-4) 0;
+		}
+		.leia-tambem-image {
+			width: 64px;
+			height: 64px;
+		}
+	}
+</style>
