@@ -266,3 +266,86 @@
 	color: var(--color-text-secondary, var(--color-text));
 	line-height: var(--leading-relaxed);
 }
+
+/* ========== Login gate (resultado liberado só pra leitor logado) ========== */
+.tool-login-gate {
+	text-align: center;
+	padding: var(--spacing-6) var(--spacing-4);
+}
+
+.tool-login-gate-icon {
+	width: 56px;
+	height: 56px;
+	margin: 0 auto var(--spacing-4);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+	border-radius: 50%;
+	color: var(--color-accent);
+}
+
+.tool-login-gate-icon svg {
+	width: 26px;
+	height: 26px;
+}
+
+.tool-login-gate-title {
+	font-size: var(--font-size-xl);
+	font-weight: 700;
+	line-height: var(--leading-tight);
+	margin-bottom: var(--spacing-3);
+	color: var(--color-text);
+}
+
+.tool-login-gate-text {
+	font-size: var(--font-size-base);
+	line-height: var(--leading-relaxed);
+	color: var(--color-text-secondary, var(--color-text));
+	max-width: 52ch;
+	margin: 0 auto var(--spacing-5);
+}
+
+.tool-login-gate-fb {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--spacing-3);
+	padding: var(--spacing-3) var(--spacing-6);
+	background: #1877F2;
+	color: #fff;
+	border-radius: 999px;
+	text-decoration: none;
+	font-weight: 600;
+	font-size: var(--font-size-base);
+	transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.tool-login-gate-fb:hover,
+.tool-login-gate-fb:focus-visible {
+	background: #166FE5;
+	transform: translateY(-1px);
+	outline: none;
+}
+
+.tool-login-gate-fb svg {
+	width: 20px;
+	height: 20px;
+	fill: currentColor;
+}
+
+.tool-login-gate-back {
+	display: block;
+	margin: var(--spacing-4) auto 0;
+	padding: var(--spacing-2) var(--spacing-3);
+	background: transparent;
+	border: none;
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	cursor: pointer;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.tool-login-gate-back:hover {
+	color: var(--color-accent);
+}
