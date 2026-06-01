@@ -298,3 +298,20 @@ body[data-focus-mode="on"] footer {
 .bionic-bold {
 	font-weight: 700;
 }
+
+/* ============================================================
+ * "Voce esta aqui" — categoria ativa sublinhada (2026-06-01)
+ * Destaque visual da categoria atual na nav desktop e no drawer
+ * mobile. Usa aria-current="page" (setado em Base.astro com base
+ * em Astro.url.pathname). Underline real (text-decoration) +
+ * color accent + bold pra sinalizar contexto sem ambiguidade.
+ * ============================================================ */
+.nav-category-item[aria-current="page"],
+.mobile-menu-item[aria-current="page"],
+.mobile-menu-item[aria-current="page"] .mobile-menu-label {
+	color: var(--color-accent) !important;
+	text-decoration: underline !important;
+	text-decoration-thickness: 2px !important;
+	text-underline-offset: 4px !important;
+	font-weight: 700;
+}
