@@ -95,7 +95,7 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 		</Fragment>
 	) : (
 		<Fragment>
-			<p class="reader-auth-bar__pitch">{pitch}</p>
+			{pitch && <p class="reader-auth-bar__pitch">{pitch}</p>}
 			<a href={loginHref} class="reader-auth-bar__login" rel="nofollow">
 				<svg
 					width="18"
