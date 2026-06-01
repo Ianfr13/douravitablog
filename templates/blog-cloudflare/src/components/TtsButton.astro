@@ -89,9 +89,32 @@
 		function pickVoice() {
 			const all = window.speechSynthesis.getVoices();
 			if (!all.length) return null;
-			return all.find(v => v.lang.toLowerCase().startsWith("pt-br")) ||
-				all.find(v => v.lang.toLowerCase().startsWith("pt")) ||
-				all[0];
+			const pt = all.filter(v => v.lang.toLowerCase().startsWith("pt"));
+			if (!pt.length) return all[0];
+			// Keywords que indicam voz neural/qualidade superior
+			const NEURAL = ["natural", "neural", "online", "wavenet", "premium", "enhanced", "studio"];
+			// Vozes pt-BR conhecidas (Edge/Chrome/iOS/Android) com qualidade
+			const GOOD = ["francisca", "antonio", "brenda", "thalita", "yara", "luciana", "paulina", "google português", "google portugues"];
+			const score = (v: SpeechSynthesisVoice) => {
+				const name = v.name.toLowerCase();
+				const lang = v.lang.toLowerCase();
+				let s = 0;
+				// Idioma: pt-BR exato > pt-BR variant > pt-PT > pt-*
+				if (lang === "pt-br") s += 100;
+				else if (lang.startsWith("pt-br")) s += 90;
+				else if (lang === "pt-pt") s += 50;
+				else if (lang.startsWith("pt")) s += 30;
+				// Marca natural/neural no nome (ganho enorme de qualidade)
+				if (NEURAL.some(k => name.includes(k))) s += 60;
+				// Nomes conhecidos de vozes pt-BR boas
+				if (GOOD.some(g => name.includes(g))) s += 40;
+				// Edge 'Microsoft Francisca Online (Natural)' e parentes
+				if (name.includes("microsoft") && name.includes("natural")) s += 20;
+				// Vozes nao-locais (Google/Microsoft cloud) costumam ser melhores
+				if (v.localService === false) s += 15;
+				return s;
+			};
+			return pt.slice().sort((a, b) => score(b) - score(a))[0];
 		}
 
 		// Voices podem carregar async — tenta agora e tambem no evento
