@@ -502,8 +502,9 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	}
 
 	.home-auth :global(.home-auth__bar) {
-		background: color-mix(in srgb, var(--color-accent) 4%, var(--color-bg));
-		border-color: color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
+		background: transparent;
+		border: none;
+		padding: 0;
 	}
 
 	.section {
