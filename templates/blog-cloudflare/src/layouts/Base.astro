@@ -15,15 +15,32 @@ import "../styles/theme.css";
 
 // Categorias visiveis na barra horizontal do header (desktop).
 // Labels CURTOS pra caber entre logo e busca sem enrolar.
-const NAV_CATEGORIES = [
+const NAV_CATEGORIES: { slug: string; label: string; href?: string }[] = [
 	{ slug: "suplementacao", label: "Suplementos" },
 	{ slug: "movimento", label: "Movimento" },
 	{ slug: "cuidador", label: "Cuidador" },
 	{ slug: "saude-mental", label: "Mente" },
 	{ slug: "doencas-cronicas", label: "Doenças" },
-	{ slug: "vida-plena", label: "Vida Plena" },
+	{ slug: "vida-plena", label: "Bem-estar" },
+	{ slug: "ferramentas", label: "Ferramentas", href: "/blog/ferramentas" },
 	{ slug: "noticias", label: "Notícias" },
 ];
+
+// Itens do menu mobile = featured pilares + Ferramentas (inserido antes de Noticias)
+const MOBILE_MENU_ITEMS = (() => {
+	const noticiasIdx = FEATURED_PILLARS.findIndex((p) => p.slug === "noticias");
+	const toMenuItem = (p: typeof FEATURED_PILLARS[number]) => ({
+		slug: p.slug,
+		label: p.label,
+		color: p.color,
+		href: `/blog/category/${p.slug}`,
+	});
+	return [
+		...FEATURED_PILLARS.slice(0, noticiasIdx).map(toMenuItem),
+		{ slug: "ferramentas", label: "Testes e calculadoras", color: "#7B61FF", href: "/blog/ferramentas" },
+		...FEATURED_PILLARS.slice(noticiasIdx).map(toMenuItem),
+	];
+})();
 
 interface Props {
 	title: string;
@@ -178,7 +195,7 @@ const isLoggedIn = !!Astro.locals.user;
 					{NAV_CATEGORIES.map((c) => (
 						<li>
 							<a
-								href={`/blog/category/${c.slug}`}
+								href={c.href ?? `/blog/category/${c.slug}`}
 								class="nav-category-item"
 								aria-current={c.slug === activeCategorySlug ? "page" : undefined}
 							>
@@ -252,10 +269,10 @@ const isLoggedIn = !!Astro.locals.user;
 					</button>
 				</div>
 				<ul class="mobile-menu-list">
-					{FEATURED_PILLARS.map((p) => (
+					{MOBILE_MENU_ITEMS.map((p) => (
 						<li>
 							<a
-								href={`/blog/category/${p.slug}`}
+								href={p.href}
 								class="mobile-menu-item"
 								style={`--pillar-color: ${p.color};`}
 							>

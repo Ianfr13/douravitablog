@@ -1,0 +1,255 @@
+---
+import Base from "../../layouts/Base.astro";
+import "../../styles/tools.css";
+
+const tools = [
+	{
+		href: "/blog/ferramentas/sarcopenia",
+		category: "Quiz",
+		title: "Você está em risco de sarcopenia?",
+		meta: "6 perguntas · 1 min",
+		desc: "Triagem baseada no SARC-F (validado). Resultado em 3 faixas: risco baixo, moderado ou alto.",
+		icon: "clipboard",
+	},
+	{
+		href: "/blog/ferramentas/imc-55",
+		category: "Calculadora",
+		title: "IMC ajustado para 55+",
+		meta: "Idade, peso, altura · 10 segundos",
+		desc: "Calcula seu IMC e usa a faixa saudável adaptada para idosos (22–27, não a clássica 18.5–24.9).",
+		icon: "calculator",
+	},
+	{
+		href: "/blog/ferramentas/proteina-diaria",
+		category: "Calculadora",
+		title: "Proteína diária para 55+",
+		meta: "Peso + nível de atividade · 10 segundos",
+		desc: "Sua meta em gramas/dia + equivalente em ovos, frango, whey e outros alimentos.",
+		icon: "calculator",
+	},
+	{
+		href: "/blog/ferramentas/idade-biologica",
+		category: "Calculadora",
+		title: "Idade biológica vs cronológica",
+		meta: "10 hábitos · 2 min",
+		desc: "Combina 10 fatores de estilo de vida (sono, dieta, exercício, social...) e estima sua idade biológica.",
+		icon: "calculator",
+	},
+];
+
+const title = "Ferramentas para 55+";
+const description =
+	"Quiz, calculadoras e autoavaliações pensados pra quem tem 55+. Resultado em segundos, sem cadastro, sem login.";
+
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, s-maxage=60, stale-while-revalidate=86400",
+);
+---
+
+<Base
+	title={title}
+	description={description}
+	canonical={`${Astro.url.origin}/blog/ferramentas`}
+>
+	<div class="tools-index-page">
+		<nav class="tool-breadcrumb" aria-label="Navegação estrutural">
+			<a href="/blog">Blog</a>
+			<span aria-hidden="true">›</span>
+			<span aria-current="page">Ferramentas</span>
+		</nav>
+
+		<header class="tools-index-header">
+			<h1 class="tools-index-title">Ferramentas para 55+</h1>
+			<p class="tools-index-subtitle">
+				Quiz, calculadoras e autoavaliações pensados pra quem tem 55+.
+				Cada uma leva poucos minutos, dá resultado na hora e não pede
+				cadastro nem login.
+			</p>
+		</header>
+
+		<div class="tools-index-grid">
+			{tools.map((t) => (
+				<a href={t.href} class="tools-index-card">
+					<span class="tools-index-icon" aria-hidden="true">
+						{t.icon === "clipboard" ? (
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="3" y="4" width="18" height="16" rx="2"></rect>
+								<path d="M9 9h6"></path>
+								<path d="M9 13h6"></path>
+								<path d="M9 17h3"></path>
+							</svg>
+						) : (
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="4" y="2" width="16" height="20" rx="2"></rect>
+								<line x1="8" y1="6" x2="16" y2="6"></line>
+								<line x1="8" y1="10" x2="10" y2="10"></line>
+								<line x1="14" y1="10" x2="16" y2="10"></line>
+								<line x1="8" y1="14" x2="10" y2="14"></line>
+								<line x1="14" y1="14" x2="16" y2="14"></line>
+								<line x1="8" y1="18" x2="10" y2="18"></line>
+								<line x1="14" y1="18" x2="16" y2="18"></line>
+							</svg>
+						)}
+					</span>
+					<div class="tools-index-body">
+						<span class="tools-index-eyebrow">{t.category}</span>
+						<h2 class="tools-index-card-title">{t.title}</h2>
+						<p class="tools-index-desc">{t.desc}</p>
+						<span class="tools-index-meta">{t.meta}</span>
+					</div>
+					<svg class="tools-index-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<line x1="5" y1="12" x2="19" y2="12"></line>
+						<polyline points="12 5 19 12 12 19"></polyline>
+					</svg>
+				</a>
+			))}
+		</div>
+
+		<aside class="tool-disclaimer">
+			<p>
+				Estas ferramentas são educativas, baseadas em literatura
+				científica (SARC-F, PROT-AGE, Winter et al. 2014, Lifestyle
+				Medicine). Não substituem avaliação médica individualizada.
+				Em caso de dúvida sobre seu resultado, procure um
+				nutricionista, geriatra ou seu médico de confiança.
+			</p>
+		</aside>
+	</div>
+</Base>
+
+<style>
+	.tools-index-page {
+		max-width: 920px;
+		margin: 0 auto;
+		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+	}
+
+	.tools-index-header {
+		margin-bottom: var(--spacing-8);
+		max-width: 60ch;
+	}
+
+	.tools-index-title {
+		font-size: clamp(1.75rem, 5vw, 2.5rem);
+		font-weight: 700;
+		line-height: var(--leading-tight);
+		letter-spacing: var(--tracking-tight);
+		margin-bottom: var(--spacing-3);
+		color: var(--color-text);
+	}
+
+	.tools-index-subtitle {
+		font-size: var(--font-size-lg);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+	}
+
+	.tools-index-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-4);
+	}
+
+	@media (min-width: 720px) {
+		.tools-index-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.tools-index-card {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		gap: var(--spacing-4);
+		align-items: start;
+		padding: var(--spacing-5);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+		border-radius: var(--radius-lg);
+		text-decoration: none;
+		color: inherit;
+		transition: transform var(--transition-fast),
+			box-shadow var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.tools-index-card:hover,
+	.tools-index-card:focus-visible {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+		border-color: var(--color-accent);
+		outline: none;
+	}
+
+	.tools-index-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: var(--radius-md);
+		background: rgba(0, 0, 0, 0.04);
+		color: var(--color-accent);
+		flex-shrink: 0;
+	}
+
+	.tools-index-icon svg {
+		width: 24px;
+		height: 24px;
+	}
+
+	.tools-index-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+		min-width: 0;
+	}
+
+	.tools-index-eyebrow {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wider);
+		color: var(--color-accent);
+	}
+
+	.tools-index-card-title {
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		line-height: var(--leading-snug);
+		color: var(--color-text);
+		margin: 0;
+	}
+
+	.tools-index-desc {
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.tools-index-meta {
+		font-size: var(--font-size-xs);
+		color: var(--color-text-muted, var(--color-text-secondary));
+		font-weight: 500;
+	}
+
+	.tools-index-arrow {
+		flex-shrink: 0;
+		width: 20px;
+		height: 20px;
+		color: var(--color-text-muted, var(--color-text-secondary));
+		opacity: 0.5;
+		align-self: center;
+		transition: transform var(--transition-fast),
+			opacity var(--transition-fast),
+			color var(--transition-fast);
+	}
+
+	.tools-index-card:hover .tools-index-arrow,
+	.tools-index-card:focus-visible .tools-index-arrow {
+		transform: translateX(4px);
+		opacity: 1;
+		color: var(--color-accent);
+	}
+</style>
