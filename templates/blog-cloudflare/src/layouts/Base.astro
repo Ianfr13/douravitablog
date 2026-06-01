@@ -118,7 +118,8 @@ const pageCtx = createPublicPageContext({
 
 // Detecta slug da categoria atual a partir do path /blog/category/<slug>
 // pra destacar o item correspondente no menu fixo do header (desktop).
-const _categoryMatch = Astro.url.pathname.match(/^\/blog\/category\/([^/]+)/);
+const _categoryMatch = Astro.url.pathname.match(/(?:^|\/blog)\/category\/([^/]+)/);
+const normPath = (s) => s.replace(/^\/blog/, "").replace(/\/+$/, "") || "/";
 const activeCategorySlug = _categoryMatch ? _categoryMatch[1] : null;
 
 // Check if user is logged in (for showing admin link)
@@ -278,7 +279,7 @@ const isLoggedIn = !!Astro.locals.user;
 								href={p.href}
 								class="mobile-menu-item"
 								style={`--pillar-color: ${p.color};`}
-								aria-current={Astro.url.pathname === p.href ? "page" : undefined}
+								aria-current={normPath(Astro.url.pathname) === normPath(p.href) ? "page" : undefined}
 							>
 								<span class="mobile-menu-label">{p.label}</span>
 								<svg class="mobile-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
