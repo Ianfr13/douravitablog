@@ -237,8 +237,9 @@ Astro.response.headers.set(
 				</div>
 				<h2 class="tool-login-gate-title">Faça login pra ver seu resultado</h2>
 				<p class="tool-login-gate-text">
-					Pra liberar o resultado, entre com seu Facebook. O cálculo acontece no
-					seu navegador — não enviamos nada pra nenhum servidor.
+					Entre com seu Facebook pra ver. Suas respostas ficam salvas — quando
+					voltar, o resultado aparece automaticamente. Nada é enviado pra
+					nenhum servidor.
 				</p>
 				<a href="#" class="tool-login-gate-fb" data-fb-login>
 					<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -293,6 +294,7 @@ Astro.response.headers.set(
 		const gateEl = root.querySelector("[data-login-gate]") as HTMLElement | null;
 		const gateBackBtn = root.querySelector("[data-gate-back]") as HTMLButtonElement | null;
 		gateBackBtn?.addEventListener("click", () => {
+			try { sessionStorage.removeItem(`tool-form:${window.location.pathname}`); } catch {}
 			if (gateEl) gateEl.hidden = true;
 			if (form) form.hidden = false;
 		});
@@ -347,6 +349,12 @@ Astro.response.headers.set(
 			}
 
 			if (!isReaderLoggedIn()) {
+				try {
+					const fd2 = new FormData(form);
+					const obj: Record<string, string> = {};
+					for (const [k, v] of fd2.entries()) obj[k] = v as string;
+					sessionStorage.setItem(`tool-form:${window.location.pathname}`, JSON.stringify(obj));
+				} catch {}
 				form.hidden = true;
 				if (gateEl) gateEl.hidden = false;
 				return;
@@ -406,5 +414,30 @@ Astro.response.headers.set(
 			if (form) form.hidden = false;
 			if (result) result.hidden = true;
 		});
+		function restoreFormState() {
+			const key = `tool-form:${window.location.pathname}`;
+			const saved = sessionStorage.getItem(key);
+			if (!saved) return;
+			if (!isReaderLoggedIn()) return;
+			try {
+				const obj = JSON.parse(saved) as Record<string, string>;
+				for (const [name, value] of Object.entries(obj)) {
+					if (!form) continue;
+					const fields = form.querySelectorAll<HTMLInputElement>(`[name="${name}"]`);
+					if (fields.length === 0) continue;
+					if (fields.length === 1 && fields[0]!.type !== "radio") {
+						fields[0]!.value = value;
+					} else {
+						fields.forEach((f) => { f.checked = f.value === value; });
+					}
+				}
+				sessionStorage.removeItem(key);
+				form?.requestSubmit?.();
+			} catch {
+				sessionStorage.removeItem(key);
+			}
+		}
+		restoreFormState();
+
 	}
 </script>
