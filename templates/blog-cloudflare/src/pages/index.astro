@@ -453,16 +453,25 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	/* Intro de boas-vindas no topo da home — reforça que isto é o BLOG
 	 * (sinal de SEO pra busca "blog douravita"). Visualmente discreta,
 	 * separa-se do hero "Assuntos do momento" via borda inferior fina. */
+	/* Banner de boas-vindas: gradiente sutil com a cor accent (oleo/marrom)
+	 * para destacar visualmente a intro sem comprometer a leitura. Cor de
+	 * accent em opacidade baixa funciona em ambos os temas (light/dark)
+	 * porque color-mix usa --color-bg como base. */
 	.home-intro {
 		margin-bottom: var(--spacing-10);
-		padding-bottom: var(--spacing-6);
-		border-bottom: 1px solid var(--color-border-subtle);
+		padding: var(--spacing-10) var(--spacing-6);
+		border-radius: var(--radius-lg);
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--color-accent) 14%, var(--color-bg)) 0%,
+			color-mix(in srgb, var(--color-accent) 4%, var(--color-bg)) 100%
+		);
 	}
 
 	.home-intro-text {
 		font-size: var(--font-size-base);
 		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
+		color: var(--color-text);
 		max-width: 760px;
 		margin-left: auto;
 		margin-right: auto;
@@ -475,6 +484,9 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	}
 
 	@media (min-width: 700px) {
+		.home-intro {
+			padding: var(--spacing-12) var(--spacing-10);
+		}
 		.home-intro-text {
 			font-size: var(--font-size-lg);
 		}
