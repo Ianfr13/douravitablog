@@ -174,6 +174,28 @@ const isLoggedIn = !!Astro.locals.user;
 				document.documentElement.setAttribute("data-font-size", v);
 			})();
 		</script>
+		<script is:inline>
+			// Limpa hash orfa: se a URL tem #algo mas a pagina nao tem elemento
+			// com esse id, remove a hash sem rolar. Anchors validas (ex: #faq em
+			// posts) continuam funcionando porque querySelector acha o elemento.
+			(function () {
+				function cleanOrphanHash() {
+					var hash = window.location.hash;
+					if (!hash || hash.length < 2) return;
+					try {
+						if (!document.querySelector(hash)) {
+							var clean = window.location.pathname + window.location.search;
+							history.replaceState(null, "", clean);
+						}
+					} catch (e) { /* selector invalido, ignora */ }
+				}
+				if (document.readyState === "loading") {
+					document.addEventListener("DOMContentLoaded", cleanOrphanHash);
+				} else {
+					cleanOrphanHash();
+				}
+			})();
+		</script>
 	</head>
 	<body>
 		<EmDashBodyStart page={pageCtx} />
