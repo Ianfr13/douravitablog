@@ -129,7 +129,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 										aria-label={post.data.title}
 									>
 										<div class="card-large-image">
-											<Image image={post.data.featured_image} />
+											<Image image={post.data.featured_image} alt={post.data.title} />
 										</div>
 									</a>
 								)}
@@ -169,7 +169,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 										class="card-small-image-link"
 										aria-label={post.data.title}
 									>
-										<Image image={post.data.featured_image} />
+										<Image image={post.data.featured_image} alt={post.data.title} />
 									</a>
 								)}
 								<div class="card-small-body">
@@ -352,7 +352,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 											aria-label={post.data.title}
 										>
 											<div class="card-tile-image">
-												<Image image={post.data.featured_image} />
+												<Image image={post.data.featured_image} alt={post.data.title} />
 											</div>
 										</a>
 									)}

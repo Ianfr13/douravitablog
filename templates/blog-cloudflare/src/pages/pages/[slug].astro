@@ -22,10 +22,36 @@ Astro.response.headers.set(
 	"Cache-Control",
 	"public, s-maxage=60, stale-while-revalidate=86400",
 );
+
+// A collection `pages` no EmDash so tem title + content (sem campo
+// description). Pra nao deixar meta description vazia (e <title> sem
+// snippet bom no SERP/WhatsApp preview), extraimos do primeiro paragrafo
+// nao-vazio do PortableText. Limite ~155 chars (recomendacao SERP).
+function extractDescription(content: any, maxChars = 155): string | null {
+	if (!Array.isArray(content)) return null;
+	let text = "";
+	for (const block of content) {
+		if (block?._type !== "block") continue;
+		const blockText = (block.children || [])
+			.map((c: any) => (c && typeof c.text === "string") ? c.text : "")
+			.join("")
+			.trim();
+		if (!blockText) continue;
+		text += (text ? " " : "") + blockText;
+		if (text.length >= maxChars) break;
+	}
+	if (!text) return null;
+	if (text.length > maxChars) {
+		text = text.slice(0, maxChars - 1).replace(/\s+\S*$/, "") + "…";
+	}
+	return text;
+}
+const description = extractDescription(page.data.content);
 ---
 
 <Base
 	title={page.data.title}
+	description={description}
 	content={{ collection: "pages", id: page.data.id, slug }}
 	canonical={`${Astro.url.origin}/blog/pages/${slug}`}
 >
