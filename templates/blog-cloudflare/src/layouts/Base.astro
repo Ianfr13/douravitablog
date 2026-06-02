@@ -798,12 +798,11 @@ const isLoggedIn = !!Astro.locals.user;
 				 * Regra global sem dependencia de scope cid garante limite. */
 				.site-header .site-logo-img,
 				.site-footer .footer-logo-img {
-					max-height: 110px;
-					width: auto;
+					max-height: 56px;
 				}
 				@media (max-width: 768px) {
 					.site-header .site-logo-img {
-						max-height: 96px;
+						max-height: 44px;
 					}
 				}
 
@@ -891,10 +890,12 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.site-logo-img {
-				height: 110px;
-				width: auto;
+				height: 56px;
+				width: 120px;
 				display: block;
-				margin: -23px 0;
+				margin: 0;
+				object-fit: cover;
+				object-position: center;
 			}
 
 			.nav-categories {
@@ -1598,8 +1599,9 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 
 				.site-logo-img {
-					height: 84px;
-					margin: -10px 0;
+					height: 44px;
+					width: 94px;
+					margin: 0;
 				}
 
 				.site-title {
