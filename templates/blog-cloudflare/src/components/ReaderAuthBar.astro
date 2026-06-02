@@ -20,6 +20,11 @@ interface Props {
 	pitch?: string;
 	/** Label exibido antes do nome quando logado. Default: "Comentando como". */
 	loggedLabel?: string;
+	/** Quando true, NAO renderiza nada se o leitor estiver anonimo. Util
+	 * enquanto o app FB nao serve usuario comum: anonimo ve direto o form
+	 * anonimo (sem botao "Continuar com Facebook" confundindo); logado
+	 * (admin/tester) continua vendo "Comentando como X | Sair". */
+	hideWhenAnonymous?: boolean;
 }
 
 const {
@@ -27,6 +32,7 @@ const {
 	class: className,
 	pitch = "Entre com o Facebook pra comentar mais rapido (foto + nome do seu perfil).",
 	loggedLabel = "Comentando como",
+	hideWhenAnonymous = false,
 } = Astro.props;
 
 let session = null;
@@ -45,7 +51,12 @@ try {
 const returnTo = returnToProp ?? Astro.url.pathname + Astro.url.search;
 const loginHref = `/blog/api/auth/facebook/login?returnTo=${encodeURIComponent(returnTo)}`;
 const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
+
+// Esconde o componente inteiro quando anonimo + flag setada.
+const shouldRender = !!session || !hideWhenAnonymous;
 ---
+
+{shouldRender && (
 
 <script is:inline>
 	// Reader auth — duas funcoes em um:
@@ -112,6 +123,7 @@ const logoutHref = `/blog/api/auth/logout?returnTo=${encodeURIComponent(returnTo
 		</Fragment>
 	)}
 </div>
+)}
 
 <style>
 	.reader-auth-bar {

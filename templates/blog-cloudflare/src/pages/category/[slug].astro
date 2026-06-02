@@ -48,6 +48,23 @@ const filteredPosts = posts.map((post) => ({
 	post,
 	tags: tagsByEntry.get(post.data.id) ?? [],
 }));
+
+// Breadcrumbs: Inicio > Categoria. Render visual + JSON-LD BreadcrumbList
+// pro Google mostrar a trilha no SERP. Mesmo padrao do post.
+const breadcrumbItems = [
+	{ name: "Início", url: `${Astro.url.origin}/blog` },
+	{ name: term.label, url: `${Astro.url.origin}/blog/category/${term.slug}` },
+];
+const breadcrumbSchema = {
+	"@context": "https://schema.org",
+	"@type": "BreadcrumbList",
+	itemListElement: breadcrumbItems.map((item, i) => ({
+		"@type": "ListItem",
+		position: i + 1,
+		name: item.name,
+		item: item.url,
+	})),
+};
 ---
 
 <Base
@@ -55,7 +72,24 @@ const filteredPosts = posts.map((post) => ({
 	description={`Todos os artigos em ${term.label}`}
 	canonical={`${Astro.url.origin}/blog/category/${term.slug}`}
 >
+	<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
 	<section class="archive-section">
+		<nav class="breadcrumbs" aria-label="Trilha de navegação">
+			<ol class="breadcrumbs-list">
+				{breadcrumbItems.map((item, i) => (
+					<li class="breadcrumbs-item">
+						{i < breadcrumbItems.length - 1 ? (
+							<>
+								<a href={item.url}>{item.name}</a>
+								<span class="breadcrumbs-sep" aria-hidden="true">›</span>
+							</>
+						) : (
+							<span aria-current="page">{item.name}</span>
+						)}
+					</li>
+				))}
+			</ol>
+		</nav>
 		<header class="archive-header">
 			<span class="archive-label">Categoria</span>
 			<h1 class="archive-title">{term.label}</h1>
@@ -92,6 +126,52 @@ const filteredPosts = posts.map((post) => ({
 		max-width: var(--wide-width);
 		margin: 0 auto;
 		padding: var(--spacing-12) var(--spacing-6);
+	}
+
+	.breadcrumbs {
+		margin-bottom: var(--spacing-6);
+	}
+
+	.breadcrumbs-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--spacing-1);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.breadcrumbs-item {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-1);
+		min-width: 0;
+	}
+
+	.breadcrumbs-item a {
+		color: var(--color-muted);
+		text-decoration: none;
+		transition: color var(--transition-fast);
+	}
+
+	.breadcrumbs-item a:hover {
+		color: var(--color-accent);
+		text-decoration: underline;
+	}
+
+	.breadcrumbs-item [aria-current="page"] {
+		color: var(--color-text-secondary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 40ch;
+	}
+
+	.breadcrumbs-sep {
+		color: var(--color-border);
 	}
 
 	.archive-header {

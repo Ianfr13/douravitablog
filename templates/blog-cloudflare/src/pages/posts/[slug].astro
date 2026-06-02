@@ -485,7 +485,8 @@ const faqSchema = faqItems.length >= 2
 					<CommentsListPT collection="posts" contentId={post.data.id} threaded />
 					<div class="comments-form-wrapper">
 						<h3 class="comments-form-title">Deixe seu comentário</h3>
-						<ReaderAuthBar />
+						<p class="comments-form-hint">Anônimo OK — e-mail não é público.</p>
+						<ReaderAuthBar hideWhenAnonymous={true} />
 						<CommentFormPT collection="posts" contentId={post.data.id} />
 					</div>
 				</div>
@@ -1476,6 +1477,12 @@ const faqSchema = faqItems.length >= 2
 		font-weight: 600;
 		color: var(--color-text);
 		margin: 0;
+	}
+
+	.comments-form-hint {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		margin: 0 0 var(--spacing-2);
 	}
 
 	/* More posts section */
