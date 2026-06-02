@@ -180,10 +180,13 @@ body {
 
 /* Tap targets >=44x44px (WCAG 2.5.5 AAA mobile). Vence as scoped
  * rules de Base.astro/index.astro via !important — a11y floor
- * non-negotiable pra mao tremula 55+. */
-.theme-btn {
-	min-width: 44px !important;
-	min-height: 44px !important;
+ * non-negotiable pra mao tremula 55+. Escopado pra mobile/touch:
+ * desktop usa mouse, botoes podem voltar ao tamanho original. */
+@media (max-width: 768px) {
+	.theme-btn {
+		min-width: 44px !important;
+		min-height: 44px !important;
+	}
 }
 
 .social-btn {
