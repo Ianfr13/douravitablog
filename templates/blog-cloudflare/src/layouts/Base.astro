@@ -813,6 +813,17 @@ const isLoggedIn = !!Astro.locals.user;
 					}
 				}
 
+				/* Desktop: nav mais alto pra logo nao ficar espremida + logo 
+				 * posicionada um pouco abaixo do topo da barra. */
+				@media (min-width: 769px) {
+					:root {
+						--nav-height: 140px;
+					}
+					.site-logo-img {
+						margin: 16px 0 0 0;
+					}
+				}
+
 				/* Theme-aware logo swap: light = texto preto, dark = texto branco,
 				 * triangulo azul + asterisco amarelo iguais nas duas.
 				 * !important porque as regras scoped do Astro (.site-logo-img
