@@ -88,7 +88,7 @@ const shareFbHref = shareData
 	? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}`
 	: null;
 const { siteTitle, siteTagline, siteLogo } = resolveBlogSiteIdentity(await getSiteSettings());
-const LOGO_DARK_URL = "/_emdash/api/media/file/01KT4RA0S3VN8TC35S15C4H28K.png";
+const LOGO_DARK_URL = "/_emdash/api/media/file/01KT1V2W48WMSTDC04TV90CNB1.png";
 // If title already includes site title (from getSeoMeta), use as-is
 const _computedFullTitle = title.includes(siteTitle) ? title : `${title} — ${siteTitle}`;
 const fullTitle = fullTitleOverride ?? _computedFullTitle;
@@ -891,9 +891,11 @@ const isLoggedIn = !!Astro.locals.user;
 
 			.site-logo-img {
 				height: 56px;
-				width: auto;
+				width: 120px;
 				display: block;
 				margin: 0;
+				object-fit: cover;
+				object-position: center;
 			}
 
 			.nav-categories {
@@ -1598,7 +1600,7 @@ const isLoggedIn = !!Astro.locals.user;
 
 				.site-logo-img {
 					height: 44px;
-					width: auto;
+					width: 94px;
 					margin: 0;
 				}
 
