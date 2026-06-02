@@ -433,6 +433,11 @@ Astro.response.headers.set(
 				}
 				sessionStorage.removeItem(key);
 				form?.requestSubmit?.();
+				// Apos restore pos-login: rola suavemente pro resultado pra
+				// o usuario voltar direto pra onde ele queria ver.
+				requestAnimationFrame(() => {
+					result?.scrollIntoView({ behavior: "smooth", block: "start" });
+				});
 			} catch {
 				sessionStorage.removeItem(key);
 			}
