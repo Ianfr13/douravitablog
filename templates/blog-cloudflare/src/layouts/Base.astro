@@ -88,7 +88,7 @@ const shareFbHref = shareData
 	? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}`
 	: null;
 const { siteTitle, siteTagline, siteLogo } = resolveBlogSiteIdentity(await getSiteSettings());
-const LOGO_DARK_URL = "/_emdash/api/media/file/01KT1V2W48WMSTDC04TV90CNB1.png";
+const LOGO_DARK_URL = "/_emdash/api/media/file/01KT9YKAFQ0FRV6VWRXFX7M0E7.png";
 // siteTitle inclui o tagline ("Blog DouraVita - Vitalidade Ativa..."), o que
 // estourava o limite SERP (~60 chars) quando appended em titles de paginas
 // internas. Usamos a versao curta (antes do primeiro " - ") nesses appends.
@@ -839,11 +839,11 @@ const isLoggedIn = !!Astro.locals.user;
 				 * posicionada um pouco abaixo do topo da barra. */
 				@media (min-width: 769px) {
 					:root {
-						--nav-height: 156px;
+						--nav-height: 84px;
 					}
 					.site-logo-img {
 						height: 64px;
-						margin: 50px 0 0 0;
+						margin: 0; height: 44px; max-width: none; flex-shrink: 0;
 					}
 				}
 
@@ -918,7 +918,7 @@ const isLoggedIn = !!Astro.locals.user;
 				height: var(--nav-height);
 			}
 
-			.site-title {
+			.site-title { flex-shrink: 0;
 				font-size: var(--font-size-lg);
 				font-weight: 600;
 				color: var(--color-text);
@@ -934,7 +934,7 @@ const isLoggedIn = !!Astro.locals.user;
 				height: 110px;
 				width: auto;
 				display: block;
-				margin: -23px 0;
+				margin: 0; height: 44px; max-width: none; flex-shrink: 0;
 			}
 
 			.nav-categories {
@@ -1639,10 +1639,10 @@ const isLoggedIn = !!Astro.locals.user;
 
 				.site-logo-img {
 					height: 84px;
-					margin: -10px 0;
+					margin: 0; height: 40px; max-width: none; flex-shrink: 0;
 				}
 
-				.site-title {
+				.site-title { flex-shrink: 0;
 					order: 1;
 					flex: 1 1 100%;
 					font-size: var(--font-size-base);
