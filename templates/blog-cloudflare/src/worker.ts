@@ -195,6 +195,18 @@ function redirectLegacyPublicPath(request: Request): Response | null {
 	return Response.redirect(url.toString(), 301);
 }
 
+// /blog/index.html (home do site estatico antigo) ficou indexada e rankeia
+// pra "blog douravita", mas hoje devolve 404 — o Google nem promove a home
+// nova porque a canonica historica dele quebrou. 301 consolida o historico
+// no /blog. Cobre tambem qualquer /blog/.../index.html legado.
+function redirectIndexHtml(request: Request): Response | null {
+	if (request.method !== "GET" && request.method !== "HEAD") return null;
+	const url = new URL(request.url);
+	if (!url.pathname.endsWith("/index.html")) return null;
+	url.pathname = url.pathname.slice(0, -"/index.html".length) || "/blog";
+	return Response.redirect(url.toString(), 301);
+}
+
 function stripBlogPrefixForAstro(request: Request): Request {
 	const url = new URL(request.url);
 	const match = url.pathname.match(/^\/blog\/([^/]+)(\/.*)?$/);
@@ -304,6 +316,10 @@ export default {
 
 		const redirect = redirectLegacyPublicPath(request);
 		if (redirect) return redirect;
+
+		// /blog/index.html legado (Google travado nela, hoje 404) -> 301 /blog.
+		const indexHtmlRedirect = redirectIndexHtml(request);
+		if (indexHtmlRedirect) return indexHtmlRedirect;
 
 		const kind = classifyCacheable(request);
 		const handlerRequest = stripBlogPrefixForAstro(request);
