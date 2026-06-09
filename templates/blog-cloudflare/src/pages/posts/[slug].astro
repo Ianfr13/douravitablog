@@ -249,6 +249,32 @@ const faqSchema = faqItems.length >= 2
 		})),
 	}
 	: null;
+
+// MedicalWebPage: sinal YMYL tradicional (rich result + confianca) para pagina
+// de saude. NAO e alavanca de "AI search" — e o sinal que o pipeline ja construia
+// (seo.build_jsonld_medical) e o md_to_portable descartava; resgatado aqui, onde
+// de fato renderiza. reviewedBy = Organization institucional, batendo com a byline
+// visivel "Curadoria DouraVita" (Google exige structured data == conteudo visivel).
+const medicalSchema = {
+	"@context": "https://schema.org",
+	"@type": "MedicalWebPage",
+	name: post.data.title,
+	description: (typeof post.data.description === "string" && post.data.description.trim()) || seo.description,
+	url: pageUrl,
+	inLanguage: "pt-BR",
+	lastReviewed: post.data.updatedAt.toISOString(),
+	datePublished: post.data.publishedAt?.toISOString() ?? undefined,
+	reviewedBy: {
+		"@type": "Organization",
+		name: (typeof post.data.author_name === "string" && post.data.author_name.trim()) || "Curadoria DouraVita",
+		url: `${Astro.url.origin}/blog`,
+	},
+	audience: {
+		"@type": "MedicalAudience",
+		audienceType: "Patient",
+		suggestedMinAge: 55,
+	},
+};
 ---
 
 <Base
@@ -272,6 +298,7 @@ const faqSchema = faqItems.length >= 2
 		{faqSchema && (
 			<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 		)}
+		<script type="application/ld+json" set:html={JSON.stringify(medicalSchema)} />
 		{/* Three-column layout */}
 		<div class="article-grid">
 			{/* Left gutter: Meta information */}
