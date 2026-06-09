@@ -32,6 +32,9 @@ const CACHEABLE_HTML_PATTERNS = [
 	/^\/blog\/ferramentas(\/|$)/,
 	/^\/blog\/sitemap\.xml$/,
 	/^\/blog\/rss\.xml$/,
+	// llms.txt (llmstxt.org): cacheia tanto a raiz quanto a versao /blog.
+	/^\/llms\.txt$/,
+	/^\/blog\/llms\.txt$/,
 	/^\/posts(\/|$)/,
 	/^\/tag\//,
 	/^\/category\//,
@@ -157,6 +160,7 @@ const BLOG_PREFIX_PATHS = [
 	"ferramentas",
 	"sitemap.xml",
 	"rss.xml",
+	"llms.txt",
 	"search",
 	// Rotas Astro custom do blog (reader auth Facebook + endpoint proxy
 	// de comentarios). Resolvem em src/pages/api/* — Astro nao adiciona
