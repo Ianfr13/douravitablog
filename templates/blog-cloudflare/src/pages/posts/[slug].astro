@@ -129,15 +129,59 @@ const [tags, categories, { entries: recentPosts }] = await Promise.all([
 	}),
 ]);
 const category = categories[0];
-const otherPosts = recentPosts.filter((p) => p.id !== post.id).slice(0, 3);
 
-// Single batched query for related-posts tags, rather than one
-// getEntryTerms() call per related post.
+// "Continue lendo" por afinidade de tema, não por recência: primeiro os
+// irmãos de cluster (posts que dividem tags com este), depois o mesmo pilar
+// (categoria), e recentes só como fallback. O slug de sub-cluster do pipeline
+// não chega ao EmDash, então tags compartilhadas são o sinal vivo mais
+// próximo de "mesmo cluster".
+const tagSlugs = tags.map((t) => t.slug);
+const [tagPool, categoryPool] = await Promise.all([
+	tagSlugs.length > 0
+		? getEmDashCollection("posts", {
+				where: { tag: tagSlugs },
+				orderBy: { published_at: "desc" },
+				limit: 8,
+			}).then((r) => r.entries)
+		: [],
+	category
+		? getEmDashCollection("posts", {
+				where: { category: category.slug },
+				orderBy: { published_at: "desc" },
+				limit: 8,
+			}).then((r) => r.entries)
+		: [],
+]);
+
+// Candidatos na ordem dos tiers; o dedup mantém a primeira aparição (tier
+// mais forte). Cada pool já vem ordenado por data, então dentro de cada tier
+// vale a recência.
+const seenIds = new Set([post.id]);
+const candidates = [...tagPool, ...categoryPool, ...recentPosts].filter((p) => {
+	if (seenIds.has(p.id)) return false;
+	seenIds.add(p.id);
+	return true;
+});
+
+// Single batched query for candidates' tags, rather than one
+// getEntryTerms() call per candidate.
 const otherTagsByEntry = await getTermsForEntries(
 	"posts",
-	otherPosts.map((p) => p.data.id),
+	candidates.map((p) => p.data.id),
 	"tag",
 );
+
+// Mais tags em comum = mais irmão de cluster. O sort é estável, então
+// empates (overlap 0: pilar e recentes) preservam a ordem tier→recência.
+const tagSlugSet = new Set(tagSlugs);
+const overlapOf = (p: (typeof candidates)[number]) =>
+	(otherTagsByEntry.get(p.data.id) ?? []).filter((t) => tagSlugSet.has(t.slug))
+		.length;
+const otherPosts = candidates
+	.map((p) => ({ p, overlap: overlapOf(p) }))
+	.sort((a, b) => b.overlap - a.overlap)
+	.slice(0, 3)
+	.map((x) => x.p);
 const otherCategoriesByEntry = await getTermsForEntries(
 	"posts",
 	otherPosts.map((p) => p.data.id),
