@@ -194,6 +194,11 @@ const otherPostsWithTags = otherPosts.map((p) => ({
 	bylines: p.data.bylines ?? [],
 }));
 
+// Indice do cluster (mobile): irmaos de categoria listados no fim do
+// conteudo. No desktop a sidebar cobre essa navegacao; <=1100px ela some e
+// o leitor fica sem rota pro resto da serie (beco sem saida do funil).
+const clusterIndexPosts = categoryPool.filter((p) => p.id !== post.id).slice(0, 6);
+
 const dateFmt: Intl.DateTimeFormatOptions = {
 	year: "numeric",
 	month: "long",
@@ -537,11 +542,40 @@ const medicalSchema = {
 				    posicao salva valida no localStorage). Fase 8 a11y. */}
 				<ReadingPosition />
 
+				{/* Sumario dobravel do mobile — a sidebar com o Sumario some <=1100px.
+				    <details> nativo (zero JS no toggle); a lista e populada pelo buildToc()
+				    e o bloco so aparece (hidden removido) se houver headings. */}
+				<details class="toc-mobile" id="toc-mobile" hidden>
+					<summary class="toc-mobile-summary">
+						<span class="toc-mobile-label">Nesta página</span>
+						<svg class="toc-mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+					</summary>
+					<div class="toc-content" id="toc-mobile-content"></div>
+				</details>
+
 				<div class="article-content">
 					<PortableText value={post.data.content} components={portableTextComponents} />
 				</div>
 
 				<TrustBadge variant="block" />
+
+				{
+					category && clusterIndexPosts.length > 0 && (
+						<nav class="cluster-index" aria-label={`Mais artigos na categoria ${category.label}`}>
+							<h2 class="cluster-index-title">Mais sobre {category.label}</h2>
+							<ul class="cluster-index-list">
+								{clusterIndexPosts.map((p) => (
+									<li>
+										<a href={`/blog/posts/${p.slug ?? p.id}`}>{p.data.title}</a>
+									</li>
+								))}
+							</ul>
+							<a class="cluster-index-all" href={`/blog/category/${category.slug}`}>
+								Ver todos em {category.label} ›
+							</a>
+						</nav>
+					)
+				}
 
 				<FeedbackWidget
 					contentId={post.data.id}
@@ -700,6 +734,19 @@ const medicalSchema = {
 
 			tocContainer.appendChild(list);
 
+			// Clona a lista pro Sumario dobravel do mobile (a sidebar some <=1100px).
+			const mobileBox = document.getElementById("toc-mobile-content");
+			const mobileDetails = document.getElementById("toc-mobile");
+			if (mobileBox && mobileDetails) {
+				mobileBox.appendChild(list.cloneNode(true));
+				mobileDetails.hidden = false;
+				// Fecha o sumario ao escolher uma secao, senao ele continua aberto no topo.
+				mobileBox.addEventListener("click", (e) => {
+					if ((e.target as HTMLElement | null)?.closest("a")) mobileDetails.removeAttribute("open");
+				});
+				markInlineSummaryForMobile();
+			}
+
 			// Highlight current section on scroll
 			const observer = new IntersectionObserver(
 				(entries) => {
@@ -749,9 +796,67 @@ const medicalSchema = {
 			}
 		}
 
+		const normText = (s: string) =>
+			s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+		// A secao "Sumario" inline do corpo (pillars) fica redundante no mobile com
+		// o Sumario dobravel — marca heading + lista pra CSS esconder <=1100px.
+		function markInlineSummaryForMobile() {
+			const content = document.querySelector(".article-content");
+			if (!content) return;
+			const h2 = Array.from(content.querySelectorAll("h2")).find((h) =>
+				["sumario", "indice", "nesta pagina"].includes(normText(h.textContent || "")),
+			);
+			if (!h2) return;
+			h2.classList.add("inline-summary");
+			let el = h2.nextElementSibling;
+			while (el && !/^H[1-3]$/.test(el.tagName)) {
+				el.classList.add("inline-summary");
+				el = el.nextElementSibling;
+			}
+		}
+
+		// FAQ em accordion nativo — SO no mobile (no desktop texto corrido le melhor
+		// e o Ctrl+F continua achando tudo). Cada H3 da secao "Perguntas frequentes"
+		// vira <details>, com o H3 dentro do <summary> (mantem o id, entao as
+		// ancoras do Sumario continuam navegando). O FAQPage schema e montado
+		// server-side a partir do conteudo bruto — nao e afetado.
+		function buildFaqAccordion() {
+			if (!window.matchMedia("(max-width: 1100px)").matches) return;
+			const content = document.querySelector(".article-content");
+			if (!content) return;
+			const faqH2 = Array.from(content.querySelectorAll("h2")).find((h) => {
+				const t = normText(h.textContent || "");
+				return t.startsWith("perguntas frequentes") || t.startsWith("perguntas e respostas") || t === "faq";
+			});
+			if (!faqH2 || !faqH2.parentElement) return;
+			const parent = faqH2.parentElement;
+			let el = faqH2.nextElementSibling;
+			let answerBox: HTMLElement | null = null;
+			while (el && el.tagName !== "H2") {
+				const next = el.nextElementSibling;
+				if (el.tagName === "H3") {
+					const details = document.createElement("details");
+					details.className = "faq-item";
+					const summary = document.createElement("summary");
+					summary.className = "faq-question";
+					parent.insertBefore(details, el);
+					summary.appendChild(el);
+					details.appendChild(summary);
+					answerBox = document.createElement("div");
+					answerBox.className = "faq-answer";
+					details.appendChild(answerBox);
+				} else if (answerBox) {
+					answerBox.appendChild(el);
+				}
+				el = next;
+			}
+		}
+
 		hoistInlineAnchors();
 		buildToc();
 		styleReferences();
+		buildFaqAccordion();
 
 		// Botão "Copiar link" do bloco de compartilhamento. Usa Clipboard API e
 		// dá feedback visual+texto por 2s. Fallback pra prompt() em browsers
@@ -1621,5 +1726,169 @@ const medicalSchema = {
 		.more-grid {
 			grid-template-columns: 1fr;
 		}
+	}
+	/* ===== Pacote mobile (Fase 1 funil): Sumario dobravel, FAQ accordion,
+	 * indice do cluster. Tudo restrito a <=1100px — desktop intocado. ===== */
+
+	.toc-mobile,
+	.cluster-index {
+		display: none;
+	}
+
+	@media (max-width: 1100px) {
+		.toc-mobile {
+			display: block;
+			margin-bottom: var(--spacing-8);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-lg);
+			background: var(--color-bg-subtle);
+		}
+
+		.toc-mobile-summary {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--spacing-2);
+			min-height: 48px;
+			padding: var(--spacing-3) var(--spacing-4);
+			cursor: pointer;
+			font-weight: 600;
+			list-style: none;
+		}
+
+		.toc-mobile-summary::-webkit-details-marker {
+			display: none;
+		}
+
+		.toc-mobile-chevron {
+			width: 20px;
+			height: 20px;
+			flex-shrink: 0;
+			color: var(--color-muted);
+		}
+
+		.toc-mobile[open] .toc-mobile-chevron {
+			transform: rotate(180deg);
+		}
+
+		.toc-mobile[open] .toc-mobile-summary {
+			border-bottom: 1px solid var(--color-border-subtle);
+		}
+
+		.toc-mobile .toc-content {
+			padding: var(--spacing-2) var(--spacing-4) var(--spacing-3);
+		}
+
+		/* Alvo de toque maior pro leitor 55+ */
+		.toc-mobile .toc-content :global(.toc-link) {
+			padding: var(--spacing-2) 0;
+		}
+
+		/* Secao "Sumario" inline do corpo e redundante com o dobravel */
+		.article-content :global(.inline-summary) {
+			display: none;
+		}
+
+		.cluster-index {
+			display: block;
+			margin-top: var(--spacing-10);
+			padding: var(--spacing-4) var(--spacing-5) var(--spacing-5);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-lg);
+			background: var(--color-bg-subtle);
+		}
+
+		.cluster-index-title {
+			font-size: var(--font-size-lg);
+			font-weight: 600;
+			margin-bottom: var(--spacing-3);
+		}
+
+		.cluster-index-list {
+			list-style: none;
+			margin: 0 0 var(--spacing-4);
+			padding: 0;
+		}
+
+		.cluster-index-list li {
+			border-bottom: 1px solid var(--color-border-subtle);
+		}
+
+		.cluster-index-list li:last-child {
+			border-bottom: none;
+		}
+
+		.cluster-index-list a {
+			display: block;
+			padding: var(--spacing-3) 0;
+			color: var(--color-text-secondary);
+			text-decoration: none;
+			line-height: var(--leading-snug);
+		}
+
+		.cluster-index-list a:hover {
+			color: var(--color-text);
+		}
+
+		.cluster-index-all {
+			display: inline-block;
+			padding: var(--spacing-2) 0;
+			font-weight: 600;
+			color: var(--color-accent);
+			text-decoration: none;
+		}
+	}
+
+	/* FAQ accordion — o DOM so e transformado no mobile (matchMedia no JS),
+	 * entao as regras nao vazam pro desktop. Elementos criados por JS nao
+	 * carregam o scope do Astro, dai o :global. */
+	.article-content :global(details.faq-item) {
+		margin-bottom: var(--spacing-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-bg-subtle);
+	}
+
+	.article-content :global(summary.faq-question) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-3);
+		min-height: 48px;
+		padding: var(--spacing-3) var(--spacing-4);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.article-content :global(summary.faq-question::-webkit-details-marker) {
+		display: none;
+	}
+
+	.article-content :global(summary.faq-question h3) {
+		margin: 0;
+		font-size: var(--font-size-lg);
+		line-height: var(--leading-snug);
+	}
+
+	.article-content :global(summary.faq-question::after) {
+		content: "";
+		width: 0.9em;
+		height: 0.9em;
+		flex-shrink: 0;
+		background-color: var(--color-muted);
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+	}
+
+	.article-content :global(details.faq-item[open] summary.faq-question::after) {
+		transform: rotate(180deg);
+	}
+
+	.article-content :global(.faq-answer) {
+		padding: 0 var(--spacing-4) var(--spacing-4);
+	}
+
+	.article-content :global(.faq-answer > :last-child) {
+		margin-bottom: 0;
 	}
 </style>
