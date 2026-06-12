@@ -230,17 +230,6 @@ const LEGACY_STATIC_SLUG_REDIRECTS: Record<string, string> = {
 		"/blog/posts/vida-plena-depois-dos-55-guia-completo-douravita-55",
 };
 
-// Redirect para URL limpa quando ha tracking params (UTM, sck, etc).
-// Sem isso, Google indexa cada variante de URL com UTM como pagina separada.
-function redirectTrackingParams(request: Request): Response | null {
-	if (request.method !== "GET" && request.method !== "HEAD") return null;
-	const url = new URL(request.url);
-	const hasTracking = TRACKING_PARAMS.some((p) => url.searchParams.has(p));
-	if (!hasTracking) return null;
-	for (const p of TRACKING_PARAMS) url.searchParams.delete(p);
-	return Response.redirect(url.toString(), 301);
-}
-
 // /blog/posts sem slug redirecionado para /blog (canonical hub).
 function redirectBlogPostsListing(request: Request): Response | null {
 	if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -414,9 +403,6 @@ export default {
 		// Slugs do site estatico antigo -> post equivalente do blog novo.
 		const legacySlugRedirect = redirectLegacyStaticSlug(request);
 		if (legacySlugRedirect) return legacySlugRedirect;
-
-		const trackingRedirect = redirectTrackingParams(request);
-		if (trackingRedirect) return trackingRedirect;
 
 		const blogPostsRedirect = redirectBlogPostsListing(request);
 		if (blogPostsRedirect) return blogPostsRedirect;
