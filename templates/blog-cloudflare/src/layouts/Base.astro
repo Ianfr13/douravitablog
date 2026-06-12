@@ -142,13 +142,32 @@ const isLoggedIn = !!Astro.locals.user;
 		<Font cssVariable="--font-mono" />
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
-		<!-- Google Analytics 4 -->
-		<script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-9BF05HSEEL"></script>
+		<!-- Google Analytics 4. Gate de hostname: dev local (localhost/IP de rede)
+		     disparava pageview real e poluia o Direct do GA4 (hits "My Blog").
+		     ?dv_internal=1 marca o navegador como trafego interno via localStorage
+		     (?dv_internal=0 desmarca) — hits saem com traffic_type=internal e o
+		     Data Filter "Internal Traffic" do GA4 os exclui, independente de IP. -->
 		<script is:inline>
-			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);}
-			gtag("js", new Date());
-			gtag("config", "G-9BF05HSEEL");
+			(function () {
+				try {
+					var qs = new URLSearchParams(location.search);
+					if (qs.get("dv_internal") === "1") localStorage.setItem("dv_internal", "1");
+					if (qs.get("dv_internal") === "0") localStorage.removeItem("dv_internal");
+				} catch (e) {}
+				if (location.hostname !== "douravita.com.br") return;
+				var s = document.createElement("script");
+				s.async = true;
+				s.src = "https://www.googletagmanager.com/gtag/js?id=G-9BF05HSEEL";
+				document.head.appendChild(s);
+				window.dataLayer = window.dataLayer || [];
+				window.gtag = function () { dataLayer.push(arguments); };
+				gtag("js", new Date());
+				var cfg = {};
+				try {
+					if (localStorage.getItem("dv_internal") === "1") cfg.traffic_type = "internal";
+				} catch (e) {}
+				gtag("config", "G-9BF05HSEEL", cfg);
+			})();
 		</script>
 		<script is:inline>
 			// Apply theme immediately to prevent flash

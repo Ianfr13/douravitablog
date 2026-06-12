@@ -1,5 +1,10 @@
 ---
 import Base from "../layouts/Base.astro";
+
+// Status 404 explicito: esta pagina renderiza tanto na rota direta /404
+// quanto via Astro.rewrite() dos [slug].astro quando o conteudo nao existe.
+// Sem isso, o rewrite devolveria 200 com cara de erro (soft-404 pro Google).
+Astro.response.status = 404;
 ---
 
 <Base title="Página não encontrada">

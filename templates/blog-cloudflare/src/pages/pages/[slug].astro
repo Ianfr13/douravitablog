@@ -5,14 +5,15 @@ import Base from "../../layouts/Base.astro";
 
 const slug = decodeSlug(Astro.params.slug);
 
+// rewrite (nao redirect): ver comentario em posts/[slug].astro.
 if (!slug) {
-	return Astro.redirect("/404");
+	return Astro.rewrite("/404");
 }
 
 const { entry: page, cacheHint } = await getEmDashEntry("pages", slug);
 
 if (!page) {
-	return Astro.redirect("/404");
+	return Astro.rewrite("/404");
 }
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);

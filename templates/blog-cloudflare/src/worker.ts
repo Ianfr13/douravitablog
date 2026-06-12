@@ -211,6 +211,33 @@ function redirectIndexHtml(request: Request): Response | null {
 	return Response.redirect(url.toString(), 301);
 }
 
+// Slugs do site estatico antigo (pre-EmDash) que ainda recebem trafego —
+// Bing mantem essas URLs indexadas e manda gente pra 404. O conteudo
+// equivalente existe no blog novo; 301 manual preserva o visitante e
+// consolida o historico de SEO. Casa /blog/<slug> e /blog/<slug>/.
+// Slugs sem entrada aqui seguem pro 404 normal (correto pra conteudo morto).
+const LEGACY_STATIC_SLUG_REDIRECTS: Record<string, string> = {
+	"autonomia-compra-suprimentos-online-vs-farmacias-bairro":
+		"/blog/posts/suplementacao-para-idosos-guia-completo-douravita-55",
+	"tecnicas-relaxamento-manejar-glicemia-dia-a-dia":
+		"/blog/posts/pre-diabetes-5-sinais-que-seu-corpo-da-antes-do-diabetes-virar-definitivo",
+	"alimentos-diabeticos-evitar-substitutos-2":
+		"/blog/posts/pre-diabetes-5-sinais-que-seu-corpo-da-antes-do-diabetes-virar-definitivo",
+	"guia-pratico-saude-bem-estar-idosos":
+		"/blog/posts/vida-plena-depois-dos-55-guia-completo-douravita-55",
+};
+
+function redirectLegacyStaticSlug(request: Request): Response | null {
+	if (request.method !== "GET" && request.method !== "HEAD") return null;
+	const url = new URL(request.url);
+	const match = url.pathname.match(/^\/blog\/([^/]+)\/?$/);
+	if (!match || !match[1]) return null;
+	const target = LEGACY_STATIC_SLUG_REDIRECTS[match[1]];
+	if (!target) return null;
+	url.pathname = target;
+	return Response.redirect(url.toString(), 301);
+}
+
 function stripBlogPrefixForAstro(request: Request): Request {
 	const url = new URL(request.url);
 	const match = url.pathname.match(/^\/blog\/([^/]+)(\/.*)?$/);
@@ -356,6 +383,10 @@ export default {
 		// /blog/index.html legado (Google travado nela, hoje 404) -> 301 /blog.
 		const indexHtmlRedirect = redirectIndexHtml(request);
 		if (indexHtmlRedirect) return indexHtmlRedirect;
+
+		// Slugs do site estatico antigo -> post equivalente do blog novo.
+		const legacySlugRedirect = redirectLegacyStaticSlug(request);
+		if (legacySlugRedirect) return legacySlugRedirect;
 
 		const kind = classifyCacheable(request);
 		const handlerRequest = stripBlogPrefixForAstro(request);

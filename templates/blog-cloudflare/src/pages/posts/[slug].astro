@@ -45,14 +45,16 @@ const portableTextComponents = {
 
 const slug = decodeSlug(Astro.params.slug);
 
+// rewrite (nao redirect): mantem a URL e devolve status 404 de verdade.
+// Astro.redirect("/404") dava 302 -> /404 com 200 — soft-404 pro Google.
 if (!slug) {
-	return Astro.redirect("/404");
+	return Astro.rewrite("/404");
 }
 
 const { entry: post, cacheHint } = await getEmDashEntry("posts", slug);
 
 if (!post) {
-	return Astro.redirect("/404");
+	return Astro.rewrite("/404");
 }
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
