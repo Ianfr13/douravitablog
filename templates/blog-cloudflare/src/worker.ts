@@ -231,6 +231,38 @@ function stripBlogPrefixForAstro(request: Request): Request {
 // pra fotos JPG). v2 = quality 75 (lossy padrao p fotos).
 const MEDIA_CACHE_VERSION = "2";
 
+const SECURITY_HEADERS = {
+	"Strict-Transport-Security": "max-age=15552000",
+	"Content-Security-Policy": [
+		"default-src 'self'",
+		"base-uri 'self'",
+		"object-src 'none'",
+		"frame-ancestors 'self'",
+		"form-action 'self'",
+		"img-src 'self' data: blob: https:",
+		"font-src 'self' data:",
+		"style-src 'self' 'unsafe-inline'",
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://static.cloudflareinsights.com https://challenges.cloudflare.com",
+		"connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com",
+		"frame-src 'self' https://www.googletagmanager.com https://challenges.cloudflare.com",
+		"upgrade-insecure-requests",
+	].join("; "),
+};
+
+function applySecurityHeaders(response: Response): Response {
+	const headers = new Headers(response.headers);
+	headers.set("Strict-Transport-Security", SECURITY_HEADERS["Strict-Transport-Security"]);
+	const contentType = headers.get("content-type") ?? "";
+	if (contentType.includes("text/html")) {
+		headers.set("Content-Security-Policy", SECURITY_HEADERS["Content-Security-Policy"]);
+	}
+	return new Response(response.body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers,
+	});
+}
+
 function makeMediaCacheKey(request: Request, asWebp: boolean): Request {
 	if (!asWebp) return request;
 	const url = new URL(request.url);
@@ -329,7 +361,8 @@ export default {
 		const handlerRequest = stripBlogPrefixForAstro(request);
 		if (!kind) {
 			// @ts-expect-error handler default export shape from @astrojs/cloudflare
-			return handler.fetch(handlerRequest, env, ctx);
+			const uncachedResponse: Response = await handler.fetch(handlerRequest, env, ctx);
+			return applySecurityHeaders(uncachedResponse);
 		}
 
 		// Bypass edge cache pra leitores logados via Facebook. O HTML inclui
@@ -339,7 +372,8 @@ export default {
 		// leitura quanto a escrita do cache pra esses requests.
 		if (kind === "html" && (request.headers.get("cookie") || "").includes("reader_session=")) {
 			// @ts-expect-error handler default export shape
-			return handler.fetch(handlerRequest, env, ctx);
+			const privateResponse: Response = await handler.fetch(handlerRequest, env, ctx);
+			return applySecurityHeaders(privateResponse);
 		}
 
 		const cache = caches.default;
@@ -357,7 +391,7 @@ export default {
 
 		const cached = await cache.match(cacheKey);
 		if (cached) {
-			const r = new Response(cached.body, cached);
+			const r = applySecurityHeaders(new Response(cached.body, cached));
 			r.headers.set("x-edge-cache", "HIT");
 			return r;
 		}
@@ -374,7 +408,7 @@ export default {
 			response.headers.has("set-cookie") ||
 			(kind !== "api" && response.headers.get("cache-control")?.includes("no-store"))
 		) {
-			return response;
+			return applySecurityHeaders(response);
 		}
 
 		// Media WebP conversion: tenta IMAGES binding pra reduzir ~70% do
@@ -428,11 +462,11 @@ export default {
 			}
 		}
 
-		const responseToCache = new Response(response.body, {
+		const responseToCache = applySecurityHeaders(new Response(response.body, {
 			status: response.status,
 			statusText: response.statusText,
 			headers,
-		});
+		}));
 		const responseToUser = responseToCache.clone();
 		responseToUser.headers.set("x-edge-cache", "MISS");
 

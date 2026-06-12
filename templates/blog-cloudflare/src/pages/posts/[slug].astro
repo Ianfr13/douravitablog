@@ -311,7 +311,7 @@ const medicalSchema = {
 	description: (typeof post.data.description === "string" && post.data.description.trim()) || seo.description,
 	url: pageUrl,
 	inLanguage: "pt-BR",
-	lastReviewed: post.data.updatedAt.toISOString(),
+	lastReviewed: post.data.updatedAt?.toISOString() ?? post.data.publishedAt?.toISOString(),
 	datePublished: post.data.publishedAt?.toISOString() ?? undefined,
 	reviewedBy: {
 		"@type": "Organization",
@@ -336,7 +336,7 @@ const medicalSchema = {
 	robots={seo.robots}
 	type="article"
 	publishedTime={post.data.publishedAt?.toISOString() ?? null}
-	modifiedTime={post.data.updatedAt.toISOString()}
+	modifiedTime={post.data.updatedAt?.toISOString() ?? null}
 	author={(typeof post.data.author_name === "string" && post.data.author_name.trim()) || "DouraVita"}
 	content={{ collection: "posts", id: post.data.id, slug }}
 	shareData={{ url: pageUrl, title: post.data.title }}
@@ -529,10 +529,10 @@ const medicalSchema = {
 							{category.label}
 						</a>
 					)}
-					<h1 class="article-title" {...post.edit.title}>{post.data.title}</h1>
+					<h1 class="article-title" {...(post.edit?.title ?? {})}>{post.data.title}</h1>
 					{
 						post.data.excerpt && (
-							<p class="article-excerpt" {...post.edit.excerpt}>{post.data.excerpt}</p>
+							<p class="article-excerpt" {...(post.edit?.excerpt ?? {})}>{post.data.excerpt}</p>
 						)
 					}
 					<TrustBadge variant="inline" />

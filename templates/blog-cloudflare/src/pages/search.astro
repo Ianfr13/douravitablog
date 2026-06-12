@@ -13,6 +13,17 @@ const query = Astro.url.searchParams.get("q")?.trim() || "";
 const { items: results } = query
 	? await search(query, { collections: ["posts"], limit: 30 })
 	: { items: [] };
+
+function sanitizeSearchSnippet(snippet: string) {
+	return snippet
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;")
+		.replace(/&lt;mark&gt;/g, "<mark>")
+		.replace(/&lt;\/mark&gt;/g, "</mark>");
+}
 ---
 
 <Base
@@ -48,21 +59,27 @@ const { items: results } = query
 		{
 			results.length > 0 && (
 				<ol class="search-results">
-					{results.map((result) => (
-						<li class="search-result">
-							<a
-								href={`/blog/posts/${result.slug ?? result.id}`}
-								class="result-link"
-							>
-								<h2 class="result-title">
-									{result.title ?? "Sem título"}
-								</h2>
-								{result.snippet && (
-									<p class="result-snippet" set:html={result.snippet} />
-								)}
-							</a>
-						</li>
-					))}
+					{results.map((result) => {
+						const safeSnippet = result.snippet
+							? sanitizeSearchSnippet(result.snippet)
+							: null;
+
+						return (
+							<li class="search-result">
+								<a
+									href={`/blog/posts/${result.slug ?? result.id}`}
+									class="result-link"
+								>
+									<h2 class="result-title">
+										{result.title ?? "Sem título"}
+									</h2>
+									{safeSnippet && (
+										<p class="result-snippet" set:html={safeSnippet} />
+									)}
+								</a>
+							</li>
+						);
+					})}
 				</ol>
 			)
 		}
