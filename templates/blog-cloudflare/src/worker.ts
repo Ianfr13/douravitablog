@@ -261,6 +261,7 @@ function redirectLegacyStaticSlug(request: Request): Response | null {
 	if (BLOG_PREFIX_PATHS.includes(slug)) return null;
 	const target = LEGACY_STATIC_SLUG_REDIRECTS[slug] ?? "/blog";
 	url.pathname = target;
+	url.search = ""; // strip UTMs e outros params ao redirecionar slug legado
 	return Response.redirect(url.toString(), 301);
 }
 
