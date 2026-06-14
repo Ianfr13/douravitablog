@@ -4,9 +4,9 @@ import { getEmDashCollection } from "emdash";
 /**
  * Sitemap dinâmico do blog Douravita.
  *
- * Inclui: home /blog, índice /blog/posts, cada post publicado, cada página
- * institucional publicada. RSS (/blog/rss.xml) fica fora — sitemap aponta pra
- * HTML, não pra feed.
+ * Inclui: home /blog, cada post publicado, cada página institucional
+ * publicada. Fora: /blog/posts (301 -> /blog, não canônica) e o RSS
+ * (/blog/rss.xml) — sitemap aponta pra HTML canônico, não pra feed/redirect.
  *
  * Cache: 1 hora (curto pra novos posts entrarem rápido na indexação).
  * Google/Bing/Yandex re-fetcham na próxima visita.
@@ -26,9 +26,10 @@ export const GET: APIRoute = async ({ site, url }) => {
 
 	const entries: string[] = [];
 
-	// Home + índice de posts (alta prioridade, atualização diária)
+	// Home do blog (alta prioridade, atualização diária).
+	// /blog/posts NÃO entra: redireciona 301 -> /blog, então listá-la geraria
+	// URL não canônica no sitemap (duplica title/meta de /blog e gasta crawl budget).
 	entries.push(urlEntry(`${siteUrl}/blog`, todayIso, "daily", 1.0));
-	entries.push(urlEntry(`${siteUrl}/blog/posts`, todayIso, "daily", 0.8));
 
 	for (const post of posts) {
 		const slug = post.data.slug || post.id;
