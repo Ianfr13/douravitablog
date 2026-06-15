@@ -254,6 +254,63 @@ function redirectLegacyStaticSlug(request: Request): Response | null {
 	return Response.redirect(url.toString(), 301);
 }
 
+// Posts duplicados consolidados (2026-06-13). 14 grupos de artigos quase
+// identicos (whey ×5, creatina ×3, gengivite ×3 etc) canibalizavam a mesma
+// busca e rachavam o link equity — o Google nao sabia qual rankear e nao
+// promovia nenhum. Cada grupo tem 1 keeper (escolhido por tracao GSC >
+// completude > recencia; pillar nunca vira 301 de spoke). Os demais 301 pro
+// keeper pra consolidar autoridade. Slug morto -> slug keeper (ambos /blog/posts/).
+const DUPLICATE_POST_REDIRECTS: Record<string, string> = {
+	// whey protein 55+
+	"whey-protein-ajuda-a-ganhar-massa-muscular-apos-55-anos": "whey-protein-funciona-para-ganhar-massa-muscular-aos-55",
+	"whey-protein-para-maiores-de-55-ganhar-massa-muscular": "whey-protein-funciona-para-ganhar-massa-muscular-aos-55",
+	"whey-protein-funciona-para-ganhar-massa-apos-55-anos": "whey-protein-funciona-para-ganhar-massa-muscular-aos-55",
+	"whey-protein-para-depois-dos-55-anos": "whey-protein-funciona-para-ganhar-massa-muscular-aos-55",
+	// creatina 55+
+	"creatina-melhora-forca-muscular-apos-os-55-anos": "creatina-para-quem-tem-55-anos-e-quer-ganhar-massa",
+	"creatina-para-ganho-de-forca-em-maiores-de-55-anos": "creatina-para-quem-tem-55-anos-e-quer-ganhar-massa",
+	// gengivite
+	"gengivite-e-cuidados-com-a-gengiva-aos-55-anos": "gengivite-como-tratar-e-prevenir-em-casa",
+	"gengivite-em-adultos-55-como-tratar-e-prevenir": "gengivite-como-tratar-e-prevenir-em-casa",
+	// outubro rosa
+	"outubro-rosa-o-que-muda-no-rastreamento-do-cancer": "outubro-rosa-deteccao-precoce-de-cancer-de-mama-salva-vidas",
+	"outubro-rosa-como-funciona-o-rastreamento-do-cancer-de-mama": "outubro-rosa-deteccao-precoce-de-cancer-de-mama-salva-vidas",
+	// estatuto do idoso
+	"estatuto-do-idoso-direitos-na-pratica-para-cuidadores": "estatuto-do-idoso-garante-seus-direitos-na-pratica",
+	"estatuto-do-idoso-conheca-seus-direitos-garantidos-por-lei": "estatuto-do-idoso-garante-seus-direitos-na-pratica",
+	// menopausa / ondas de calor (menopausa-10-sintomas FICA — intencao distinta)
+	"ondas-de-calor-na-menopausa-como-controlar-os-fogachos": "ondas-de-calor-na-menopausa-como-lidar-com-elas",
+	// luto
+	"como-lidar-com-o-luto-na-maturidade": "luto-na-terceira-idade-como-lidar-com-a-perda",
+	"luto-e-memoria-como-lidar-apos-uma-perda": "luto-na-terceira-idade-como-lidar-com-a-perda",
+	// memoria / saude mental (keeper = pillar)
+	"memoria-depois-dos-60-7-habitos-com-base-cientifica-pra-manter-o-cerebro-afiado": "saude-mental-do-idoso-como-proteger-a-memoria",
+	// suplementacao (keeper = pillar guia-completo)
+	"suplementacao-para-idosos-melhora-forca-muscular": "suplementacao-para-idosos-guia-completo-douravita-55",
+	// vitamina b12
+	"vitamina-b12-deficiencia-sinais-e-alimentos-ricos": "vitamina-b12-por-que-seus-niveis-importam-aos-55",
+	// triglicerideos
+	"triglicerideos-altos-causam-pressao-alta-e-dor": "triglicerideos-altos-afetam-o-coracao-apos-os-55",
+	// pilates
+	"pilates-para-quem-caminha-todos-os-dias": "pilates-para-idosos-acima-de-55-anos",
+	// investimentos
+	"comece-a-investir-aos-55-com-seguranca-e-tranquilidade": "investimentos-seguros-para-quem-tem-55-anos",
+	// testosterona
+	"testosterona-e-queda-de-cabelo-no-homem-55-anos": "testosterona-e-queda-de-cabelo-em-homens-55",
+};
+
+function redirectDuplicatePost(request: Request): Response | null {
+	if (request.method !== "GET" && request.method !== "HEAD") return null;
+	const url = new URL(request.url);
+	const m = url.pathname.match(/^\/blog\/posts\/([^/]+)\/?$/);
+	if (!m || !m[1]) return null;
+	const keeper = DUPLICATE_POST_REDIRECTS[m[1]];
+	if (!keeper) return null;
+	url.pathname = `/blog/posts/${keeper}`;
+	url.search = ""; // strip UTMs e outros params ao consolidar
+	return Response.redirect(url.toString(), 301);
+}
+
 function stripBlogPrefixForAstro(request: Request): Request {
 	const url = new URL(request.url);
 	const match = url.pathname.match(/^\/blog\/([^/]+)(\/.*)?$/);
@@ -406,6 +463,10 @@ export default {
 
 		const blogPostsRedirect = redirectBlogPostsListing(request);
 		if (blogPostsRedirect) return blogPostsRedirect;
+
+		// Posts duplicados consolidados -> keeper do grupo (301).
+		const dupPostRedirect = redirectDuplicatePost(request);
+		if (dupPostRedirect) return dupPostRedirect;
 
 		const kind = classifyCacheable(request);
 		const handlerRequest = stripBlogPrefixForAstro(request);
