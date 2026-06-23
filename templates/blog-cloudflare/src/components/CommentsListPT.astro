@@ -165,7 +165,8 @@ function headingLabel(total: number): string {
 
 	.dv-comments-heading {
 		font-size: var(--font-size-xl);
-		font-weight: 600;
+		font-weight: 700;
+		letter-spacing: var(--tracking-snug);
 		color: var(--color-text);
 		margin: 0;
 	}
@@ -180,17 +181,19 @@ function headingLabel(total: number): string {
 	.dv-comments-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-6);
+		gap: var(--spacing-4);
 	}
 
 	.dv-comment {
-		padding-bottom: var(--spacing-6);
-		border-bottom: 1px solid var(--color-border-subtle, var(--color-border));
+		padding: var(--spacing-5);
+		border: 1px solid var(--color-border-subtle, var(--color-border));
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
 	}
 
 	.dv-comments-list > li:last-child .dv-comment {
-		border-bottom: none;
-		padding-bottom: 0;
+		border: 1px solid var(--color-border-subtle, var(--color-border));
+		padding: var(--spacing-5);
 	}
 
 	.dv-comment-header {
@@ -206,10 +209,10 @@ function headingLabel(total: number): string {
 		justify-content: center;
 		width: 2.5rem;
 		height: 2.5rem;
-		border-radius: 50%;
+		border-radius: var(--radius);
 		color: #fff;
 		font-size: var(--font-size-sm);
-		font-weight: 600;
+		font-weight: 700;
 		flex-shrink: 0;
 		user-select: none;
 	}
@@ -256,23 +259,23 @@ function headingLabel(total: number): string {
 
 	.dv-comment-replies {
 		margin-top: var(--spacing-5);
-		padding-left: calc(2.5rem + var(--spacing-3));
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-5);
-		border-left: 2px solid var(--color-border-subtle, var(--color-border));
+		gap: var(--spacing-4);
+		border-left: 2px solid color-mix(in oklch, var(--color-accent) 16%, var(--color-border));
 		padding-left: var(--spacing-5);
 		margin-left: var(--spacing-4);
 	}
 
 	.dv-comment-reply {
-		padding-bottom: var(--spacing-5);
-		border-bottom: 1px dashed var(--color-border-subtle, var(--color-border));
+		padding: var(--spacing-4);
+		background: color-mix(in oklch, var(--color-accent) 4%, var(--color-bg));
+		border: 1px solid var(--color-border-subtle, var(--color-border));
 	}
 
 	.dv-comment-replies > li:last-child .dv-comment-reply {
-		border-bottom: none;
-		padding-bottom: 0;
+		border: 1px solid var(--color-border-subtle, var(--color-border));
+		padding: var(--spacing-4);
 	}
 
 	.dv-comment-reply .dv-comment-body {

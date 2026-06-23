@@ -205,7 +205,7 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 		flex-direction: column;
 		gap: var(--spacing-4);
 		padding: var(--spacing-6);
-		background: var(--color-bg-subtle, var(--color-surface));
+		background: var(--color-bg);
 		border: 1px solid var(--color-border-subtle, var(--color-border));
 		border-radius: var(--radius-lg);
 	}
@@ -230,8 +230,8 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 
 	.dv-comment-form-field > span {
 		font-size: var(--font-size-sm);
-		font-weight: 500;
-		color: var(--color-text-secondary);
+		font-weight: 700;
+		color: var(--color-text);
 		display: flex;
 		align-items: baseline;
 		gap: var(--spacing-1);
@@ -245,22 +245,23 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 
 	.dv-comment-form-field input,
 	.dv-comment-form-field textarea {
-		padding: var(--spacing-3);
+		padding: var(--spacing-3) var(--spacing-4);
 		font: inherit;
 		font-size: var(--font-size-base);
 		line-height: var(--leading-snug);
 		color: var(--color-text);
-		background: var(--color-bg);
+		background: color-mix(in oklch, var(--color-bg) 92%, var(--color-surface));
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
 		transition:
 			border-color var(--transition-fast),
-			box-shadow var(--transition-fast);
+			box-shadow var(--transition-fast),
+			background var(--transition-fast);
 	}
 
 	.dv-comment-form-field textarea {
 		resize: vertical;
-		min-height: 7rem;
+		min-height: 9rem;
 		font-family: inherit;
 	}
 
@@ -272,6 +273,7 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 	.dv-comment-form-field input:focus-visible,
 	.dv-comment-form-field textarea:focus-visible {
 		outline: none;
+		background: var(--color-bg);
 		border-color: var(--color-accent);
 		box-shadow: 0 0 0 3px var(--color-accent-ring, rgba(138, 111, 42, 0.18));
 	}
@@ -282,10 +284,11 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 
 	.dv-comment-form-submit {
 		align-self: flex-start;
-		padding: var(--spacing-3) var(--spacing-6);
+		min-height: 52px;
+		padding: 0 var(--spacing-6);
 		font: inherit;
 		font-size: var(--font-size-base);
-		font-weight: 600;
+		font-weight: 700;
 		color: var(--color-on-accent, #fff);
 		background: var(--color-accent);
 		border: none;
@@ -297,7 +300,8 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 	}
 
 	.dv-comment-form-submit:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--color-accent) 88%, black);
+		background: var(--color-accent-hover);
+		transform: translateY(-1px);
 	}
 
 	.dv-comment-form-submit:active:not(:disabled) {
@@ -327,7 +331,7 @@ const formId = `dv-comment-form-${parentId ?? "root"}`;
 	}
 
 	.dv-comment-form-status {
-		padding: var(--spacing-3);
+		padding: var(--spacing-4);
 		font-size: var(--font-size-sm);
 		line-height: var(--leading-snug);
 		border-radius: var(--radius);
