@@ -31,10 +31,11 @@ Astro.response.headers.set(
 	"public, s-maxage=60, stale-while-revalidate=86400",
 );
 
-// Section 1 — Assuntos do momento: 2 large + 3 small (5 mais recentes)
-const trending = allPosts.slice(0, 5);
-const trendingLarge = trending.slice(0, 2);
-const trendingSmall = trending.slice(2, 5);
+// Section 1 — capa editorial + assuntos do momento (6 mais recentes)
+const trending = allPosts.slice(0, 6);
+const heroPost = trending[0];
+const trendingLarge = trending.slice(1, 3);
+const trendingSmall = trending.slice(3, 6);
 const usedIds = new Set(trending.map((p) => p.data.id));
 
 // Section 3 — Mais lidos: 8 mais antigos (proxy de "tempo exposto")
@@ -77,12 +78,15 @@ function withCategory(post: typeof allPosts[0]) {
 	};
 }
 
+const heroWithCat = heroPost ? withCategory(heroPost) : null;
 const trendingLargeWithCat = trendingLarge.map(withCategory);
 const trendingSmallWithCat = trendingSmall.map(withCategory);
 const mostReadWithCat = mostRead.map(withCategory);
 
 
-const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
+type HomePost = typeof allPosts[number];
+const slugFor = (post: HomePost) => (post as HomePost & { slug?: string }).slug ?? post.id;
+const summaryFor = (post: HomePost) => post.data.excerpt ?? (post.data as { description?: string }).description;
 ---
 
 <Base
@@ -112,6 +116,46 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 						memória, longevidade e qualidade de vida.
 					</p>
 				</section>
+
+				{heroWithCat && (
+					<section class="home-hero" aria-label="Destaque editorial">
+						<div class="home-hero-media">
+							{heroWithCat.post.data.featured_image && (
+								<a
+									href={`/blog/posts/${slugFor(heroWithCat.post)}`}
+									class="home-hero-image-link"
+									aria-label={heroWithCat.post.data.title}
+								>
+									<div class="home-hero-image">
+										<Image image={heroWithCat.post.data.featured_image} alt={heroWithCat.post.data.title} />
+									</div>
+								</a>
+							)}
+						</div>
+						<div class="home-hero-body">
+							<span class="section-kicker">Edição de hoje</span>
+							{heroWithCat.category && (
+								<a href={`/blog/category/${heroWithCat.category.slug}`} class="badge">
+									{heroWithCat.category.label}
+								</a>
+							)}
+							<a href={`/blog/posts/${slugFor(heroWithCat.post)}`} class="card-title-link">
+								<h2 class="home-hero-title">{heroWithCat.post.data.title ?? "Sem título"}</h2>
+							</a>
+							{summaryFor(heroWithCat.post) && (
+								<p class="home-hero-excerpt">
+									{summaryFor(heroWithCat.post)}
+								</p>
+							)}
+							<div class="home-hero-actions">
+								<a href={`/blog/posts/${slugFor(heroWithCat.post)}`} class="home-hero-cta">
+									Ler o artigo <span aria-hidden="true">→</span>
+								</a>
+								<span class="home-hero-note">Texto claro, revisado e pensado para leitura confortável.</span>
+							</div>
+						</div>
+					</section>
+				)}
 
 				{/* ====== 1. ASSUNTOS DO MOMENTO ====== */}
 				<section class="section trending">
@@ -150,9 +194,9 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 											{post.data.title ?? "Sem título"}
 										</h3>
 									</a>
-									{(post.data.excerpt ?? post.data.description) && (
+									{summaryFor(post) && (
 										<p class="card-large-excerpt">
-											{post.data.excerpt ?? post.data.description}
+											{summaryFor(post)}
 										</p>
 									)}
 								</div>
@@ -189,9 +233,9 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 											{post.data.title ?? "Sem título"}
 										</h3>
 									</a>
-									{(post.data.excerpt ?? post.data.description) && (
+									{summaryFor(post) && (
 										<p class="card-small-excerpt">
-											{post.data.excerpt ?? post.data.description}
+											{summaryFor(post)}
 										</p>
 									)}
 								</div>
@@ -447,7 +491,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	.home-content {
 		max-width: var(--wide-width);
 		margin: 0 auto;
-		padding: var(--spacing-8) var(--spacing-4) var(--spacing-16);
+		padding: var(--spacing-6) var(--spacing-4) var(--spacing-16);
 	}
 
 	/* Intro de boas-vindas no topo da home — reforça que isto é o BLOG
@@ -458,14 +502,11 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	 * accent em opacidade baixa funciona em ambos os temas (light/dark)
 	 * porque color-mix usa --color-bg como base. */
 	.home-intro {
-		margin-bottom: var(--spacing-10);
-		padding: var(--spacing-10) var(--spacing-6);
+		margin-bottom: var(--spacing-8);
+		padding: var(--spacing-8) var(--spacing-6);
+		border: 1px solid var(--color-border-subtle);
 		border-radius: var(--radius-lg);
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, var(--color-accent) 14%, var(--color-bg)) 0%,
-			color-mix(in srgb, var(--color-accent) 4%, var(--color-bg)) 100%
-		);
+		background: color-mix(in oklch, var(--color-accent) 7%, var(--color-bg));
 	}
 
 	.home-intro-text {
@@ -496,6 +537,18 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		margin-bottom: var(--spacing-16);
 	}
 
+	.section-kicker {
+		display: inline-flex;
+		align-items: center;
+		min-height: 34px;
+		width: fit-content;
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wider);
+		color: var(--color-accent);
+	}
+
 	.section-header {
 		margin-bottom: var(--spacing-6);
 	}
@@ -508,27 +561,135 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	}
 
 	.badge {
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
 		align-self: start;
-		padding: var(--tag-padding-y) var(--spacing-3);
+		min-height: 36px;
+		padding: 0 var(--spacing-3);
 		font-size: var(--font-size-xs);
-		font-weight: 500;
+		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: var(--tracking-wide);
-		color: var(--color-accent);
-		background: var(--color-accent-ring, var(--color-surface));
+		color: var(--color-accent-hover);
+		background: color-mix(in oklch, var(--color-accent) 13%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 20%, var(--color-border));
 		border-radius: 999px;
 		text-decoration: none;
-		transition: background var(--transition-fast);
+		transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 	}
 
 	.badge:hover {
-		background: var(--color-border);
+		color: var(--color-text);
+		background: color-mix(in oklch, var(--color-accent) 20%, var(--color-bg));
+		border-color: color-mix(in oklch, var(--color-accent) 34%, var(--color-border));
 	}
 
 	.card-title-link {
 		text-decoration: none;
 		color: inherit;
+	}
+
+	/* ===== Capa editorial ===== */
+	.home-hero {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-5);
+		margin-bottom: var(--spacing-16);
+		padding: var(--spacing-4);
+		border: 1px solid var(--color-border);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-bg) 78%, var(--color-surface));
+	}
+
+	.home-hero-media {
+		min-width: 0;
+	}
+
+	.home-hero-image-link {
+		display: block;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.home-hero-image {
+		aspect-ratio: 16 / 10;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+	}
+
+	.home-hero-image img {
+		width: 100% !important;
+		height: 100% !important;
+		object-fit: cover !important;
+		transition: transform 420ms ease-out;
+	}
+
+	.home-hero-image-link:hover .home-hero-image img {
+		transform: scale(1.025);
+	}
+
+	.home-hero-body {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: var(--spacing-3);
+		padding: var(--spacing-2) var(--spacing-1) var(--spacing-3);
+	}
+
+	.home-hero-title {
+		font-size: clamp(var(--font-size-2xl), 5vw, var(--font-size-5xl));
+		font-weight: 700;
+		line-height: var(--leading-tight);
+		letter-spacing: -0.035em;
+		color: var(--color-text);
+		transition: color var(--transition-fast);
+	}
+
+	.card-title-link:hover .home-hero-title {
+		color: var(--color-accent-hover);
+	}
+
+	.home-hero-excerpt {
+		max-width: 62ch;
+		font-size: var(--font-size-lg);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+	}
+
+	.home-hero-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--spacing-3);
+		margin-top: var(--spacing-2);
+	}
+
+	.home-hero-cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 52px;
+		padding: 0 var(--spacing-6);
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border-radius: var(--radius);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		text-decoration: none;
+		transition: background var(--transition-fast), transform var(--transition-fast);
+	}
+
+	.home-hero-cta:hover {
+		background: var(--color-accent-hover);
+		transform: translateY(-1px);
+	}
+
+	.home-hero-note {
+		max-width: 34ch;
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-snug);
+		color: var(--color-muted);
 	}
 
 	/* ===== 1. Assuntos do momento ===== */
@@ -544,6 +705,10 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	.card-large {
 		display: flex;
 		flex-direction: column;
+		padding: var(--spacing-4);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
 	}
 
 	.card-large-image-link {
@@ -556,9 +721,9 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		aspect-ratio: 16 / 9;
 		max-height: 320px;
 		overflow: hidden;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius);
 		background: var(--color-surface);
-		margin-bottom: var(--spacing-3);
+		margin-bottom: var(--spacing-4);
 	}
 
 	.card-large-image img {
@@ -613,6 +778,10 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		grid-template-columns: 110px 1fr;
 		gap: var(--spacing-3);
 		align-items: start;
+		padding: var(--spacing-3);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: color-mix(in oklch, var(--color-bg) 86%, var(--color-surface));
 	}
 
 	.card-small-image-link {
@@ -620,6 +789,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		overflow: hidden;
 		border-radius: var(--radius);
 		background: var(--color-surface);
+		min-height: 100%;
 	}
 
 	.card-small-image-link img {
@@ -670,6 +840,10 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 	.card-tile {
 		display: flex;
 		flex-direction: column;
+		padding: var(--spacing-3);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
 	}
 
 	.card-tile-image-link {
@@ -683,7 +857,7 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 		overflow: hidden;
 		border-radius: var(--radius);
 		background: var(--color-surface);
-		margin-bottom: var(--spacing-3);
+		margin-bottom: var(--spacing-4);
 	}
 
 	.card-tile-image img {
@@ -819,10 +993,10 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 
 	/* ===== Educational section: sarcopenia + creatina ===== */
 	.edu-card {
-		background: var(--color-bg-subtle, var(--color-surface));
+		background: color-mix(in oklch, var(--color-accent) 6%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 18%, var(--color-border));
 		border-radius: var(--radius-lg);
 		padding: var(--spacing-6) var(--spacing-5);
-		border-left: 4px solid var(--color-accent);
 	}
 
 	.edu-header {
@@ -992,10 +1166,10 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 
 		/* ===== Ferramentas (categoria de conteudo interativo) ===== */
 	.tools-card {
-		background: var(--color-bg-subtle, var(--color-surface));
+		background: color-mix(in oklch, var(--color-accent) 5%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 16%, var(--color-border));
 		border-radius: var(--radius-lg);
 		padding: var(--spacing-6) var(--spacing-5);
-		border-left: 4px solid var(--color-accent);
 	}
 
 	.tools-header {
@@ -1134,7 +1308,8 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 
 	/* ===== Frase inspiradora (antes de 'Conteudos mais recentes') ===== */
 	.inspirational-quote {
-		background: var(--color-bg-subtle);
+		background: color-mix(in oklch, var(--color-accent) 5%, var(--color-bg));
+		border: 1px solid var(--color-border-subtle);
 		padding: var(--spacing-12) var(--spacing-6);
 		border-radius: var(--radius-lg);
 		margin-bottom: var(--spacing-16);
@@ -1184,6 +1359,21 @@ const slugFor = (post: typeof allPosts[0]) => post.slug ?? post.id;
 
 		.home-content {
 			padding: var(--spacing-12) var(--spacing-6) var(--spacing-16);
+		}
+
+		.home-hero {
+			grid-template-columns: minmax(0, 1.16fr) minmax(320px, 0.84fr);
+			gap: var(--spacing-8);
+			padding: var(--spacing-5);
+		}
+
+		.home-hero-body {
+			padding: var(--spacing-6) var(--spacing-4);
+		}
+
+		.home-hero-actions {
+			flex-direction: row;
+			align-items: center;
 		}
 
 		.trending-large-grid {
