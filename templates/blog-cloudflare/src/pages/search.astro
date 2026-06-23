@@ -90,25 +90,37 @@ function sanitizeSearchSnippet(snippet: string) {
 
 <style>
 	.search-page {
-		max-width: var(--max-width);
+		max-width: 920px;
 		margin: 0 auto;
-		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+		padding: var(--spacing-10) var(--spacing-6) var(--spacing-16);
 	}
 
 	.search-title {
-		font-size: var(--font-size-2xl);
+		font-size: clamp(var(--font-size-3xl), 6vw, var(--font-size-5xl));
+		font-weight: 700;
+		line-height: var(--leading-tight);
+		letter-spacing: -0.035em;
 		margin-bottom: var(--spacing-6);
+		padding: var(--spacing-8);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-accent) 5%, var(--color-bg));
 	}
 
 	.search-form {
 		display: flex;
-		gap: var(--spacing-2);
+		gap: var(--spacing-3);
 		margin-bottom: var(--spacing-8);
+		padding: var(--spacing-3);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: color-mix(in oklch, var(--color-bg) 86%, var(--color-surface));
 	}
 
 	.search-input {
 		flex: 1;
-		padding: var(--spacing-2) var(--spacing-4);
+		min-height: 52px;
+		padding: 0 var(--spacing-4);
 		font-size: var(--font-size-base);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
@@ -119,30 +131,39 @@ function sanitizeSearchSnippet(snippet: string) {
 	.search-input:focus {
 		outline: none;
 		border-color: var(--color-accent);
+		box-shadow: 0 0 0 3px var(--color-accent-ring);
 	}
 
 	.search-button {
-		padding: var(--spacing-2) var(--spacing-6);
+		min-height: 52px;
+		padding: 0 var(--spacing-6);
 		font-size: var(--font-size-base);
 		background: var(--color-accent);
 		color: var(--color-on-accent);
 		border: none;
 		border-radius: var(--radius);
 		cursor: pointer;
-		font-weight: 500;
+		font-weight: 700;
+		transition: background var(--transition-fast), transform var(--transition-fast);
 	}
 
 	.search-button:hover {
-		opacity: 0.9;
+		background: var(--color-accent-hover);
+		transform: translateY(-1px);
 	}
 
 	.search-summary {
-		color: var(--color-muted);
+		color: var(--color-text-secondary);
 		margin-bottom: var(--spacing-6);
+		font-size: var(--font-size-lg);
 	}
 
 	.search-hint {
-		color: var(--color-muted);
+		padding: var(--spacing-6);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
+		color: var(--color-text-secondary);
 	}
 
 	.search-results {
@@ -151,19 +172,21 @@ function sanitizeSearchSnippet(snippet: string) {
 		margin: 0;
 		display: flex;
 		flex-direction: column;
+		gap: var(--spacing-4);
 	}
 
 	.search-result {
-		padding: var(--spacing-6) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
+		padding: var(--spacing-5);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
+		transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
 	}
 
-	.search-result:first-child {
-		padding-top: 0;
-	}
-
-	.search-result:last-child {
-		border-bottom: none;
+	.search-result:hover {
+		border-color: var(--color-border);
+		background: color-mix(in oklch, var(--color-bg) 88%, var(--color-surface));
+		transform: translateY(-1px);
 	}
 
 	.result-link {
@@ -174,14 +197,15 @@ function sanitizeSearchSnippet(snippet: string) {
 
 	.result-title {
 		font-size: var(--font-size-xl);
-		font-weight: 600;
+		font-weight: 700;
 		line-height: var(--leading-snug);
+		letter-spacing: var(--tracking-snug);
 		margin-bottom: var(--spacing-2);
 		transition: color var(--transition-fast);
 	}
 
 	.result-link:hover .result-title {
-		color: var(--color-accent);
+		color: var(--color-accent-hover);
 	}
 
 	.result-snippet {
@@ -192,9 +216,19 @@ function sanitizeSearchSnippet(snippet: string) {
 
 	/* FTS returns <mark> wrapping the matched terms */
 	.result-snippet :global(mark) {
-		background: var(--color-accent-ring, rgba(99, 102, 241, 0.2));
-		color: inherit;
-		padding: 0 0.1em;
+		background: color-mix(in oklch, var(--color-accent) 18%, var(--color-bg));
+		color: var(--color-text);
+		padding: 0 0.12em;
 		border-radius: 2px;
+	}
+
+	@media (max-width: 640px) {
+		.search-page {
+			padding: var(--spacing-8) var(--spacing-4) var(--spacing-12);
+		}
+
+		.search-form {
+			flex-direction: column;
+		}
 	}
 </style>

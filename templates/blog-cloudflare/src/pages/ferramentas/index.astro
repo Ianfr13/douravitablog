@@ -240,26 +240,30 @@ Astro.response.headers.set(
 
 <style>
 	.tools-index-page {
-		max-width: 920px;
+		max-width: 980px;
 		margin: 0 auto;
-		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+		padding: var(--spacing-10) var(--spacing-6) var(--spacing-16);
 	}
 
 	.tools-index-header {
 		margin-bottom: var(--spacing-8);
-		max-width: 60ch;
+		padding: var(--spacing-8);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-accent) 5%, var(--color-bg));
 	}
 
 	.tools-index-title {
-		font-size: clamp(1.75rem, 5vw, 2.5rem);
+		font-size: clamp(var(--font-size-3xl), 6vw, var(--font-size-5xl));
 		font-weight: 700;
 		line-height: var(--leading-tight);
-		letter-spacing: var(--tracking-tight);
+		letter-spacing: -0.035em;
 		margin-bottom: var(--spacing-3);
 		color: var(--color-text);
 	}
 
 	.tools-index-subtitle {
+		max-width: 62ch;
 		font-size: var(--font-size-lg);
 		line-height: var(--leading-relaxed);
 		color: var(--color-text-secondary);
@@ -268,7 +272,7 @@ Astro.response.headers.set(
 	.tools-index-grid {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: var(--spacing-4);
+		gap: var(--spacing-5);
 	}
 
 	@media (min-width: 720px) {
@@ -279,22 +283,22 @@ Astro.response.headers.set(
 
 	/* Article container - holds main link + leia-tambem link */
 	.tools-index-card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+		background: var(--color-bg);
+		border: 1px solid var(--color-border-subtle);
 		border-radius: var(--radius-lg);
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
 		transition: transform var(--transition-fast),
-			box-shadow var(--transition-fast),
+			background var(--transition-fast),
 			border-color var(--transition-fast);
 	}
 
 	.tools-index-card:has(.tools-index-card-main:hover),
 	.tools-index-card:has(.tools-index-card-main:focus-visible) {
-		transform: translateY(-2px);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-		border-color: var(--color-accent);
+		transform: translateY(-1px);
+		background: color-mix(in oklch, var(--color-bg) 88%, var(--color-surface));
+		border-color: var(--color-border);
 	}
 
 	/* Main link area: icon + body + arrow */
@@ -313,11 +317,12 @@ Astro.response.headers.set(
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 48px;
-		height: 48px;
-		border-radius: var(--radius-md);
-		background: rgba(0, 0, 0, 0.04);
-		color: var(--color-accent);
+		width: 52px;
+		height: 52px;
+		border-radius: var(--radius);
+		background: color-mix(in oklch, var(--color-accent) 12%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 18%, var(--color-border));
+		color: var(--color-accent-hover);
 		flex-shrink: 0;
 	}
 
@@ -335,10 +340,10 @@ Astro.response.headers.set(
 
 	.tools-index-eyebrow {
 		font-size: var(--font-size-xs);
-		font-weight: 600;
+		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: var(--tracking-wider);
-		color: var(--color-accent);
+		color: var(--color-accent-hover);
 	}
 
 	.tools-index-card-title {
@@ -387,8 +392,8 @@ Astro.response.headers.set(
 		align-items: center;
 		gap: var(--spacing-3);
 		padding: var(--spacing-3) var(--spacing-5);
-		border-top: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
-		background: color-mix(in srgb, var(--color-text) 4%, transparent);
+		border-top: 1px solid var(--color-border-subtle);
+		background: color-mix(in oklch, var(--color-accent) 4%, var(--color-bg));
 		text-decoration: none;
 		color: var(--color-text-secondary);
 		font-size: var(--font-size-sm);
@@ -399,7 +404,7 @@ Astro.response.headers.set(
 
 	.tools-index-readalso:hover,
 	.tools-index-readalso:focus-visible {
-		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+		background: color-mix(in oklch, var(--color-accent) 10%, var(--color-bg));
 		color: var(--color-text);
 		outline: none;
 	}
@@ -422,10 +427,10 @@ Astro.response.headers.set(
 
 	.tools-index-readalso-label {
 		font-size: var(--font-size-xs);
-		font-weight: 600;
+		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: var(--tracking-wider);
-		color: var(--color-accent);
+		color: var(--color-accent-hover);
 	}
 
 	.tools-index-readalso-title {
@@ -460,6 +465,10 @@ Astro.response.headers.set(
 
 	.tools-trust {
 		margin-top: var(--spacing-12);
+		padding: var(--spacing-8);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-bg) 86%, var(--color-surface));
 	}
 
 	.tools-trust-grid {
@@ -488,9 +497,10 @@ Astro.response.headers.set(
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: var(--radius-md);
-		background: color-mix(in srgb, var(--color-accent) 12%, transparent);
-		color: var(--color-accent);
+		border-radius: var(--radius);
+		background: color-mix(in oklch, var(--color-accent) 12%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 18%, var(--color-border));
+		color: var(--color-accent-hover);
 	}
 
 	.tools-trust-icon svg {
@@ -539,25 +549,27 @@ Astro.response.headers.set(
 
 	.tools-upcoming-card {
 		padding: var(--spacing-5);
-		background: color-mix(in srgb, var(--color-text) 3%, transparent);
-		border: 1px dashed var(--color-border, rgba(0, 0, 0, 0.15));
+		background: var(--color-bg);
+		border: 1px dashed var(--color-border);
 		border-radius: var(--radius-lg);
-		opacity: 0.85;
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-2);
 	}
 
 	.tools-upcoming-badge {
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
 		width: fit-content;
+		min-height: 30px;
 		font-size: var(--font-size-xs);
-		font-weight: 600;
+		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: var(--tracking-wider);
-		padding: 2px 8px;
-		background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-		color: var(--color-accent);
+		padding: 0 var(--spacing-3);
+		background: color-mix(in oklch, var(--color-accent) 12%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 18%, var(--color-border));
+		color: var(--color-accent-hover);
 		border-radius: 999px;
 		margin-bottom: var(--spacing-1);
 	}
