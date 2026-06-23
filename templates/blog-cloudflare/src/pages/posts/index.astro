@@ -129,25 +129,30 @@ const formatDate = (date: Date) =>
 
 <style>
 	.posts-page {
-		max-width: var(--content-width);
+		max-width: 980px;
 		margin: 0 auto;
-		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+		padding: var(--spacing-10) var(--spacing-6) var(--spacing-16);
 	}
 
 	.page-header {
-		margin-bottom: var(--spacing-12);
+		margin-bottom: var(--spacing-10);
+		padding: var(--spacing-8);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-accent) 5%, var(--color-bg));
 	}
 
 	.page-title {
-		font-size: var(--font-size-4xl);
+		font-size: clamp(var(--font-size-3xl), 6vw, var(--font-size-5xl));
 		font-weight: 700;
-		letter-spacing: var(--tracking-tight);
-		margin-bottom: var(--spacing-2);
+		line-height: var(--leading-tight);
+		letter-spacing: -0.035em;
+		margin-bottom: var(--spacing-3);
 	}
 
 	.page-description {
 		font-size: var(--font-size-lg);
-		color: var(--color-muted);
+		color: var(--color-text-secondary);
 	}
 
 	.empty {
@@ -158,20 +163,23 @@ const formatDate = (date: Date) =>
 	.posts-list {
 		display: flex;
 		flex-direction: column;
+		gap: var(--spacing-5);
 	}
 
 	.post-item {
-		padding: var(--spacing-8) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
+		padding: var(--spacing-5);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
+		transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
 	}
 
-	.post-item:first-child {
-		padding-top: 0;
+	.post-item:hover {
+		border-color: var(--color-border);
+		background: color-mix(in oklch, var(--color-bg) 88%, var(--color-surface));
+		transform: translateY(-1px);
 	}
 
-	.post-item:last-child {
-		border-bottom: none;
-	}
 
 	/* Layout 2-colunas: capa (160px) + texto. Quando o post nao tem
 	 * featured_image, cai pra 1-coluna automaticamente via :has(). */
@@ -191,7 +199,7 @@ const formatDate = (date: Date) =>
 	.post-thumb {
 		aspect-ratio: 4 / 3;
 		overflow: hidden;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius);
 		background: var(--color-surface);
 	}
 
@@ -264,7 +272,7 @@ const formatDate = (date: Date) =>
 
 	.post-title {
 		font-size: var(--font-size-2xl);
-		font-weight: 600;
+		font-weight: 700;
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
 		margin-bottom: var(--spacing-2);
@@ -272,7 +280,7 @@ const formatDate = (date: Date) =>
 	}
 
 	.post-link:hover .post-title {
-		color: var(--color-accent);
+		color: var(--color-accent-hover);
 	}
 
 	.post-excerpt {
@@ -289,21 +297,27 @@ const formatDate = (date: Date) =>
 	}
 
 	.post-tag {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-2);
+		display: inline-flex;
+		align-items: center;
+		min-height: 34px;
+		padding: 0 var(--spacing-3);
 		font-size: var(--font-size-xs);
+		font-weight: 600;
 		color: var(--color-text-secondary);
 		background: var(--color-surface);
-		border-radius: var(--radius);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: 999px;
 		text-decoration: none;
 		transition:
 			color var(--transition-fast),
-			background var(--transition-fast);
+			background var(--transition-fast),
+			border-color var(--transition-fast);
 	}
 
 	.post-tag:hover {
 		color: var(--color-text);
-		background: var(--color-border);
+		background: color-mix(in oklch, var(--color-accent) 12%, var(--color-bg));
+		border-color: color-mix(in oklch, var(--color-accent) 22%, var(--color-border));
 	}
 
 	@media (max-width: 600px) {

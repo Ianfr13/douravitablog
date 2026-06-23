@@ -898,17 +898,20 @@ const medicalSchema = {
 
 	/* Hero image - full width within container */
 	.article-hero {
-		margin: var(--spacing-16) var(--spacing-6);
-		border-radius: var(--radius-lg);
+		margin: var(--spacing-10) var(--spacing-6) var(--spacing-14);
+		padding: var(--spacing-3);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
 		overflow: hidden;
-		background: var(--color-surface);
+		background: color-mix(in oklch, var(--color-bg) 82%, var(--color-surface));
 	}
 
 	.article-hero img {
 		width: 100%;
 		height: auto;
-		max-height: 500px;
+		max-height: 540px;
 		object-fit: cover;
+		border-radius: var(--radius-lg);
 	}
 
 	/* Three-column grid */
@@ -920,7 +923,7 @@ const medicalSchema = {
 		gap: var(--spacing-10);
 		justify-content: center;
 		padding: 0 var(--spacing-6);
-		margin: var(--spacing-16) 0;
+		margin: var(--spacing-14) 0 var(--spacing-16);
 	}
 
 	/* Left column: Meta */
@@ -1120,6 +1123,10 @@ const medicalSchema = {
 
 	.article-header {
 		margin-bottom: var(--spacing-10);
+		padding: var(--spacing-8);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-accent) 4%, var(--color-bg));
 	}
 
 	.article-header .article-meta {
@@ -1139,20 +1146,27 @@ const medicalSchema = {
 	}
 
 	.article-category {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-3);
-		font-size: var(--font-size-sm);
-		font-weight: 500;
-		color: var(--color-accent);
-		background: var(--color-accent-ring, var(--color-surface));
-		border-radius: var(--radius);
+		display: inline-flex;
+		align-items: center;
+		min-height: 36px;
+		padding: 0 var(--spacing-3);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-accent-hover);
+		background: color-mix(in oklch, var(--color-accent) 12%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 18%, var(--color-border));
+		border-radius: 999px;
 		text-decoration: none;
-		margin-bottom: var(--spacing-3);
-		transition: background var(--transition-fast);
+		margin-bottom: var(--spacing-4);
+		transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 	}
 
 	.article-category:hover {
-		background: var(--color-border);
+		color: var(--color-text);
+		background: color-mix(in oklch, var(--color-accent) 20%, var(--color-bg));
+		border-color: color-mix(in oklch, var(--color-accent) 34%, var(--color-border));
 	}
 
 	/* Breadcrumbs */
@@ -1211,7 +1225,7 @@ const medicalSchema = {
 		font-size: clamp(2rem, 5vw, var(--font-size-5xl));
 		font-weight: 700;
 		line-height: var(--leading-tight);
-		letter-spacing: var(--tracking-tight);
+		letter-spacing: -0.035em;
 		margin-bottom: var(--spacing-4);
 	}
 
@@ -1241,6 +1255,8 @@ const medicalSchema = {
 		font-size: var(--font-size-2xl);
 		margin-top: 2.5em;
 		margin-bottom: 0.75em;
+		padding-top: 0.35em;
+		border-top: 1px solid var(--color-border-subtle);
 		scroll-margin-top: calc(var(--nav-height) + var(--spacing-4));
 	}
 
@@ -1253,10 +1269,10 @@ const medicalSchema = {
 
 	.article-content :global(blockquote) {
 		margin: 2em 0;
-		padding: var(--spacing-4) var(--spacing-6);
-		border-left: 3px solid var(--color-border);
-		background: var(--color-bg-subtle);
-		border-radius: 0 var(--radius) var(--radius) 0;
+		padding: var(--spacing-5) var(--spacing-6);
+		border: 1px solid color-mix(in oklch, var(--color-accent) 16%, var(--color-border));
+		background: color-mix(in oklch, var(--color-accent) 5%, var(--color-bg));
+		border-radius: var(--radius-lg);
 		color: var(--color-text-secondary);
 		font-style: italic;
 	}
@@ -1630,8 +1646,10 @@ const medicalSchema = {
 	/* Comments section */
 	.article-comments {
 		margin-top: var(--spacing-16);
-		padding-top: var(--spacing-10);
-		border-top: 1px solid var(--color-border);
+		padding: var(--spacing-8);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-bg) 86%, var(--color-surface));
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-10);
@@ -1665,7 +1683,8 @@ const medicalSchema = {
 
 	/* More posts section */
 	.more-posts {
-		background: var(--color-bg-subtle);
+		background: color-mix(in oklch, var(--color-accent) 4%, var(--color-bg));
+		border-top: 1px solid var(--color-border-subtle);
 		padding: var(--spacing-16) 0;
 		margin-top: var(--spacing-16);
 	}

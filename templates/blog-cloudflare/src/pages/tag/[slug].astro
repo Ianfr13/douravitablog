@@ -90,41 +90,50 @@ const filteredPosts = posts.map((post) => ({
 	.archive-section {
 		max-width: var(--wide-width);
 		margin: 0 auto;
-		padding: var(--spacing-12) var(--spacing-6);
+		padding: var(--spacing-10) var(--spacing-6) var(--spacing-16);
 	}
 
 	.archive-header {
-		margin-bottom: var(--spacing-12);
-		padding-bottom: var(--spacing-8);
-		border-bottom: 1px solid var(--color-border-subtle);
+		margin-bottom: var(--spacing-10);
+		padding: var(--spacing-8);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: calc(var(--radius-lg) * 2);
+		background: color-mix(in oklch, var(--color-accent) 5%, var(--color-bg));
 	}
 
 	.archive-label {
-		display: block;
+		display: inline-flex;
+		align-items: center;
+		min-height: 34px;
+		padding: 0 var(--spacing-3);
 		font-size: var(--font-size-xs);
-		font-weight: 500;
-		color: var(--color-accent);
+		font-weight: 700;
+		color: var(--color-accent-hover);
+		background: color-mix(in oklch, var(--color-accent) 12%, var(--color-bg));
+		border: 1px solid color-mix(in oklch, var(--color-accent) 18%, var(--color-border));
+		border-radius: 999px;
 		text-transform: uppercase;
 		letter-spacing: var(--tracking-wider);
-		margin-bottom: var(--spacing-2);
+		margin-bottom: var(--spacing-4);
 	}
 
 	.archive-title {
-		font-size: var(--font-size-4xl);
+		font-size: clamp(var(--font-size-3xl), 6vw, var(--font-size-5xl));
 		font-weight: 700;
-		letter-spacing: var(--tracking-tight);
-		margin-bottom: var(--spacing-2);
+		line-height: var(--leading-tight);
+		letter-spacing: -0.035em;
+		margin-bottom: var(--spacing-3);
 	}
 
 	.archive-count {
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
+		font-size: var(--font-size-lg);
+		color: var(--color-text-secondary);
 	}
 
 	.posts-grid {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: var(--spacing-12) var(--spacing-8);
+		gap: var(--spacing-8) var(--spacing-6);
 	}
 
 	.no-posts {
